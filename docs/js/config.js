@@ -5,7 +5,7 @@ window.PULSO_CONFIG = {
   SUPABASE_URL: "https://adkzrnmhvshqbiwpzemx.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_1Z-UKL06N1_d0W5a_o6NEQ_awyynRA9",
   // true cuando la función de IA esté desplegada en Supabase con su clave de Anthropic
-  IA_ACTIVA: false,
+  IA_ACTIVA: true,
   MARCA: "Pulso",
   COLOR: "#2F6BFF"
 };
