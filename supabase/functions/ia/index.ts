@@ -4,7 +4,8 @@
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const MODELO = Deno.env.get("MODELO_IA") || "claude-opus-5-5";
+// Modelo más económico por petición de Miguel. Se puede cambiar con el secreto MODELO_IA.
+const MODELO = Deno.env.get("MODELO_IA") || "claude-haiku-5-5";
 const TOPE_DIARIO = Number(Deno.env.get("TOPE_IA_DIARIO") || "30"); // peticiones por entrenador al día
 
 const CORS = {
@@ -86,13 +87,12 @@ No des consejos médicos ni diagnostiques; si hay dolor o lesión, sugiere consu
 const anthropic = new Anthropic(); // lee ANTHROPIC_API_KEY del entorno
 
 async function pedirJSON(sistema: string, texto: string, esquema: unknown, maxTokens: number) {
-  const respuesta = await anthropic.beta.messages.create({
+  const respuesta = await anthropic.messages.create({
     model: MODELO,
     max_tokens: maxTokens,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
     system: sistema,
-    output_config: { effort: "medium", format: { type: "json_schema", schema: esquema } },
+    // effort "low": menos razonamiento = más barato; suficiente para armar rutinas.
+    output_config: { effort: "low", format: { type: "json_schema", schema: esquema } },
     messages: [{ role: "user", content: texto }],
   } as any);
   if (respuesta.stop_reason === "refusal") throw new Error("La IA no pudo ayudar con ese pedido. Prueba a escribirlo de otra forma.");
