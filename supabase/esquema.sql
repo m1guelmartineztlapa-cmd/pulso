@@ -90,6 +90,11 @@ create index if not exists asig_cli on asignaciones(cliente_id);
 create index if not exists ses_cli on sesiones(cliente_id, fecha desc);
 create index if not exists med_cli on medidas(cliente_id, fecha desc);
 
+-- Permisos para la API (por si el proyecto no expone tablas nuevas automáticamente).
+-- La seguridad real la ponen las reglas RLS de más abajo.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on entrenadores, clientes, ejercicios, rutinas, asignaciones, sesiones, medidas to authenticated;
+
 -- ───────── Funciones de ayuda ─────────
 create or replace function mi_cliente_id() returns uuid
 language sql stable security definer set search_path = public as
