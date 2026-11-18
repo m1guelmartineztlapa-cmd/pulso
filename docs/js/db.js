@@ -4,7 +4,8 @@
 (function () {
   "use strict";
   var C = window.PULSO_CONFIG || {};
-  var real = !!(C.SUPABASE_URL && C.SUPABASE_ANON_KEY && window.supabase);
+  // ?demo en la dirección fuerza el modo demo (para enseñar la app sin tocar datos reales)
+  var real = !!(C.SUPABASE_URL && C.SUPABASE_ANON_KEY && window.supabase) && !/[?&]demo\b/.test(location.search);
 
   function uuid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -62,7 +63,16 @@
       urlFirmada: async function (cubeta, ruta) {
         var d = r(await sb.storage.from(cubeta).createSignedUrl(ruta, 3600)); return d.signedUrl;
       },
-      borrarArchivo: async function (cubeta, ruta) { await sb.storage.from(cubeta).remove([ruta]); }
+      borrarArchivo: async function (cubeta, ruta) { await sb.storage.from(cubeta).remove([ruta]); },
+      ia: async function (cuerpo) {
+        var res = await sb.functions.invoke("ia", { body: cuerpo });
+        if (res.error) {
+          var msg = "La IA no está disponible ahora.";
+          try { var j = await res.error.context.json(); if (j && j.error) msg = j.error; } catch (e) {}
+          throw new Error(msg);
+        }
+        return res.data;
+      }
     };
   }
 
@@ -204,7 +214,8 @@
       },
       urlPublica: function (cubeta, ruta) { return est.archivos[cubeta + "/" + ruta] || ""; },
       urlFirmada: async function (cubeta, ruta) { return est.archivos[cubeta + "/" + ruta] || ""; },
-      borrarArchivo: async function (cubeta, ruta) { delete est.archivos[cubeta + "/" + ruta]; guardar(); }
+      borrarArchivo: async function (cubeta, ruta) { delete est.archivos[cubeta + "/" + ruta]; guardar(); },
+      ia: async function () { throw new Error("La IA no está disponible en el modo demo."); }
     };
   }
 

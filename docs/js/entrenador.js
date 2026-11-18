@@ -242,6 +242,9 @@
         '</div><div class="t2">' + esc(UI.diasTxt(a.dias)) + " · " + n + ' ejercicios</div></span><span class="chev">' + ico("der") + "</span></div>";
     }).join("") : '<div class="vacio">Sin rutinas todavía.</div>';
     html += "</div></div>";
+    if (ses.length || med.length) html += '<div class="tarjeta" id="iaResumen"><div class="promo"><span class="avatar" style="background:var(--brand)">' + ico("chispa", ' width="22" height="22"') +
+      '</span><div><h3>¿Cómo va ' + esc(c.nombre.split(" ")[0]) + '?</h3><p>La IA lee sus sesiones, comentarios y medidas y te da un resumen con sugerencias.</p></div></div>' +
+      '<button class="btn vidrio" style="margin-top:14px" id="pedirResumen">' + ico("chispa") + "Resumen con IA</button></div>";
     html += '<div class="titulo-sec"><h2>Progreso de fuerza</h2></div><div class="tarjeta">';
     if (ejs.length) {
       html += '<div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
@@ -270,6 +273,26 @@
     ["#asignar", "#asignar2"].forEach(function (s) { UI.$(s).onclick = function () { hojaAsignar({ clienteId: c.id, rutinas: rutinas }); }; });
     ["#medir", "#medir2"].forEach(function (s) { UI.$(s).onclick = function () { V.hojaMedida(c); }; });
     var st = UI.$("#sinTel"); if (st) st.onclick = function () { UI.aviso("Agrega su teléfono en Editar", true); };
+    var pr = UI.$("#pedirResumen");
+    if (pr) pr.onclick = async function () {
+      pr.disabled = true; pr.innerHTML = '<span class="girar" style="width:18px;height:18px;border-width:2px"></span>Pensando…';
+      var datos = {
+        objetivo: c.objetivo || "", notas_del_entrenador: c.notas || "",
+        sesiones: ses.slice(0, 12).map(function (s) {
+          var porEj = {};
+          (s.series || []).forEach(function (x) { (porEj[x.nombre] = porEj[x.nombre] || []).push((x.peso ? x.peso + "kg×" : "") + (x.reps || "?")); });
+          return { fecha: s.fecha, rutina: s.rutina_nombre, calificacion: s.calificacion, comentario: s.comentario || "", series: porEj };
+        }),
+        medidas: med.slice(-6).map(function (m) { return { fecha: m.fecha, peso: m.peso, cintura: m.cintura, cadera: m.cadera, grasa: m.grasa }; })
+      };
+      try {
+        var r = await DB.ia({ accion: "resumen", datos: datos });
+        UI.$("#iaResumen").innerHTML = '<h3 style="display:flex;align-items:center;gap:8px">' + ico("chispa", ' width="20" height="20"') + "Resumen con IA</h3>" +
+          '<p style="color:#fff;margin-top:8px;line-height:1.5">' + esc(r.resumen) + '</p><div class="lbl" style="margin:14px 0 6px">Sugerencias</div>' +
+          (r.sugerencias || []).map(function (s) { return '<p style="margin-top:6px">• ' + esc(s) + "</p>"; }).join("") +
+          '<p class="nota-demo" style="text-align:left;margin-top:12px">Hecho con IA: revísalo con tu criterio.</p>';
+      } catch (e) { UI.error(e); pr.disabled = false; pr.innerHTML = ico("chispa") + "Resumen con IA"; }
+    };
     UI.$$("[data-asig]").forEach(function (el) {
       el.onclick = function () { hojaAsignar({ asig: asig.find(function (a) { return a.id === el.dataset.asig; }) }); };
     });
@@ -347,7 +370,22 @@
     app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px">' + cabecera("Buscar rutina",
       '<a class="btn-redondo" href="#/rutina/nueva" aria-label="Nueva rutina">' + ico("mas") + "</a>") +
       '<h1 class="titulo-pag">Rutinas</h1></section><div class="contenido"><div class="tarjeta sin-relleno"><div class="lista" id="lista"></div></div>' +
-      '<a class="btn azul" href="#/rutina/nueva">' + ico("mas") + "Nueva rutina</a></div>";
+      '<div class="fila-btns"><a class="btn azul" href="#/rutina/nueva">' + ico("mas") + 'Nueva rutina</a><button class="btn" id="conIA">' + ico("chispa") + "Crear con IA</button></div></div>";
+    UI.$("#conIA").onclick = function () {
+      hojaIA("Crear rutina con IA", "Ej. Pierna y glúteo para principiante, 45 min, en gimnasio", [
+        "Cuerpo completo para principiante, 3 días, con mancuernas",
+        "Torso hipertrofia, intermedio, 60 min",
+        "Pierna y glúteo, 45 min, cuida rodillas",
+        "Circuito en casa sin equipo, 30 min"
+      ], async function (pedido) {
+        var cat = await catalogoIA();
+        var res = await DB.ia({ accion: "rutina", pedido: pedido, ejercicios: cat.lista });
+        var r = rutinaDesdeIA(res.rutina, cat.porRef);
+        if (!r.bloques.length) throw new Error("La IA no encontró ejercicios para ese pedido. Prueba con otras palabras.");
+        sessionStorage.setItem("pulso_rutina_ia", JSON.stringify(r));
+        A().ir("rutina/nueva");
+      });
+    };
     function lista(q) {
       var n = UI.normal(q);
       var fs = d.rutinas.filter(function (r) { return !n || UI.normal(r.nombre).indexOf(n) >= 0; });
@@ -373,6 +411,11 @@
     if (!r) return A().ir("rutinas");
     var cambios = false;
     function marcar() { cambios = true; }
+    var deIA = id === "nueva" && sessionStorage.getItem("pulso_rutina_ia");
+    if (deIA) {
+      sessionStorage.removeItem("pulso_rutina_ia");
+      try { r = JSON.parse(deIA); cambios = true; setTimeout(function () { UI.aviso("✨ Rutina lista: revísala y pulsa Guardar"); }, 300); } catch (e) {}
+    }
     function item(b, it, i) {
       var sigUnido = b.items[i + 1] && it.grupo && b.items[i + 1].grupo === it.grupo;
       return '<div class="ej' + (it.grupo ? " super" : "") + '" data-i="' + i + '"><div class="ej-cab"><span class="ico">' + UI.miniEj(it) + '</span><div class="nom">' + esc(it.nombre) +
@@ -393,7 +436,7 @@
     }
     function dibujar() {
       app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:6px"><div class="barra-sup" style="justify-content:space-between">' + atras("rutinas", "Rutinas") +
-        '<div style="display:flex;gap:8px">' + (r.id ? '<button class="btn-redondo" id="duplicar" aria-label="Duplicar">' + ico("duplicar") + '</button><button class="btn-redondo" id="borrar" aria-label="Eliminar">' + ico("basura") + "</button>" : "") +
+        '<div style="display:flex;gap:8px"><button class="btn-redondo" id="ajustarIA" aria-label="Ajustar con IA" title="Ajustar con IA">' + ico("chispa") + "</button>" + (r.id ? '<button class="btn-redondo" id="duplicar" aria-label="Duplicar">' + ico("duplicar") + '</button><button class="btn-redondo" id="borrar" aria-label="Eliminar">' + ico("basura") + "</button>" : "") +
         '</div></div><input class="titulo-pag" id="rNombre" value="' + esc(r.nombre) + '" placeholder="Nombre de la rutina" style="background:none;border:0;outline:0;width:100%;color:#fff">' +
         '<input id="rDesc" value="' + esc(r.descripcion || "") + '" placeholder="Descripción (opcional)" style="background:none;border:0;outline:0;width:100%;color:var(--suave);font-size:16px;margin-top:4px"></section>' +
         '<div class="contenido" id="bloques">' + r.bloques.map(function (b, bi) {
@@ -464,6 +507,28 @@
         var cl = await DB.sel("clientes", { entrenador_id: eid() }, { orden: "nombre" });
         hojaAsignar({ rutinaId: r.id, clientes: cl });
       };
+      UI.$("#ajustarIA").onclick = function () {
+        var vacia = !r.bloques.some(function (b) { return b.items.length; });
+        hojaIA(vacia ? "Armar con IA" : "Ajustar con IA", vacia ? "Ej. Espalda y bíceps, intermedio, 50 min" : "Ej. Hazla más ligera, cambia la barra por mancuernas", vacia ? [
+          "Cuerpo completo para principiante", "Pierna con énfasis en glúteo", "Empuje (pecho, hombro, tríceps)"
+        ] : ["Hazla más ligera para esta semana", "Cámbiala para entrenar en casa con mancuernas", "Agrega un bloque de abdomen", "Súbele la intensidad"], async function (pedido) {
+          var cat = await catalogoIA();
+          var actual = { nombre: r.nombre, bloques: r.bloques.map(function (b) {
+            return { nombre: b.nombre, items: b.items.map(function (it) { return { ref: it.ref, nombre: it.nombre, series: it.series, reps: it.reps, tiempo: it.tiempo, descanso: it.descanso, intTipo: it.intTipo, int: it.int, nota: it.nota, superserie: !!it.grupo }; }) };
+          }) };
+          // los ejercicios que ya están en la rutina también cuentan como disponibles
+          r.bloques.forEach(function (b) { b.items.forEach(function (it) {
+            if (!cat.porRef[it.ref]) { cat.porRef[it.ref] = { nombre: it.nombre, img: it.img, video: it.video }; cat.lista.push({ ref: it.ref, nombre: it.nombre }); }
+          }); });
+          var res = await DB.ia(vacia ? { accion: "rutina", pedido: pedido, ejercicios: cat.lista } : { accion: "variar", pedido: pedido, rutina: actual, ejercicios: cat.lista });
+          var nueva = rutinaDesdeIA(res.rutina, cat.porRef);
+          if (!nueva.bloques.length) throw new Error("La IA no devolvió ejercicios. Prueba con otras palabras.");
+          if (!r.nombre.trim()) r.nombre = nueva.nombre;
+          if (!(r.descripcion || "").trim()) r.descripcion = nueva.descripcion;
+          r.bloques = nueva.bloques; marcar(); dibujar();
+          UI.aviso("✨ Listo: revisa y pulsa Guardar");
+        });
+      };
       var du = UI.$("#duplicar");
       if (du) du.onclick = async function () {
         try {
@@ -489,6 +554,55 @@
     window.onbeforeunload = function () { return cambios ? "Hay cambios sin guardar" : undefined; };
     dibujar();
   };
+
+  /* ───────── IA ───────── */
+  async function catalogoIA() {
+    var r = await Promise.all([UI.biblioteca(), DB.sel("ejercicios", { entrenador_id: eid() }, { orden: "nombre" })]);
+    var lista = [], porRef = {};
+    r[1].forEach(function (e) {
+      var ref = "own:" + e.id;
+      lista.push({ ref: ref, nombre: e.nombre, m: e.musculo || "", e: e.equipo || "" });
+      porRef[ref] = { nombre: e.nombre, img: e.imagen_url || "", video: e.video_url || "" };
+    });
+    r[0].filter(function (e) { return e.es; }).forEach(function (e) {
+      var ref = "lib:" + e.id;
+      lista.push({ ref: ref, nombre: e.n, m: e.m, e: e.e });
+      porRef[ref] = { nombre: e.n, img: e.img[0] || "", video: "" };
+    });
+    return { lista: lista, porRef: porRef };
+  }
+  function rutinaDesdeIA(ia, porRef) {
+    var letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", g = 0;
+    var bloques = (ia.bloques || []).map(function (b) {
+      var items = (b.items || []).filter(function (it) { return porRef[it.ref]; }).map(function (it) {
+        var ej = porRef[it.ref];
+        return { id: DB.uuid(), ref: it.ref, nombre: ej.nombre, img: ej.img, video: ej.video, series: Number(it.series) || 3, reps: String(it.reps || ""), tiempo: String(it.tiempo || ""),
+          descanso: Number(it.descanso) || 60, peso: "", intTipo: it.intTipo || "", int: String(it.int || ""), nota: String(it.nota || ""), grupo: "", _sup: !!it.superserie_con_siguiente };
+      });
+      items.forEach(function (it, i) {
+        if (it._sup && items[i + 1]) { var letra = it.grupo || letras[g++ % 26]; it.grupo = letra; items[i + 1].grupo = letra; }
+      });
+      items.forEach(function (it) { delete it._sup; });
+      return { id: DB.uuid(), nombre: b.nombre || "Bloque", items: items };
+    }).filter(function (b) { return b.items.length; });
+    return { nombre: ia.nombre || "", descripcion: ia.descripcion || "", bloques: bloques };
+  }
+  function hojaIA(titulo, ejemplo, sugerencias, alEnviar) {
+    UI.hoja(titulo, '<div class="form"><p style="color:var(--suave);margin:-6px 0 0;line-height:1.4">Escribe lo que necesitas: objetivo, nivel, tiempo, equipo, lesiones… La IA usa los ejercicios de tu biblioteca.</p>' +
+      '<textarea class="entrada" id="iaPedido" maxlength="600" placeholder="' + esc(ejemplo) + '"></textarea><div class="chips">' +
+      sugerencias.map(function (s) { return '<button class="chip" data-s="' + esc(s) + '">' + esc(s) + "</button>"; }).join("") +
+      '</div><button class="btn" id="iaIr">' + ico("chispa") + 'Generar</button><p class="nota-demo">Tarda unos segundos. Revisa siempre lo que propone antes de asignarlo.</p></div>', function (h, cerrar) {
+      UI.$$("[data-s]", h).forEach(function (b) { b.onclick = function () { h.querySelector("#iaPedido").value = b.dataset.s; }; });
+      var ir = h.querySelector("#iaIr");
+      ir.onclick = async function () {
+        var pedido = h.querySelector("#iaPedido").value.trim();
+        if (!pedido) return UI.aviso("Escribe qué necesitas", true);
+        ir.disabled = true; ir.innerHTML = '<span class="girar" style="width:18px;height:18px;border-width:2px;border-top-color:#0A0F25;border-color:rgba(10,15,37,.2);border-top-color:#0A0F25"></span>Pensando…';
+        try { await alEnviar(pedido); cerrar(); }
+        catch (e) { UI.error(e); ir.disabled = false; ir.innerHTML = ico("chispa") + "Generar"; }
+      };
+    });
+  }
 
   /* Selector de ejercicios (biblioteca + propios) */
   async function elegirEjercicio(alElegir) {
