@@ -11,6 +11,7 @@
     { id: "ajustes", ruta: "ajustes", ico: "ajustes", txt: "Ajustes" }
   ];
   function A() { return window.APP; }
+  function iaActiva() { return DB.modo === "supabase" && !!(window.PULSO_CONFIG || {}).IA_ACTIVA; }
   function app() { return UI.$("#app"); }
   function eid() { return A().ent.id; }
 
@@ -242,7 +243,7 @@
         '</div><div class="t2">' + esc(UI.diasTxt(a.dias)) + " · " + n + ' ejercicios</div></span><span class="chev">' + ico("der") + "</span></div>";
     }).join("") : '<div class="vacio">Sin rutinas todavía.</div>';
     html += "</div></div>";
-    if (ses.length || med.length) html += '<div class="tarjeta" id="iaResumen"><div class="promo"><span class="avatar" style="background:var(--brand)">' + ico("chispa", ' width="22" height="22"') +
+    if (iaActiva() && (ses.length || med.length)) html += '<div class="tarjeta" id="iaResumen"><div class="promo"><span class="avatar" style="background:var(--brand)">' + ico("chispa", ' width="22" height="22"') +
       '</span><div><h3>¿Cómo va ' + esc(c.nombre.split(" ")[0]) + '?</h3><p>La IA lee sus sesiones, comentarios y medidas y te da un resumen con sugerencias.</p></div></div>' +
       '<button class="btn vidrio" style="margin-top:14px" id="pedirResumen">' + ico("chispa") + "Resumen con IA</button></div>";
     html += '<div class="titulo-sec"><h2>Progreso de fuerza</h2></div><div class="tarjeta">';
@@ -370,8 +371,9 @@
     app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px">' + cabecera("Buscar rutina",
       '<a class="btn-redondo" href="#/rutina/nueva" aria-label="Nueva rutina">' + ico("mas") + "</a>") +
       '<h1 class="titulo-pag">Rutinas</h1></section><div class="contenido"><div class="tarjeta sin-relleno"><div class="lista" id="lista"></div></div>' +
-      '<div class="fila-btns"><a class="btn azul" href="#/rutina/nueva">' + ico("mas") + 'Nueva rutina</a><button class="btn" id="conIA">' + ico("chispa") + "Crear con IA</button></div></div>";
-    UI.$("#conIA").onclick = function () {
+      '<div class="fila-btns"><a class="btn azul" href="#/rutina/nueva">' + ico("mas") + "Nueva rutina</a>" +
+      (iaActiva() ? '<button class="btn" id="conIA">' + ico("chispa") + "Crear con IA</button>" : "") + "</div></div>";
+    if (iaActiva()) UI.$("#conIA").onclick = function () {
       hojaIA("Crear rutina con IA", "Ej. Pierna y glúteo para principiante, 45 min, en gimnasio", [
         "Cuerpo completo para principiante, 3 días, con mancuernas",
         "Torso hipertrofia, intermedio, 60 min",
@@ -436,7 +438,7 @@
     }
     function dibujar() {
       app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:6px"><div class="barra-sup" style="justify-content:space-between">' + atras("rutinas", "Rutinas") +
-        '<div style="display:flex;gap:8px"><button class="btn-redondo" id="ajustarIA" aria-label="Ajustar con IA" title="Ajustar con IA">' + ico("chispa") + "</button>" + (r.id ? '<button class="btn-redondo" id="duplicar" aria-label="Duplicar">' + ico("duplicar") + '</button><button class="btn-redondo" id="borrar" aria-label="Eliminar">' + ico("basura") + "</button>" : "") +
+        '<div style="display:flex;gap:8px">' + (iaActiva() ? '<button class="btn-redondo" id="ajustarIA" aria-label="Ajustar con IA" title="Ajustar con IA">' + ico("chispa") + "</button>" : "") + (r.id ? '<button class="btn-redondo" id="duplicar" aria-label="Duplicar">' + ico("duplicar") + '</button><button class="btn-redondo" id="borrar" aria-label="Eliminar">' + ico("basura") + "</button>" : "") +
         '</div></div><input class="titulo-pag" id="rNombre" value="' + esc(r.nombre) + '" placeholder="Nombre de la rutina" style="background:none;border:0;outline:0;width:100%;color:#fff">' +
         '<input id="rDesc" value="' + esc(r.descripcion || "") + '" placeholder="Descripción (opcional)" style="background:none;border:0;outline:0;width:100%;color:var(--suave);font-size:16px;margin-top:4px"></section>' +
         '<div class="contenido" id="bloques">' + r.bloques.map(function (b, bi) {
@@ -507,7 +509,7 @@
         var cl = await DB.sel("clientes", { entrenador_id: eid() }, { orden: "nombre" });
         hojaAsignar({ rutinaId: r.id, clientes: cl });
       };
-      UI.$("#ajustarIA").onclick = function () {
+      if (UI.$("#ajustarIA")) UI.$("#ajustarIA").onclick = function () {
         var vacia = !r.bloques.some(function (b) { return b.items.length; });
         hojaIA(vacia ? "Armar con IA" : "Ajustar con IA", vacia ? "Ej. Espalda y bíceps, intermedio, 50 min" : "Ej. Hazla más ligera, cambia la barra por mancuernas", vacia ? [
           "Cuerpo completo para principiante", "Pierna con énfasis en glúteo", "Empuje (pecho, hombro, tríceps)"
