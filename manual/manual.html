@@ -1,0 +1,267 @@
+<title>Manual de Pulso</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: guía por pasos; texto a la izquierda y la pantalla real del celular a la derecha; en celular se apilan. */
+:root{
+  --bg:#F4F6FB; --card:#FFFFFF; --fg:#0B1230; --muted:#56607F; --line:#DFE4F0;
+  --brand:#2F6BFF; --brand-soft:#E6EDFF; --ok:#12A46B; --warn:#B86E00; --warn-soft:#FFF3DF;
+  --phone:#0B1026;
+  --display:"Sora","Inter",system-ui,sans-serif; --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#070B1F; --card:#10173A; --fg:#F2F4FF; --muted:#A7B0D6; --line:#232C57;
+  --brand:#5B8CFF; --brand-soft:#1A2557; --ok:#34D399; --warn:#FBBF24; --warn-soft:#2E2510; --phone:#000;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#070B1F; --card:#10173A; --fg:#F2F4FF; --muted:#A7B0D6; --line:#232C57;
+  --brand:#5B8CFF; --brand-soft:#1A2557; --ok:#34D399; --warn:#FBBF24; --warn-soft:#2E2510; --phone:#000;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.envoltura{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.02em;text-wrap:balance;margin:0}
+a{color:var(--brand)}
+.portada{padding-block:48px 28px;display:grid;gap:18px}
+.etiqueta{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--brand)}
+.etiqueta svg{width:18px;height:18px}
+.portada h1{font-size:clamp(34px,6vw,54px);line-height:1.05}
+.portada p{margin:0;max-width:62ch;color:var(--muted);font-size:18px}
+.url{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;max-width:640px}
+.url code{font-family:ui-monospace,Consolas,monospace;font-size:15px;flex:1;min-width:0;word-break:break-all;color:var(--fg)}
+.boton{border:0;border-radius:999px;background:var(--brand);color:#fff;font-weight:600;font-size:15px;padding:10px 18px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.boton.claro{background:var(--brand-soft);color:var(--brand)}
+.boton:focus-visible,summary:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.indice{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.indice a{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;text-decoration:none;color:var(--fg);font-weight:600;font-size:14.5px}
+.indice b{flex:none;width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:13px}
+.bloque-titulo{margin:56px 0 18px;display:grid;gap:6px}
+.bloque-titulo h2{font-size:clamp(26px,4vw,34px)}
+.bloque-titulo p{margin:0;color:var(--muted);max-width:60ch}
+.paso{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:32px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:28px;margin-top:18px}
+.paso.dos-tel{grid-template-columns:minmax(0,1fr) auto}
+.num{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--brand);color:#fff;font-family:var(--display);font-weight:800;font-size:18px;margin-bottom:12px}
+.paso h3{font-size:24px;margin-bottom:10px}
+.paso ol{margin:0;padding-left:22px;display:grid;gap:8px}
+.paso li::marker{color:var(--brand);font-weight:700}
+.boton-app{display:inline-block;font-weight:700;background:var(--brand-soft);color:var(--brand);border-radius:8px;padding:1px 8px;white-space:nowrap}
+.nota{margin-top:16px;display:flex;gap:10px;background:var(--brand-soft);border-radius:14px;padding:12px 14px;font-size:15px}
+.nota.aviso{background:var(--warn-soft)}
+.nota svg{flex:none;width:20px;height:20px;margin-top:2px;color:var(--brand)}
+.nota.aviso svg{color:var(--warn)}
+.tels{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.tel{width:240px;max-width:100%;border-radius:34px;background:var(--phone);padding:9px;box-shadow:0 18px 40px rgba(11,18,48,.18)}
+.tel img{display:block;width:100%;border-radius:26px;aspect-ratio:390/800;object-fit:cover;object-position:top}
+.tel figcaption{color:#C9D1F5;font-size:12.5px;text-align:center;padding:8px 4px 2px}
+.tel.chico{width:200px}
+.faq{display:grid;gap:10px;margin-top:6px}
+details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:0 18px}
+summary{cursor:pointer;font-weight:600;padding:16px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--brand);font-size:22px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{margin:0 0 16px;color:var(--muted)}
+.cierre{margin-top:48px;text-align:center;color:var(--muted);font-size:15px}
+@media (max-width:760px){
+  .paso,.paso.dos-tel{grid-template-columns:1fr;padding:20px;gap:22px}
+  .tel{width:230px}.tel.chico{width:160px}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+
+<div class="envoltura">
+  <header class="portada">
+    <span class="etiqueta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12.5h4l2.2-5 3.6 10 2.6-7 1.6 2h5"/></svg>Pulso · Manual del entrenador</span>
+    <h1>Tus rutinas y tus alumnos, en el celular</h1>
+    <p>Con Pulso armas rutinas, se las mandas a tus alumnos y ves cómo progresan. Ellos ven qué les toca hoy y anotan cada serie. Es gratis y no hay que descargar nada de la tienda.</p>
+    <div class="url">
+      <code id="direccion">https://m1guelmartineztlapa-cmd.github.io/pulso/</code>
+      <button class="boton" id="copiar" type="button">Copiar</button>
+      <a class="boton claro" href="https://m1guelmartineztlapa-cmd.github.io/pulso/" target="_blank" rel="noopener">Abrir</a>
+    </div>
+    <nav class="indice" aria-label="Pasos">
+      <a href="#paso1"><b>1</b>Crear cuenta</a>
+      <a href="#paso2"><b>2</b>Tu marca</a>
+      <a href="#paso3"><b>3</b>Agregar alumno</a>
+      <a href="#paso4"><b>4</b>Armar rutina</a>
+      <a href="#paso5"><b>5</b>Asignar</a>
+      <a href="#paso6"><b>6</b>Invitar</a>
+    </nav>
+  </header>
+
+  <section class="bloque-titulo"><h2>Empieza en 6 pasos</h2><p>Hazlo una vez y ya. Toma unos 15 minutos.</p></section>
+
+  <article class="paso" id="paso1">
+    <div>
+      <span class="num">1</span>
+      <h3>Crea tu cuenta de entrenador</h3>
+      <ol>
+        <li>Abre la dirección de arriba en tu celular o computadora.</li>
+        <li>Toca <span class="boton-app">Soy entrenador</span>.</li>
+        <li>Toca <span class="boton-app">Crear cuenta de entrenador</span>.</li>
+        <li>Escribe tu correo, una contraseña (6 o más) y tu nombre.</li>
+        <li>Toca <span class="boton-app">Crear mi cuenta</span>. Ya estás dentro.</li>
+      </ol>
+      <div class="nota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.4"/></svg><span>Guárdala en tu pantalla de inicio para abrirla como app. <b>iPhone:</b> Safari → Compartir → «Agregar a pantalla de inicio». <b>Android:</b> Chrome → ⋮ → «Instalar app».</span></div>
+    </div>
+    <figure class="tel"><img src="img/01-crear-cuenta.jpeg" alt="Pantalla para crear la cuenta de entrenador" loading="lazy"><figcaption>Crear cuenta</figcaption></figure>
+  </article>
+
+  <article class="paso" id="paso2">
+    <div>
+      <span class="num">2</span>
+      <h3>Pon tu marca</h3>
+      <ol>
+        <li>Abajo, toca <span class="boton-app">Ajustes</span> (el engrane).</li>
+        <li>Toca <span class="boton-app">Cambiar logo</span> y elige tu imagen.</li>
+        <li>Escribe el nombre de tu marca, por ejemplo «Team Fuerza».</li>
+        <li>Elige tu color. Toda la app cambia al momento.</li>
+        <li>Toca <span class="boton-app">Guardar</span>.</li>
+      </ol>
+      <div class="nota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.4"/></svg><span>Tus alumnos ven tu logo, tu nombre y tu color, no los de Pulso.</span></div>
+    </div>
+    <figure class="tel"><img src="img/03-ajustes.jpeg" alt="Pantalla de ajustes con logo, nombre de marca y color" loading="lazy"><figcaption>Ajustes</figcaption></figure>
+  </article>
+
+  <article class="paso dos-tel" id="paso3">
+    <div>
+      <span class="num">3</span>
+      <h3>Agrega a tu primer alumno</h3>
+      <ol>
+        <li>En <span class="boton-app">Inicio</span>, toca el círculo <span class="boton-app">+ Cliente</span>.</li>
+        <li>Escribe su nombre y su <b>teléfono de 10 dígitos</b> (para mandarle WhatsApp).</li>
+        <li>Opcional: su objetivo y notas privadas (lesiones, horarios). Las notas solo las ves tú.</li>
+        <li>Toca <span class="boton-app">Crear cliente</span>. Se abre su ficha.</li>
+      </ol>
+    </div>
+    <div class="tels">
+      <figure class="tel chico"><img src="img/04-nuevo-cliente.jpeg" alt="Formulario de nuevo cliente" loading="lazy"><figcaption>Datos del alumno</figcaption></figure>
+      <figure class="tel chico"><img src="img/05-ficha-nueva.jpeg" alt="Ficha del alumno recién creado" loading="lazy"><figcaption>Su ficha</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="paso dos-tel" id="paso4">
+    <div>
+      <span class="num">4</span>
+      <h3>Arma una rutina</h3>
+      <ol>
+        <li>Abajo, toca <span class="boton-app">Rutinas</span> y luego <span class="boton-app">+ Nueva rutina</span>.</li>
+        <li>Ponle nombre arriba, por ejemplo «Pierna».</li>
+        <li>En cada bloque toca <span class="boton-app">+ Agregar ejercicio</span>, busca (por ejemplo «sentadilla») y tócalo.</li>
+        <li>Llena series, reps, peso y descanso. La intensidad (RIR, RPE o %) y la nota son opcionales.</li>
+        <li>Toca <span class="boton-app">Guardar rutina</span>.</li>
+      </ol>
+      <div class="nota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.4"/></svg><span><b>Superserie:</b> debajo de un ejercicio toca «Unir con el siguiente» y el alumno los alternará sin descanso. Con la flecha ↑ cambias el orden y con la ✕ quitas uno.</span></div>
+    </div>
+    <div class="tels">
+      <figure class="tel chico"><img src="img/07-editor.jpeg" alt="Editor de rutina con bloques y ejercicios" loading="lazy"><figcaption>Editor de rutina</figcaption></figure>
+      <figure class="tel chico"><img src="img/08-agregar-ejercicio.jpeg" alt="Buscador de ejercicios de la biblioteca" loading="lazy"><figcaption>Biblioteca</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="paso" id="paso5">
+    <div>
+      <span class="num">5</span>
+      <h3>Asígnala a tu alumno</h3>
+      <ol>
+        <li>En la rutina guardada, toca <span class="boton-app">Asignar</span>.</li>
+        <li>Elige al alumno.</li>
+        <li>Marca los días que le toca, por ejemplo L y J.</li>
+        <li>Toca <span class="boton-app">Asignar</span>.</li>
+      </ol>
+      <div class="nota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.4"/></svg><span>Si no marcas días, la rutina le queda disponible para cuando quiera. Una misma rutina sirve para muchos alumnos.</span></div>
+    </div>
+    <figure class="tel"><img src="img/09-asignar.jpeg" alt="Ventana para asignar la rutina a un alumno por días" loading="lazy"><figcaption>Asignar por días</figcaption></figure>
+  </article>
+
+  <article class="paso" id="paso6">
+    <div>
+      <span class="num">6</span>
+      <h3>Mándale su invitación</h3>
+      <ol>
+        <li>Abre la ficha del alumno (pestaña <span class="boton-app">Clientes</span>).</li>
+        <li>Toca el círculo <span class="boton-app">Invitar</span>.</li>
+        <li>Toca <span class="boton-app">Mandar por WhatsApp</span>: el mensaje con su enlace ya va escrito.</li>
+      </ol>
+      <div class="nota aviso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg><span>Cada alumno tiene su <b>propio enlace</b>. Solo entra quien tú invites. Cuando cree su cuenta, en su ficha cambiará de «Sin entrar» a «Activo».</span></div>
+    </div>
+    <figure class="tel"><img src="img/06-invitar.jpeg" alt="Ventana de invitación con botón de WhatsApp" loading="lazy"><figcaption>Invitar</figcaption></figure>
+  </article>
+
+  <section class="bloque-titulo" id="alumno"><h2>Lo que ve tu alumno</h2><p>Para que puedas explicárselo. Él no tiene que configurar nada.</p></section>
+
+  <article class="paso dos-tel">
+    <div>
+      <h3>Entra y entrena</h3>
+      <ol>
+        <li>Abre tu enlace, pone su correo, crea una contraseña y toca <span class="boton-app">Crear mi cuenta</span>.</li>
+        <li>Ve <b>«Hoy te toca»</b> con su rutina del día. Toca <span class="boton-app">Empezar</span>.</li>
+        <li>En cada serie anota los kilos y las reps, y toca el <b style="color:var(--ok)">✓ verde</b>. Arranca solo el cronómetro de descanso.</li>
+        <li>Debajo de cada ejercicio ve lo que hizo la vez pasada, para saber si subir peso.</li>
+        <li>Al final toca <span class="boton-app">Terminar entrenamiento</span>, pone estrellas y un comentario para ti.</li>
+      </ol>
+    </div>
+    <div class="tels">
+      <figure class="tel chico"><img src="img/11-alumno-invitacion.jpeg" alt="Pantalla de invitación que ve el alumno con la marca del entrenador" loading="lazy"><figcaption>Su invitación</figcaption></figure>
+      <figure class="tel chico"><img src="img/12-alumno-hoy.jpeg" alt="Pantalla Hoy te toca del alumno" loading="lazy"><figcaption>Hoy te toca</figcaption></figure>
+    </div>
+  </article>
+  <article class="paso dos-tel">
+    <div>
+      <h3>Registra sus series</h3>
+      <p style="margin:0;color:var(--muted)">Kilos, reps y RIR o RPE por serie. Si no escribe nada y toca ✓, se guarda lo que tú le pusiste en la rutina. Puede ver el video o la foto del ejercicio con el botón ⓘ.</p>
+    </div>
+    <div class="tels">
+      <figure class="tel chico"><img src="img/13-alumno-entrenando.jpeg" alt="Pantalla de entrenamiento con series y cronómetro de descanso" loading="lazy"><figcaption>Entrenando</figcaption></figure>
+      <figure class="tel chico"><img src="img/14-alumno-terminar.jpeg" alt="Pantalla final con estrellas y comentario" loading="lazy"><figcaption>Al terminar</figcaption></figure>
+    </div>
+  </article>
+
+  <section class="bloque-titulo"><h2>Tu día a día</h2><p>Todo lo que hacen tus alumnos te llega solo.</p></section>
+  <article class="paso dos-tel">
+    <div>
+      <h3>Revisa cómo van</h3>
+      <ol>
+        <li><span class="boton-app">Inicio</span>: tus alumnos activos, las sesiones de la semana y la <b>actividad reciente</b> con estrellas y comentarios.</li>
+        <li>Toca un alumno para ver su <b>historial</b>, su <b>gráfica de fuerza</b> por ejercicio y sus <b>medidas y fotos</b>.</li>
+        <li>Con <span class="boton-app">Medidas</span> anotas peso, cintura, etc., y subes fotos de antes y después.</li>
+        <li>¿Quieres cambiarle la rutina? Edítala y guarda: le llega al momento.</li>
+      </ol>
+    </div>
+    <div class="tels">
+      <figure class="tel chico"><img src="img/02-inicio.jpeg" alt="Inicio del entrenador con alumnos activos" loading="lazy"><figcaption>Inicio</figcaption></figure>
+      <figure class="tel chico"><img src="img/10-progreso-cliente.jpeg" alt="Ficha de alumno con datos y progreso" loading="lazy"><figcaption>Progreso del alumno</figcaption></figure>
+    </div>
+  </article>
+
+  <section class="bloque-titulo"><h2>Preguntas frecuentes</h2></section>
+  <div class="faq">
+    <details><summary>¿Cuesta algo?</summary><p>No. Ni para ti ni para tus alumnos, y no tiene límite de alumnos.</p></details>
+    <details><summary>¿Mis alumnos tienen que descargar algo?</summary><p>No. Abren su enlace y, si quieren, la guardan en su pantalla de inicio. Funciona en iPhone y Android.</p></details>
+    <details><summary>¿Un alumno puede ver los datos de otro?</summary><p>No. Cada alumno solo ve sus rutinas y su progreso. Tú solo ves a tus alumnos.</p></details>
+    <details><summary>Un alumno olvidó su contraseña</summary><p>En la pantalla de entrada toca «Olvidé mi contraseña» y le llega un correo para cambiarla. Si no llega, que espere un rato y lo intente otra vez.</p></details>
+    <details><summary>Un alumno cambió de celular</summary><p>Abre la misma dirección, entra con su correo y contraseña, y tiene todo igual.</p></details>
+    <details><summary>Un alumno dejó de venir</summary><p>Mejor no lo borres: entra a su ficha → Editar → quita «Cliente activo». Así conservas su historial. Borrar elimina todo y no se puede deshacer.</p></details>
+    <details><summary>¿Funciona sin internet?</summary><p>Se abre, pero necesita internet para cargar las rutinas y guardar las series.</p></details>
+    <details><summary>La app no me deja entrar o no carga nada</summary><p>Si nadie la usa en una semana, la base de datos se pone en pausa. Avísale a Miguel y la reactiva en unos minutos. No se pierde nada.</p></details>
+    <details><summary>¿Puedo subir mis propios ejercicios?</summary><p>Sí. Pestaña Ejercicios → botón + → nombre, músculo y el enlace de tu video de YouTube. Luego aparece al armar rutinas.</p></details>
+  </div>
+
+  <p class="cierre">¿Dudas o algo no funciona? Escríbele a Miguel con una captura de pantalla.</p>
+</div>
+
+<script>
+(function(){
+  var b=document.getElementById("copiar"), t=document.getElementById("direccion").textContent;
+  b.addEventListener("click",function(){
+    function ok(){ b.textContent="Copiado ✓"; setTimeout(function(){ b.textContent="Copiar"; },1800); }
+    try{
+      navigator.clipboard.writeText(t).then(ok,function(){ seleccionar(); });
+    }catch(e){ seleccionar(); }
+  });
+  function seleccionar(){ var r=document.createRange(); r.selectNodeContents(document.getElementById("direccion")); var s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent="Selecciona y copia"; }
+})();
+</script>

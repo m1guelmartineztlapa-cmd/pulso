@@ -50,7 +50,7 @@
     var nombreCli = {}; d.clientes.forEach(function (c) { nombreCli[c.id] = c.nombre; });
     var html = A().bandaDemo() + '<section class="hero">' + cabecera("Buscar cliente") +
       '<div class="saldo"><div class="etq">Clientes activos</div><div class="cifra">' + activos.length + '</div>' +
-      '<div class="sub">' + ico("rayo") + semana + " sesiones esta semana " + ico("info") + "</div></div>" +
+      '<div class="sub">' + ico("rayo") + semana + (semana === 1 ? " sesión esta semana " : " sesiones esta semana ") + ico("info") + "</div></div>" +
       '<div class="centro"><a class="pastilla" href="#/clientes">Mis clientes</a></div>' +
       '<div class="acciones">' +
       '<button class="accion" id="aCliente"><span class="circ">' + ico("mas") + "</span>Cliente</button>" +

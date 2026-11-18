@@ -150,7 +150,7 @@ select.entrada{appearance:none;-webkit-appearance:none}
 @keyframes sube{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
 @keyframes aparece{from{opacity:0}to{opacity:1}}
 
-.aviso{position:fixed;left:50%;top:calc(14px + var(--arriba));transform:translate(-50%,-140%);z-index:80;padding:12px 18px;border-radius:999px;background:rgba(255,255,255,.95);
+.aviso{position:fixed;left:50%;top:calc(14px + var(--arriba));transform:translate(-50%,-200%);z-index:80;padding:12px 18px;border-radius:999px;background:rgba(255,255,255,.95);
   color:#0A0F25;font-weight:600;font-size:15px;box-shadow:var(--sombra);transition:transform .3s cubic-bezier(.2,.9,.3,1.2);max-width:90vw;text-align:center}
 .aviso.ver{transform:translate(-50%,0)}
 .aviso.error{background:#FFE1E1;color:#8A1C1C}
