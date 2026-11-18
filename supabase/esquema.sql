@@ -124,6 +124,13 @@ begin
   return v;
 end $$;
 
+create or replace function mi_cliente()
+returns table (id uuid, entrenador_id uuid, user_id uuid, nombre text, objetivo text, activo boolean)
+language sql stable security definer set search_path = public as
+$$ select c.id, c.entrenador_id, c.user_id, c.nombre, c.objetivo, c.activo
+   from clientes c where c.user_id = auth.uid() limit 1 $$;
+grant execute on function mi_cliente() to authenticated;
+
 grant execute on function invitacion(text) to anon, authenticated;
 grant execute on function reclamar_invitacion(text) to authenticated;
 
@@ -147,7 +154,7 @@ create policy p_ent_propio on entrenadores for all using (id = auth.uid()) with 
 create policy p_ent_cliente on entrenadores for select using (id = mi_entrenador_de_cliente());
 
 create policy p_cli_ent on clientes for all using (entrenador_id = auth.uid()) with check (entrenador_id = auth.uid());
-create policy p_cli_yo on clientes for select using (user_id = auth.uid());
+-- (el alumno lee su ficha con la función mi_cliente(), sin las notas privadas)
 
 create policy p_eje_ent on ejercicios for all using (entrenador_id = auth.uid()) with check (entrenador_id = auth.uid());
 create policy p_eje_cli on ejercicios for select using (entrenador_id = mi_entrenador_de_cliente());

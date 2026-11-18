@@ -55,6 +55,12 @@
       upd: async function (tabla, id, cambios) { return r(await sb.from(tabla).update(cambios).eq("id", id).select().single()); },
       del: async function (tabla, id) { r(await sb.from(tabla).delete().eq("id", id)); },
       rpc: async function (nombre, args) { return r(await sb.rpc(nombre, args)); },
+      // El alumno lee su ficha con una función segura (sin las notas privadas del entrenador).
+      miCliente: async function (uid) {
+        var res = await sb.rpc("mi_cliente");
+        if (!res.error) { var d = Array.isArray(res.data) ? res.data[0] : res.data; return d || null; }
+        return await this.uno("clientes", { user_id: uid }); // por si aún no existe la función
+      },
       subir: async function (cubeta, ruta, archivo) {
         r(await sb.storage.from(cubeta).upload(ruta, archivo, { upsert: false, contentType: archivo.type || "image/jpeg" }));
         return ruta;
@@ -171,6 +177,7 @@
         return JSON.parse(JSON.stringify(filas));
       },
       uno: async function (tabla, filtro) { var f = await this.sel(tabla, filtro, { limite: 1 }); return f[0] || null; },
+      miCliente: async function (uid) { return await this.uno("clientes", { user_id: uid }); },
       ins: async function (tabla, fila) {
         var ahora = new Date().toISOString();
         var n = Object.assign({ id: uuid(), creado: ahora }, fila);

@@ -33,11 +33,11 @@
     var pendiente = localStorage.getItem(LLAVE_INV);
     var ent = await DB.uno("entrenadores", { id: uid });
     if (ent) { APP.rol = "entrenador"; APP.ent = ent; localStorage.removeItem(LLAVE_INV); return; }
-    var cli = await DB.uno("clientes", { user_id: uid });
+    var cli = await DB.miCliente(uid);
     if (!cli && pendiente) {
       try { await DB.rpc("reclamar_invitacion", { p_codigo: pendiente }); } catch (e) { UI.error(e); }
       localStorage.removeItem(LLAVE_INV);
-      cli = await DB.uno("clientes", { user_id: uid });
+      cli = await DB.miCliente(uid);
     }
     if (cli) {
       APP.rol = "cliente"; APP.cli = cli;
@@ -153,7 +153,13 @@
     function dibujar() {
       app.innerHTML = bandaDemo() + '<section class="entrar"><div class="marca-grande">' + logoMarca(logo) + "<h1>" + esc(inv.marca || "Pulso") + "</h1><p>Hola " +
         esc((inv.cliente_nombre || "").split(" ")[0]) + ", " + esc(inv.entrenador || "tu entrenador") + " te invitó. Aquí verás tus rutinas y registrarás tu progreso.</p></div>" +
-        (APP.usuario ?
+        (APP.usuario && APP.rol === "entrenador" ?
+          '<div class="form"><p class="nota-demo" style="font-size:15px;color:#fff">Estás dentro con tu cuenta de <b>entrenador</b>. Esta invitación es para tu alumno: mándale el enlace para que la abra en su celular.</p>' +
+          '<a class="btn" href="#/">Volver a mi panel</a><button class="btn vidrio" id="otra">Cerrar sesión y crear la cuenta del alumno aquí</button></div>' :
+         APP.usuario && APP.rol === "cliente" ?
+          '<div class="form"><p class="nota-demo" style="font-size:15px;color:#fff">Ya tienes tu cuenta de alumno con ' + esc(APP.usuario.email || "tu correo") + '.</p>' +
+          '<a class="btn" href="#/">Ir a mi app</a><button class="btn vidrio" id="otra">Usar otra cuenta</button></div>' :
+         APP.usuario ?
           '<div class="form"><button class="btn" id="aceptar">Aceptar invitación</button><p class="nota-demo">Entrarás con ' + esc(APP.usuario.email || "tu cuenta") + "</p>" +
           '<button class="btn vidrio" id="otra">Usar otra cuenta</button></div>' :
           '<div class="form"><div class="campo"><input class="entrada" id="email" type="email" autocomplete="email" placeholder="Tu correo"></div>' +
@@ -165,7 +171,7 @@
       if (ac) ac.onclick = async function () {
         try { await DB.rpc("reclamar_invitacion", { p_codigo: codigo }); await detectarRol(); APP.ir(""); } catch (e) { UI.error(e); }
       };
-      var otra = UI.$("#otra", app); if (otra) otra.onclick = async function () { await DB.salir(); APP.usuario = null; dibujar(); };
+      var otra = UI.$("#otra", app); if (otra) otra.onclick = async function () { await DB.salir(); APP.usuario = null; APP.rol = null; APP.ent = null; APP.cli = null; UI.aplicarMarca(inv.color); dibujar(); };
       var alt = UI.$("#alternar", app); if (alt) alt.onclick = function () { crear = !crear; dibujar(); };
       var ir = UI.$("#ir", app);
       if (ir) ir.onclick = async function () {

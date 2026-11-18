@@ -452,6 +452,14 @@
       enlazar();
     }
     function enlazar() {
+      var salir = UI.$(".hero .atras");
+      if (salir) salir.onclick = async function (e) {
+        if (!cambios) return;
+        e.preventDefault();
+        if (await UI.confirmar("¿Salir sin guardar?", "Tienes cambios en esta rutina que todavía no guardaste. Si sales, se pierden.", "Salir sin guardar")) {
+          cambios = false; A().ir("rutinas");
+        }
+      };
       UI.$("#rNombre").oninput = function () { r.nombre = this.value; marcar(); };
       UI.$("#rDesc").oninput = function () { r.descripcion = this.value; marcar(); };
       UI.$$(".bloque").forEach(function (el) {
