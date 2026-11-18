@@ -6,6 +6,8 @@
   var APP = window.APP = { usuario: null, rol: null, ent: null, cli: null, marca: null };
   var VISTAS = window.VISTAS = window.VISTAS || { entrenador: {}, cliente: {} };
   var LLAVE_INV = "pulso_invitacion";
+  // El enlace de "Olvidé mi contraseña" llega con type=recovery; lo leemos antes de que Supabase limpie la dirección.
+  var esRecuperacion = /type=recovery/.test(location.hash), hojaClaveAbierta = false;
 
   function ruta() {
     var h = (location.hash || "#/").replace(/^#\/?/, "");
@@ -194,21 +196,30 @@
     dibujar();
   }
 
+  function hojaNuevaClave() {
+    if (hojaClaveAbierta) return; hojaClaveAbierta = true;
+    UI.hoja("Nueva contraseña", '<div class="form"><input class="entrada" id="nueva" type="password" autocomplete="new-password" placeholder="Nueva contraseña (6+)"><button class="btn" id="guardarClave">Guardar</button></div>', function (h, cerrar) {
+      h.querySelector("#guardarClave").onclick = async function () {
+        try { await DB.cambiarClave(h.querySelector("#nueva").value); cerrar(); hojaClaveAbierta = false; UI.aviso("Contraseña cambiada ✓"); } catch (e) { UI.error(e); }
+      };
+    });
+  }
+  // Enter en los campos de correo/contraseña pulsa el botón principal
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" || !e.target.matches || !e.target.matches("#email, #clave, #nombre")) return;
+    var b = UI.$("#ir"); if (b && !b.disabled) { e.preventDefault(); b.click(); }
+  });
+
   /* ───────── Arranque ───────── */
   async function arrancar() {
     UI.aplicarMarca(C.COLOR);
     UI.$("#app").innerHTML = UI.cargando();
     DB.alCambiar(async function (ev) {
-      if (ev === "PASSWORD_RECOVERY") {
-        UI.hoja("Nueva contraseña", '<div class="form"><input class="entrada" id="nueva" type="password" placeholder="Nueva contraseña (6+)"><button class="btn" id="guardarClave">Guardar</button></div>', function (h, cerrar) {
-          h.querySelector("#guardarClave").onclick = async function () {
-            try { await DB.cambiarClave(h.querySelector("#nueva").value); cerrar(); UI.aviso("Contraseña cambiada ✓"); } catch (e) { UI.error(e); }
-          };
-        });
-      }
+      if (ev === "PASSWORD_RECOVERY") hojaNuevaClave();
       if (ev === "SIGNED_OUT") { APP.usuario = null; APP.rol = null; }
     });
     try { await detectarRol(); } catch (e) { UI.error(e); }
+    if (esRecuperacion) { history.replaceState(null, "", location.pathname + location.search + "#/"); hojaNuevaClave(); }
     pintar();
     if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(function () {});
   }
