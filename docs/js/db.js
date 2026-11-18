@@ -56,7 +56,7 @@
       del: async function (tabla, id) { r(await sb.from(tabla).delete().eq("id", id)); },
       rpc: async function (nombre, args) { return r(await sb.rpc(nombre, args)); },
       subir: async function (cubeta, ruta, archivo) {
-        r(await sb.storage.from(cubeta).upload(ruta, archivo, { upsert: true, contentType: archivo.type || "image/jpeg" }));
+        r(await sb.storage.from(cubeta).upload(ruta, archivo, { upsert: false, contentType: archivo.type || "image/jpeg" }));
         return ruta;
       },
       urlPublica: function (cubeta, ruta) { return sb.storage.from(cubeta).getPublicUrl(ruta).data.publicUrl; },
