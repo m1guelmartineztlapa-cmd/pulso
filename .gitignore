@@ -1,0 +1,4 @@
+replica/
+node_modules/
+.env
+*.log

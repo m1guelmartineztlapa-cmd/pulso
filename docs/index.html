@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <title>Pulso</title>
+  <meta name="description" content="Tus rutinas, tu progreso y tu entrenador en una sola app.">
+  <meta name="theme-color" content="#070B1F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pulso">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="iconos/icono-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="iconos/icono-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css?v=20261117b">
+</head>
+<body>
+  <noscript><p style="padding:24px;color:#fff">Pulso necesita JavaScript activado.</p></noscript>
+  <div id="app" aria-live="polite"></div>
+  <nav id="tabbar" class="tabbar" hidden></nav>
+  <div id="capa"></div>
+  <div id="aviso" class="aviso" role="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" defer></script>
+  <script src="js/config.js?v=20261117b" defer></script>
+  <script src="js/db.js?v=20261117b" defer></script>
+  <script src="js/ui.js?v=20261117b" defer></script>
+  <script src="js/entrenador.js?v=20261117b" defer></script>
+  <script src="js/cliente.js?v=20261117b" defer></script>
+  <script src="js/app.js?v=20261117b" defer></script>
+</body>
+</html>

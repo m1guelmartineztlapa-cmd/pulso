@@ -1,0 +1,17 @@
+{
+  "name": "Pulso",
+  "short_name": "Pulso",
+  "description": "Tus rutinas, tu progreso y tu entrenador en una sola app.",
+  "lang": "es-MX",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070B1F",
+  "theme_color": "#070B1F",
+  "icons": [
+    { "src": "iconos/icono-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "iconos/icono-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "iconos/icono-mascara-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
