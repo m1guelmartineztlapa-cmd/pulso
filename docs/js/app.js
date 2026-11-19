@@ -45,6 +45,7 @@
       APP.rol = "cliente"; APP.cli = cli;
       APP.ent = await DB.uno("entrenadores", { id: cli.entrenador_id });
     }
+    if (DB.modo === "supabase") DB.rpc("registrar_acceso", {}).catch(function () {});
   }
   APP.detectarRol = detectarRol;
 

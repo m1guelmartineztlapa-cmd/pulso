@@ -822,6 +822,7 @@
   };
 
   /* ───────── Panel de administrador (solo el dueño de la plataforma) ───────── */
+  var MESES_C = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
   function cuando(iso) {
     if (!iso) return "Nunca";
     var d = new Date(iso), min = Math.round((Date.now() - d.getTime()) / 60000);
@@ -832,17 +833,45 @@
     if (dias < 7) return "Hace " + dias + (dias === 1 ? " día" : " días");
     return UI.fecha(iso);
   }
-  var ICO_TIPO = { entreno: "check", alumno: "persona", rutina: "rutinas", registro: "mas" };
-  V.admin = async function () {
+  function hora(iso) { var d = new Date(iso); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
+  function fechaHora(iso) { if (!iso) return "Nunca"; var d = new Date(iso); return d.getDate() + " " + MESES_C[d.getMonth()] + " · " + hora(iso); }
+  function diaDe(iso) {
+    var d = new Date(iso), hoy = new Date(), ayer = new Date(); ayer.setDate(hoy.getDate() - 1);
+    if (d.toDateString() === hoy.toDateString()) return "Hoy";
+    if (d.toDateString() === ayer.toDateString()) return "Ayer";
+    return UI.DIAS_L[d.getDay()].replace(/^./, function (x) { return x.toUpperCase(); }) + " " + d.getDate() + " de " + MESES_C[d.getMonth()];
+  }
+  var ICO_TIPO = { entreno: "check", alumno: "persona", rutina: "rutinas", registro: "mas", asignacion: "calendario", medida: "regla", acceso: "reloj" };
+  var ES_ENT = { alumno: 1, rutina: 1, asignacion: 1 }; // movimientos que hace el entrenador
+  function filaMov(a, conQuien) {
+    return '<div class="item"><span class="ico">' + ico(ICO_TIPO[a.tipo] || "info") + '</span><span class="txt"><div class="t1">' +
+      (conQuien ? esc(a.quien || "") + (a.de ? ' <span style="color:var(--suave);font-weight:500">· ' + esc(a.de) + "</span>" : "") : esc(a.detalle || "")) +
+      '</div><div class="t2">' + (conQuien ? esc(a.detalle || "") : esc(a.quien || "")) + '</div></span><span class="der">' + hora(a.cuando) +
+      "<small>" + esc(cuando(a.cuando)) + "</small></span></div>";
+  }
+  function porDia(lista, conQuien) {
+    var html = "", dia = "";
+    lista.forEach(function (a) {
+      var d = diaDe(a.cuando);
+      if (d !== dia) { dia = d; html += '<div class="lbl" style="padding:14px 18px 2px">' + esc(d) + "</div>"; }
+      html += filaMov(a, conQuien);
+    });
+    return html;
+  }
+  async function datosAdmin() {
+    if (DB.modo === "demo" && window.__adminDemo) return window.__adminDemo;
+    return await DB.rpc("admin_resumen", {});
+  }
+  function sinAcceso() {
+    app().innerHTML = A().bandaDemo() + '<section class="hero"><a class="atras" href="#/ajustes">' + ico("izq", ' width="22" height="22"') + 'Ajustes</a><h1 class="titulo-pag">Administración</h1></section>' +
+      '<div class="contenido"><div class="tarjeta"><h3>Sin acceso</h3><p>Este panel es solo para el administrador de Pulso.</p></div></div>';
+  }
+  V.admin = async function (entId) {
     UI.tabbar(TABS, "ajustes");
     app().innerHTML = UI.cargando();
-    var d;
-    try { d = DB.modo === "demo" && window.__adminDemo ? window.__adminDemo : await DB.rpc("admin_resumen", {}); } catch (e) { d = null; }
-    if (!d) {
-      app().innerHTML = A().bandaDemo() + '<section class="hero"><a class="atras" href="#/ajustes">' + ico("izq", ' width="22" height="22"') + 'Ajustes</a><h1 class="titulo-pag">Administración</h1></section>' +
-        '<div class="contenido"><div class="tarjeta"><h3>Sin acceso</h3><p>Este panel es solo para el administrador de Pulso.</p></div></div>';
-      return;
-    }
+    var d; try { d = await datosAdmin(); } catch (e) { d = null; }
+    if (!d) return sinAcceso();
+    if (entId) return adminEntrenador(d, entId);
     var t = d.totales || {}, vista = "actividad", q = "";
     app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/ajustes">' +
       ico("izq", ' width="22" height="22"') + 'Ajustes</a><button class="btn-redondo" id="recargar" aria-label="Actualizar">' + ico("reloj") + '</button></div>' +
@@ -859,25 +888,20 @@
       UI.$$(".segmento button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === vista); });
       var html = "";
       if (vista === "actividad") {
-        html = (d.actividad || []).filter(coincide).map(function (a) {
-          return '<div class="item"><span class="ico">' + ico(ICO_TIPO[a.tipo] || "info") + '</span><span class="txt"><div class="t1">' + esc(a.quien || "") +
-            (a.de ? ' <span style="color:var(--suave);font-weight:500">· ' + esc(a.de) + "</span>" : "") + '</div><div class="t2">' + esc(a.detalle || "") +
-            '</div></span><span class="der"><small>' + esc(cuando(a.cuando)) + "</small></span></div>";
-        }).join("");
+        html = porDia((d.actividad || []).filter(coincide).slice(0, 200), true);
       } else if (vista === "entrenadores") {
         html = (d.entrenadores || []).filter(coincide).map(function (e) {
-          return '<div class="item"><span class="ico">' + esc(UI.iniciales(e.nombre || e.marca)) + '</span><span class="txt"><div class="t1">' + esc(e.nombre || "(sin nombre)") +
-            ' <span style="color:var(--suave);font-weight:500">· ' + esc(e.marca || "") + '</span></div><div class="t2">' + esc(e.email || "") + " · " + e.alumnos + " alumnos (" +
-            e.alumnos_con_cuenta + " con cuenta) · " + e.rutinas + " rutinas · " + e.sesiones_7d + ' entrenos esta semana</div></span><span class="der"><small>' +
-            esc(cuando(e.ultimo_acceso)) + "</small></span></div>";
+          return '<a class="item" href="#/admin/' + e.id + '"><span class="ico">' + esc(UI.iniciales(e.nombre || e.marca)) + '</span><span class="txt"><div class="t1">' + esc(e.nombre || "(sin nombre)") +
+            ' <span style="color:var(--suave);font-weight:500">· ' + esc(e.marca || "") + '</span></div><div class="t2">' + e.alumnos + " alumnos · " + e.rutinas + " rutinas · " +
+            e.sesiones_7d + ' entrenos esta semana</div></span><span class="der"><small>Último acceso</small>' + esc(cuando(e.ultimo_acceso)) + '</span><span class="chev">' + ico("der") + "</span></a>";
         }).join("");
       } else {
         html = (d.alumnos || []).filter(coincide).map(function (c) {
-          return '<div class="item"><span class="ico">' + esc(UI.iniciales(c.nombre)) + '</span><span class="txt"><div class="t1">' + esc(c.nombre) +
+          return '<a class="item" href="#/admin/' + c.ent + '"><span class="ico">' + esc(UI.iniciales(c.nombre)) + '</span><span class="txt"><div class="t1">' + esc(c.nombre) +
             ' <span style="color:var(--suave);font-weight:500">· ' + esc(c.marca || c.entrenador || "") + '</span></div><div class="t2">' +
             (c.tiene_cuenta ? esc(c.email || "con cuenta") : "Aún no crea su cuenta") + " · " + c.sesiones + " entrenos" +
-            (c.ultima_sesion ? " · último " + esc(UI.fecha(c.ultima_sesion)) : "") + '</div></span><span class="der"><small>' +
-            (c.tiene_cuenta ? esc(cuando(c.ultimo_acceso)) : "—") + "</small></span></div>";
+            (c.ultima_sesion ? " · último " + esc(UI.fecha(c.ultima_sesion)) : "") + '</div></span><span class="der"><small>Último acceso</small>' +
+            (c.tiene_cuenta ? esc(cuando(c.ultimo_acceso)) : "—") + "</span></a>";
         }).join("");
       }
       UI.$("#listaAdmin").innerHTML = html || '<div class="vacio">Nada que mostrar.</div>';
@@ -887,4 +911,47 @@
     UI.$("#recargar").onclick = function () { A().recargar(); };
     dibujar();
   };
+
+  /* Detalle de un entrenador: qué hizo él y sus alumnos, día por día y a qué hora */
+  function adminEntrenador(d, entId) {
+    var e = (d.entrenadores || []).find(function (x) { return x.id === entId; });
+    if (!e) return A().ir("admin");
+    var movs = (d.actividad || []).filter(function (a) { return a.ent === entId; });
+    var alumnos = (d.alumnos || []).filter(function (c) { return c.ent === entId; });
+    var filtro = "todo";
+    var hoyISO = new Date().toDateString();
+    var hoyN = movs.filter(function (a) { return new Date(a.cuando).toDateString() === hoyISO; }).length;
+    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/admin">' +
+      ico("izq", ' width="22" height="22"') + 'Administración</a><button class="btn-redondo" id="recargar" aria-label="Actualizar">' + ico("reloj") + '</button></div>' +
+      '<div class="saldo" style="margin-top:18px"><div class="avatar grande" style="margin:0 auto">' + esc(UI.iniciales(e.nombre || e.marca)) + '</div>' +
+      '<div class="cifra" style="font-size:30px;letter-spacing:-.5px;margin-top:12px">' + esc(e.nombre || "(sin nombre)") + '</div><div class="sub">' + esc(e.marca || "") + " · " + esc(e.email || "") + "</div></div></section>" +
+      '<div class="contenido"><div class="datos"><div class="dato"><div class="v" style="font-size:17px">' + esc(fechaHora(e.ultimo_acceso)) + '</div><div class="l">Último acceso</div></div>' +
+      '<div class="dato"><div class="v">' + (e.accesos_7d || 0) + '</div><div class="l">Veces que abrió la app (7 días)</div></div>' +
+      '<div class="dato"><div class="v">' + hoyN + '</div><div class="l">Movimientos hoy</div></div></div>' +
+      '<div class="datos"><div class="dato"><div class="v">' + e.alumnos + '</div><div class="l">Alumnos (' + e.alumnos_con_cuenta + ' con cuenta)</div></div>' +
+      '<div class="dato"><div class="v">' + e.rutinas + '</div><div class="l">Rutinas</div></div>' +
+      '<div class="dato"><div class="v">' + e.sesiones_7d + '</div><div class="l">Entrenos de sus alumnos (7 días)</div></div></div>' +
+      '<div class="chips scroll" id="filtros"><button class="chip on" data-f="todo">Todo</button><button class="chip" data-f="ent">Lo que hizo el entrenador</button>' +
+      '<button class="chip" data-f="acceso">Accesos</button><button class="chip" data-f="alum">Sus alumnos</button></div>' +
+      '<div class="tarjeta sin-relleno"><div class="lista" id="listaMov"></div></div>' +
+      '<div class="titulo-sec"><h2>Sus alumnos</h2></div><div class="tarjeta sin-relleno"><div class="lista">' +
+      (alumnos.length ? alumnos.map(function (c) {
+        return '<div class="item"><span class="ico">' + esc(UI.iniciales(c.nombre)) + '</span><span class="txt"><div class="t1">' + esc(c.nombre) + '</div><div class="t2">' +
+          (c.tiene_cuenta ? c.sesiones + " entrenos" + (c.ultima_sesion ? " · último " + esc(UI.fecha(c.ultima_sesion)) : "") : "Aún no crea su cuenta") +
+          '</div></span><span class="der"><small>Último acceso</small>' + (c.tiene_cuenta ? esc(fechaHora(c.ultimo_acceso)) : "—") + "</span></div>";
+      }).join("") : '<div class="vacio">Todavía no tiene alumnos.</div>') + "</div></div></div>";
+    function dibujar() {
+      UI.$$("#filtros .chip").forEach(function (b) { b.classList.toggle("on", b.dataset.f === filtro); });
+      var l = movs.filter(function (a) {
+        if (filtro === "ent") return ES_ENT[a.tipo] || (a.tipo === "acceso" && /entrenador/.test(a.detalle)) || (a.tipo === "registro" && /entrenador/.test(a.detalle));
+        if (filtro === "acceso") return a.tipo === "acceso";
+        if (filtro === "alum") return a.tipo === "entreno" || a.tipo === "medida" || (a.tipo === "acceso" && /alumno/.test(a.detalle)) || (a.tipo === "registro" && /alumno/.test(a.detalle));
+        return true;
+      });
+      UI.$("#listaMov").innerHTML = l.length ? porDia(l, true) : '<div class="vacio">Sin movimientos en este filtro.</div>';
+    }
+    UI.$$("#filtros .chip").forEach(function (b) { b.onclick = function () { filtro = b.dataset.f; dibujar(); }; });
+    UI.$("#recargar").onclick = function () { A().recargar(); };
+    dibujar();
+  }
 })();
