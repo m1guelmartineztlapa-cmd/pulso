@@ -130,6 +130,46 @@
     if (faltan.length) { try { Object.assign(cacheFotos, await window.DB.urlsFirmadas("fotos", faltan)); } catch (e) {} }
     els.forEach(function (el) { var u = cacheFotos[el.dataset.foto]; if (u) el.innerHTML = '<img src="' + UI.esc(u) + '" alt="">'; });
   };
+  /* Optimiza un video en el propio celular: lo baja a 720p, ~1.2 Mbps y sin audio.
+     Se reproduce una vez (tarda lo que dura el video) y se graba de nuevo, en MP4 si el navegador puede. */
+  UI.comprimirVideo = function (archivo, alProgreso) {
+    return new Promise(function (ok, mal) {
+      if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return mal(new Error("Este navegador no puede optimizar videos"));
+      var tipos = ["video/mp4;codecs=avc1.42E01E", "video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+      var tipo = tipos.filter(function (t) { return MediaRecorder.isTypeSupported(t); })[0];
+      if (!tipo) return mal(new Error("Este navegador no puede optimizar videos"));
+      var url = URL.createObjectURL(archivo), v = document.createElement("video"), terminado = false;
+      v.muted = true; v.playsInline = true; v.setAttribute("playsinline", ""); v.preload = "auto"; v.src = url;
+      function limpiar() { terminado = true; try { v.pause(); } catch (e) {} URL.revokeObjectURL(url); }
+      v.onerror = function () { limpiar(); mal(new Error("No se pudo leer el video")); };
+      v.onloadedmetadata = function () {
+        var dur = v.duration;
+        if (isFinite(dur) && dur > 120) { limpiar(); return mal(new Error("El video dura más de 2 minutos. Recórtalo a menos de 2 minutos.")); }
+        var e = Math.min(1, 720 / Math.max(v.videoWidth || 720, v.videoHeight || 720));
+        var w = Math.max(2, Math.round((v.videoWidth || 720) * e / 2) * 2), h = Math.max(2, Math.round((v.videoHeight || 720) * e / 2) * 2);
+        var c = document.createElement("canvas"); c.width = w; c.height = h;
+        var ctx = c.getContext("2d"), trozos = [];
+        var rec = new MediaRecorder(c.captureStream(30), { mimeType: tipo, videoBitsPerSecond: 1200000 });
+        rec.ondataavailable = function (ev) { if (ev.data && ev.data.size) trozos.push(ev.data); };
+        rec.onstop = function () { limpiar(); ok(new Blob(trozos, { type: tipo.split(";")[0] })); };
+        rec.onerror = function () { limpiar(); mal(new Error("No se pudo optimizar el video")); };
+        function dibujar() {
+          if (terminado) return;
+          ctx.drawImage(v, 0, 0, w, h);
+          if (alProgreso && isFinite(dur) && dur > 0) alProgreso(Math.min(99, Math.round(v.currentTime / dur * 100)));
+          if (!v.ended) { if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(dibujar); else requestAnimationFrame(dibujar); }
+        }
+        v.onended = function () { ctx.drawImage(v, 0, 0, w, h); setTimeout(function () { if (rec.state !== "inactive") rec.stop(); }, 150); };
+        // si el usuario cambia de app y vuelve, el video sigue donde se quedó
+        function alVolver() { if (!document.hidden && !terminado && v.paused && !v.ended) v.play().then(dibujar).catch(function () {}); }
+        document.addEventListener("visibilitychange", alVolver);
+        var limpiarBase = limpiar;
+        limpiar = function () { document.removeEventListener("visibilitychange", alVolver); limpiarBase(); };
+        rec.start(1000);
+        v.play().then(dibujar).catch(function () { limpiar(); mal(new Error("No se pudo reproducir el video para optimizarlo")); });
+      };
+    });
+  };
   UI.esVideoArchivo = function (url) { return !!url && !UI.youtube(url) && /^https?:|^blob:|^data:video/.test(url); };
   UI.num = function (n) { var x = Number(n); return isFinite(x) ? (Math.round(x * 10) / 10).toString() : "–"; };
   UI.hace = function (iso) {

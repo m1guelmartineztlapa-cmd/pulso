@@ -712,7 +712,7 @@
       '<div id="xVyt"><input class="entrada" id="xV" value="' + esc(UI.youtube(e.video_url) ? e.video_url : "") + '" placeholder="https://youtu.be/…"></div>' +
       '<div id="xVar">' + (UI.esVideoArchivo(e.video_url) ? '<video class="video-ej" src="' + esc(e.video_url) + '" controls playsinline preload="metadata"></video>' : "") +
       '<input class="entrada" type="file" accept="video/mp4,video/quicktime,video/webm,video/*" id="xF" style="padding-top:12px;margin-top:8px">' +
-      '<p class="nota-demo" style="text-align:left;margin-top:6px">Máximo 50 MB (más o menos 30 a 60 segundos). En iPhone, para que también se vea en Android: Ajustes › Cámara › Formatos › «Más compatible».</p></div></div>' +
+      '<p class="nota-demo" style="text-align:left;margin-top:6px">Hasta 2 minutos. La app lo optimiza antes de subirlo (unos 5 MB por cada 30 segundos, sin sonido): deja la app abierta mientras tanto, tarda lo que dura el video.</p></div></div>' +
       '<div class="campo"><label>Imagen (opcional)</label><input class="entrada" type="file" accept="image/*" id="xI" style="padding-top:12px"></div>' +
       '<div class="campo"><label>Instrucciones</label><textarea class="entrada" id="xT">' + esc(e.instrucciones || "") + "</textarea></div>" +
       '<button class="btn" id="xG">Guardar</button>' + (e.id ? '<button class="btn peligro" id="xB">Eliminar</button>' : "") + "</div>", function (h, cerrar) {
@@ -736,15 +736,26 @@
           d.video_url = UI.esVideoArchivo(e.video_url) ? e.video_url : "";
         } else {
           if (DB.modo === "demo") return UI.aviso("En el modo demo no se pueden subir videos", true);
-          if (fv.size > 50 * 1024 * 1024) return UI.aviso("El video pesa " + Math.round(fv.size / 1048576) + " MB. El máximo es 50 MB: recórtalo o grábalo más corto.", true);
+          if (fv.size > 400 * 1024 * 1024) return UI.aviso("El video pesa " + Math.round(fv.size / 1048576) + " MB. Recórtalo o grábalo más corto.", true);
         }
         btn.disabled = true;
         try {
           if (modoV === "archivo" && fv) {
-            btn.innerHTML = '<span class="girar" style="width:18px;height:18px;border-width:2px;border-color:rgba(10,15,37,.2);border-top-color:#0A0F25"></span>Subiendo video…';
-            var ext = (fv.name.split(".").pop() || "mp4").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
+            var giro = '<span class="girar" style="width:18px;height:18px;border-width:2px;border-color:rgba(10,15,37,.2);border-top-color:#0A0F25"></span>';
+            btn.innerHTML = giro + "Optimizando video…";
+            var subir = fv;
+            try {
+              subir = await UI.comprimirVideo(fv, function (pct) { btn.innerHTML = giro + "Optimizando video… " + pct + "%"; });
+              if (subir.size > fv.size) subir = fv; // si salió más pesado, nos quedamos con el original
+            } catch (ev) {
+              if (/2 minutos/.test(ev.message)) throw ev;
+              subir = fv; // el navegador no pudo optimizar: se intenta subir el original
+            }
+            if (subir.size > 50 * 1024 * 1024) throw new Error("El video sigue pesando " + Math.round(subir.size / 1048576) + " MB y el máximo es 50 MB. Recórtalo o grábalo más corto.");
+            btn.innerHTML = giro + "Subiendo video (" + Math.max(1, Math.round(subir.size / 1048576)) + " MB)…";
+            var ext = subir === fv ? ((fv.name.split(".").pop() || "mp4").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4") : (/webm/.test(subir.type) ? "webm" : "mp4");
             var rutaV = eid() + "/" + DB.uuid() + "." + ext;
-            await DB.subir("videos", rutaV, fv);
+            await DB.subir("videos", rutaV, subir);
             d.video_url = DB.urlPublica("videos", rutaV);
           }
           var f = h.querySelector("#xI").files[0];
