@@ -36,7 +36,7 @@
   }
   function cabecera() {
     var e = ent();
-    return '<div class="barra-sup"><a class="avatar" href="#/perfil" aria-label="Perfil">' + esc(UI.iniciales(cli().nombre)) + '<span class="punto" hidden></span></a>' +
+    return '<div class="barra-sup"><a href="#/perfil" aria-label="Perfil" style="display:contents">' + UI.avatarCli(cli(), "avatar") + '</a>' +
       '<div class="buscador" style="justify-content:center;gap:10px">' + (e.logo_url ? '<img src="' + esc(e.logo_url) + '" alt="" style="width:24px;height:24px;border-radius:7px;object-fit:cover">' : ico("pulso", ' width="20" height="20"')) +
       '<span style="color:#fff;font-weight:600">' + esc(e.marca || "Pulso") + "</span></div>" +
       '<a class="btn-redondo" href="#/progreso" aria-label="Progreso">' + ico("grafica") + '</a><a class="btn-redondo" href="#/perfil" aria-label="Perfil">' + ico("puntos") + "</a></div>";
@@ -82,6 +82,7 @@
     html += '<div class="titulo-sec"><h2>Últimas sesiones</h2><a href="#/progreso">Ver todo</a></div><div class="tarjeta sin-relleno"><div class="lista">' +
       (d.ses.length ? d.ses.slice(0, 5).map(filaSesion).join("") : '<div class="vacio">Aquí verás tus entrenamientos terminados.</div>') + "</div></div></div>";
     app().innerHTML = html;
+    UI.cargarFotos(app());
     enlazarSesiones(d.ses);
     ["#semana", "#semana2"].forEach(function (s) { UI.$(s).onclick = function () { hojaSemana(d.asig); }; });
   };
@@ -136,7 +137,7 @@
       var prev = anterior(it.ref);
       var vals = est.v[it.id] || (est.v[it.id] = []);
       var n = Number(it.series) || 1;
-      var yt = UI.youtube(it.video);
+      var yt = UI.youtube(it.video) || UI.esVideoArchivo(it.video);
       var html = '<div class="tarjeta" data-it="' + it.id + '"><div class="ej-cab"><span class="ico" style="width:52px;height:52px">' + UI.miniEj(it) + '</span><div class="nom" style="font-size:17px">' +
         esc(it.nombre) + "<small>" + esc([n + " series", it.reps && it.reps + " reps", it.tiempo, it.intTipo && it.int && it.intTipo + " " + it.int, it.descanso && it.descanso + " s descanso"].filter(Boolean).join(" · ")) +
         '</small></div><button class="mini" data-ver aria-label="Ver cómo se hace">' + ico(yt ? "video" : "info") + "</button></div>" +
@@ -216,10 +217,11 @@
         });
         card.querySelector("[data-ver]").onclick = function () {
           var yt = UI.youtube(it.video);
-          UI.hoja(it.nombre, (yt ? '<iframe class="video-ej" src="' + esc(yt) + '" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>' : "") +
+          UI.hoja(it.nombre, (yt ? '<iframe class="video-ej" src="' + esc(yt) + '" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>' :
+              UI.esVideoArchivo(it.video) ? '<video class="video-ej" src="' + esc(it.video) + '" controls playsinline autoplay muted loop preload="metadata"></video>' : "") +
             (it.img ? '<img class="foto-ej" src="' + esc(UI.imgEj(it.img)) + '" alt="">' + (/^[\w-]+\/0\.jpg$/.test(it.img) ? '<img class="foto-ej" src="' + esc(UI.imgEj(it.img.replace("/0.jpg", "/1.jpg"))) + '" alt="">' : "") : "") +
             (it.nota ? '<div class="tarjeta" style="margin-top:12px"><p style="color:#fff">' + esc(it.nota) + "</p></div>" : "") +
-            (!yt && !it.img ? '<div class="vacio">Tu entrenador no agregó video para este ejercicio.</div>' : ""));
+            (!yt && !UI.esVideoArchivo(it.video) && !it.img ? '<div class="vacio">Tu entrenador no agregó video para este ejercicio.</div>' : ""));
         };
       });
       UI.$("#terminar").onclick = terminar;
@@ -273,6 +275,7 @@
       '<div class="titulo-sec"><h2>Historial</h2></div><div class="tarjeta sin-relleno"><div class="lista">' +
       (ses.length ? ses.slice(0, 50).map(filaSesion).join("") : '<div class="vacio">Aún no hay entrenamientos.</div>') + "</div></div></div>";
     VIS.entrenador.pintarFotos(med);
+    UI.cargarFotos(app());
     function graf(ref) { UI.$("#graf").innerHTML = UI.grafica(UI.serieFuerza(ses, ref), "kg"); }
     if (ejs.length) {
       graf(ejs[0].ref);
@@ -286,7 +289,8 @@
   V.perfil = async function () {
     UI.tabbar(TABS, "perfil");
     var c = cli(), e = ent();
-    app().innerHTML = A().bandaDemo() + '<section class="hero"><div class="saldo" style="margin-top:30px"><div class="avatar grande" style="margin:0 auto">' + esc(UI.iniciales(c.nombre)) + "</div>" +
+    app().innerHTML = A().bandaDemo() + '<section class="hero"><div class="saldo" style="margin-top:30px"><label class="foto-perfil" title="Cambiar foto">' + UI.avatarCli(c, "avatar grande") +
+      '<span class="foto-cam">' + ico("camara") + '</span><input type="file" accept="image/*" id="fotoCli" class="oculto-vista"></label>' +
       '<div class="cifra" style="font-size:30px;letter-spacing:-.5px;margin-top:12px">' + esc(c.nombre) + '</div><div class="sub">' + esc((A().usuario && A().usuario.email) || "") + "</div></div></section>" +
       '<div class="contenido"><div class="tarjeta"><div class="promo"><div class="avatar grande" style="border-radius:22px">' + (e.logo_url ? '<img src="' + esc(e.logo_url) + '" alt="">' : esc(UI.iniciales(e.marca))) +
       '</div><div><h3>' + esc(e.marca || "Tu entrenador") + "</h3><p>Entrenador: " + esc(e.nombre || "") + (c.objetivo ? "<br>Tu objetivo: " + esc(c.objetivo) : "") + "</p></div></div></div>" +
@@ -294,5 +298,15 @@
       '<b style="color:#fff">Android:</b> en Chrome, menú ⋮ → «Instalar app».</p></div>' +
       '<div class="tarjeta sin-relleno"><div class="lista"><div class="item" id="salir"><span class="ico">' + ico("salir") + '</span><span class="txt"><div class="t1">Cerrar sesión</div></span></div></div></div></div>';
     UI.$("#salir").onclick = function () { A().salir(); };
+    UI.cargarFotos(app());
+    UI.$("#fotoCli").onchange = async function () {
+      var f = this.files[0]; if (!f) return;
+      try {
+        var ruta = c.entrenador_id + "/" + c.id + "/perfil-" + DB.uuid() + ".jpg";
+        await DB.subir("fotos", ruta, await UI.comprimir(f, 600));
+        await DB.cambiarMiFoto(ruta);
+        A().cli.foto_path = ruta; UI.aviso("Foto actualizada ✓"); A().recargar();
+      } catch (er) { UI.error(er); }
+    };
   };
 })();

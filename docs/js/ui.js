@@ -119,6 +119,18 @@
   UI.iniciales = function (n) {
     return String(n || "?").trim().split(/\s+/).slice(0, 2).map(function (p) { return p[0]; }).join("").toUpperCase();
   };
+  /* Foto de perfil del alumno: el HTML lleva data-foto y luego UI.cargarFotos pone las imágenes */
+  UI.avatarCli = function (c, clase) {
+    return '<span class="' + (clase || "ico") + '"' + (c && c.foto_path ? ' data-foto="' + UI.esc(c.foto_path) + '"' : "") + ">" + UI.esc(UI.iniciales(c && c.nombre)) + "</span>";
+  };
+  var cacheFotos = {};
+  UI.cargarFotos = async function (raiz) {
+    var els = UI.$$("[data-foto]", raiz || document), faltan = [];
+    els.forEach(function (el) { var p = el.dataset.foto; if (!cacheFotos[p] && faltan.indexOf(p) < 0) faltan.push(p); });
+    if (faltan.length) { try { Object.assign(cacheFotos, await window.DB.urlsFirmadas("fotos", faltan)); } catch (e) {} }
+    els.forEach(function (el) { var u = cacheFotos[el.dataset.foto]; if (u) el.innerHTML = '<img src="' + UI.esc(u) + '" alt="">'; });
+  };
+  UI.esVideoArchivo = function (url) { return !!url && !UI.youtube(url) && /^https?:|^blob:|^data:video/.test(url); };
   UI.num = function (n) { var x = Number(n); return isFinite(x) ? (Math.round(x * 10) / 10).toString() : "–"; };
   UI.hace = function (iso) {
     if (!iso) return "Sin entrenar";

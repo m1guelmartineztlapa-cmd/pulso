@@ -47,7 +47,7 @@
     var activos = d.clientes.filter(function (c) { return c.activo; });
     var semana = d.ses.filter(function (s) { return s.fecha >= inicioSemana(); }).length;
     var pendientes = activos.filter(function (c) { return !c.user_id; });
-    var nombreCli = {}; d.clientes.forEach(function (c) { nombreCli[c.id] = c.nombre; });
+    var nombreCli = {}, porIdCli = {}; d.clientes.forEach(function (c) { nombreCli[c.id] = c.nombre; porIdCli[c.id] = c; });
     var html = A().bandaDemo() + '<section class="hero">' + cabecera("Buscar cliente") +
       '<div class="saldo"><div class="etq">Clientes activos</div><div class="cifra">' + activos.length + '</div>' +
       '<div class="sub">' + ico("rayo") + semana + (semana === 1 ? " sesión esta semana " : " sesiones esta semana ") + ico("info") + "</div></div>" +
@@ -73,13 +73,14 @@
     if (!rec.length) html += '<div class="vacio">' + ico("fuego") + "Cuando tus clientes terminen una rutina, la verás aquí.</div>";
     rec.forEach(function (s) {
       var vol = (s.series || []).reduce(function (t, x) { return t + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0);
-      html += '<a class="item" href="#/cliente/' + s.cliente_id + '"><span class="ico">' + esc(UI.iniciales(nombreCli[s.cliente_id])) + '</span><span class="txt"><div class="t1">' +
+      html += '<a class="item" href="#/cliente/' + s.cliente_id + '">' + UI.avatarCli(porIdCli[s.cliente_id] || { nombre: nombreCli[s.cliente_id] }) + '<span class="txt"><div class="t1">' +
         esc(nombreCli[s.cliente_id] || "Cliente") + " → " + esc(s.rutina_nombre || "Rutina") + '</div><div class="t2">' + esc(UI.fecha(s.fecha)) +
         (s.comentario ? " · “" + esc(s.comentario) + "”" : "") + '</div></span><span class="der">' + (s.calificacion ? "★ " + s.calificacion : "") +
         (vol ? "<small>" + Math.round(vol).toLocaleString("es-MX") + " kg</small>" : "") + "</span></a>";
     });
     html += "</div></div></div>";
     app().innerHTML = html;
+    UI.cargarFotos(app());
     UI.$("#aCliente").onclick = function () { hojaCliente(); };
     UI.$("#aAsignar").onclick = function () { hojaAsignar({ clientes: d.clientes, rutinas: d.rutinas }); };
     UI.$("#buscar").addEventListener("keydown", function (e) { if (e.key === "Enter") A().ir("clientes/" + encodeURIComponent(this.value)); });
@@ -112,10 +113,11 @@
       });
       UI.$("#lista").innerHTML = fs.length ? fs.map(function (c) {
         var asig = d.asig.filter(function (a) { return a.cliente_id === c.id && a.activa; }).length;
-        return '<a class="item" href="#/cliente/' + c.id + '"><span class="ico">' + esc(UI.iniciales(c.nombre)) + '</span><span class="txt"><div class="t1">' + esc(c.nombre) +
+        return '<a class="item" href="#/cliente/' + c.id + '">' + UI.avatarCli(c) + '<span class="txt"><div class="t1">' + esc(c.nombre) +
           '</div><div class="t2">' + esc(UI.hace(ultimaSesion(d.ses, c.id))) + " · " + asig + (asig === 1 ? " rutina" : " rutinas") + '</div></span><span class="der">' +
           (!c.activo ? '<span class="etiqueta gris">Pausado</span>' : c.user_id ? '<span class="etiqueta">Activo</span>' : '<span class="etiqueta ambar">Sin entrar</span>') + "</span></a>";
       }).join("") : '<div class="vacio">' + ico("clientes") + (d.clientes.length ? "Nadie coincide con la búsqueda." : "Aún no tienes clientes. Pulsa + para dar de alta al primero.") + "</div>";
+      UI.cargarFotos(UI.$("#lista"));
     }
     lista();
     UI.$("#buscar").oninput = function () { busq = this.value; lista(); };
@@ -222,7 +224,8 @@
     var ejs = UI.ejerciciosRegistrados(ses);
     var html = A().bandaDemo() + '<section class="hero">' + '<div class="barra-sup" style="justify-content:space-between">' + atras("clientes", "Clientes") +
       '<button class="btn-redondo" id="editar" aria-label="Editar">' + ico("editar") + "</button></div>" +
-      '<div class="saldo" style="margin-top:18px"><div class="avatar grande" style="margin:0 auto">' + esc(UI.iniciales(c.nombre)) + "</div>" +
+      '<div class="saldo" style="margin-top:18px"><label class="foto-perfil" title="Cambiar foto">' + UI.avatarCli(c, "avatar grande") +
+      '<span class="foto-cam">' + ico("camara") + '</span><input type="file" accept="image/*" id="fotoCli" class="oculto-vista"></label>' +
       '<div class="cifra" style="font-size:32px;letter-spacing:-.6px;margin-top:12px">' + esc(c.nombre) + '</div><div class="sub">' +
       (c.objetivo ? esc(c.objetivo) + " · " : "") + esc(UI.hace(ses[0] && ses[0].fecha)) + "</div></div>" +
       '<div class="acciones">' +
@@ -269,6 +272,16 @@
       graf(ejs[0].ref);
       UI.$$("#chipsEj .chip").forEach(function (b) { b.onclick = function () { UI.$$("#chipsEj .chip").forEach(function (x) { x.classList.toggle("on", x === b); }); graf(b.dataset.ref); }; });
     }
+    UI.cargarFotos(app());
+    UI.$("#fotoCli").onchange = async function () {
+      var f = this.files[0]; if (!f) return;
+      try {
+        var ruta = c.entrenador_id + "/" + c.id + "/perfil-" + DB.uuid() + ".jpg";
+        await DB.subir("fotos", ruta, await UI.comprimir(f, 600));
+        await DB.upd("clientes", c.id, { foto_path: ruta });
+        UI.aviso("Foto actualizada ✓"); A().recargar();
+      } catch (er) { UI.error(er); }
+    };
     UI.$("#editar").onclick = function () { hojaCliente(c); };
     ["#invitar", "#invitar2"].forEach(function (s) { var b = UI.$(s); if (b) b.onclick = function () { hojaInvitar(c); }; });
     ["#asignar", "#asignar2"].forEach(function (s) { UI.$(s).onclick = function () { hojaAsignar({ clienteId: c.id, rutinas: rutinas }); }; });
@@ -695,17 +708,45 @@
       '<div class="campo"><label>Nombre</label><input class="entrada" id="xN" value="' + esc(e.nombre || "") + '"></div>' +
       '<div class="rejilla"><div class="campo"><label>Músculo</label><input class="entrada" id="xM" value="' + esc(e.musculo || "") + '" placeholder="Pierna"></div>' +
       '<div class="campo"><label>Equipo</label><input class="entrada" id="xE" value="' + esc(e.equipo || "") + '" placeholder="Mancuernas"></div></div>' +
-      '<div class="campo"><label>Video de YouTube (enlace)</label><input class="entrada" id="xV" value="' + esc(e.video_url || "") + '" placeholder="https://youtu.be/…"></div>' +
+      '<div class="campo"><label>Video (opcional)</label><div class="segmento" id="xVM"><button type="button" data-m="archivo">Subir mi video</button><button type="button" data-m="yt">Enlace de YouTube</button></div>' +
+      '<div id="xVyt"><input class="entrada" id="xV" value="' + esc(UI.youtube(e.video_url) ? e.video_url : "") + '" placeholder="https://youtu.be/…"></div>' +
+      '<div id="xVar">' + (UI.esVideoArchivo(e.video_url) ? '<video class="video-ej" src="' + esc(e.video_url) + '" controls playsinline preload="metadata"></video>' : "") +
+      '<input class="entrada" type="file" accept="video/mp4,video/quicktime,video/webm,video/*" id="xF" style="padding-top:12px;margin-top:8px">' +
+      '<p class="nota-demo" style="text-align:left;margin-top:6px">Máximo 50 MB (más o menos 30 a 60 segundos). En iPhone, para que también se vea en Android: Ajustes › Cámara › Formatos › «Más compatible».</p></div></div>' +
       '<div class="campo"><label>Imagen (opcional)</label><input class="entrada" type="file" accept="image/*" id="xI" style="padding-top:12px"></div>' +
       '<div class="campo"><label>Instrucciones</label><textarea class="entrada" id="xT">' + esc(e.instrucciones || "") + "</textarea></div>" +
       '<button class="btn" id="xG">Guardar</button>' + (e.id ? '<button class="btn peligro" id="xB">Eliminar</button>' : "") + "</div>", function (h, cerrar) {
+      var modoV = UI.youtube(e.video_url) ? "yt" : "archivo";
+      function pintarModo() {
+        UI.$$("#xVM button", h).forEach(function (b) { b.classList.toggle("on", b.dataset.m === modoV); });
+        h.querySelector("#xVyt").hidden = modoV !== "yt"; h.querySelector("#xVar").hidden = modoV !== "archivo";
+      }
+      UI.$$("#xVM button", h).forEach(function (b) { b.onclick = function () { modoV = b.dataset.m; pintarModo(); }; });
+      pintarModo();
       h.querySelector("#xG").onclick = async function () {
+        var btn = this;
         var d = { nombre: h.querySelector("#xN").value.trim(), musculo: h.querySelector("#xM").value.trim(), equipo: h.querySelector("#xE").value.trim(),
-          video_url: h.querySelector("#xV").value.trim(), instrucciones: h.querySelector("#xT").value.trim() };
+          instrucciones: h.querySelector("#xT").value.trim() };
         if (!d.nombre) return UI.aviso("Escribe el nombre", true);
-        if (d.video_url && !UI.youtube(d.video_url)) return UI.aviso("Ese enlace no parece de YouTube", true);
-        this.disabled = true;
+        var fv = h.querySelector("#xF").files[0];
+        if (modoV === "yt") {
+          d.video_url = h.querySelector("#xV").value.trim();
+          if (d.video_url && !UI.youtube(d.video_url)) return UI.aviso("Ese enlace no parece de YouTube", true);
+        } else if (!fv) {
+          d.video_url = UI.esVideoArchivo(e.video_url) ? e.video_url : "";
+        } else {
+          if (DB.modo === "demo") return UI.aviso("En el modo demo no se pueden subir videos", true);
+          if (fv.size > 50 * 1024 * 1024) return UI.aviso("El video pesa " + Math.round(fv.size / 1048576) + " MB. El máximo es 50 MB: recórtalo o grábalo más corto.", true);
+        }
+        btn.disabled = true;
         try {
+          if (modoV === "archivo" && fv) {
+            btn.innerHTML = '<span class="girar" style="width:18px;height:18px;border-width:2px;border-color:rgba(10,15,37,.2);border-top-color:#0A0F25"></span>Subiendo video…';
+            var ext = (fv.name.split(".").pop() || "mp4").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
+            var rutaV = eid() + "/" + DB.uuid() + "." + ext;
+            await DB.subir("videos", rutaV, fv);
+            d.video_url = DB.urlPublica("videos", rutaV);
+          }
           var f = h.querySelector("#xI").files[0];
           if (f) {
             var ruta = eid() + "/ej-" + DB.uuid() + ".jpg";
@@ -714,7 +755,7 @@
           }
           if (e.id) await DB.upd("ejercicios", e.id, d); else await DB.ins("ejercicios", Object.assign({ entrenador_id: eid() }, d));
           cerrar(); UI.aviso("Ejercicio guardado ✓"); A().recargar();
-        } catch (er) { UI.error(er); this.disabled = false; }
+        } catch (er) { UI.error(er); btn.disabled = false; btn.textContent = "Guardar"; }
       };
       var b = h.querySelector("#xB");
       if (b) b.onclick = async function () {

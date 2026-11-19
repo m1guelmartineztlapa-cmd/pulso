@@ -240,3 +240,10 @@ select.entrada{appearance:none;-webkit-appearance:none}
   .saldo .cifra{font-size:64px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Foto de perfil con botón de cámara */
+.foto-perfil{position:relative;display:inline-block;margin:0 auto;cursor:pointer}
+.foto-perfil .avatar{margin:0}
+.foto-cam{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:#fff;color:#0A0F25;display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.foto-cam svg{width:16px;height:16px}
+.ico[data-foto] img,.avatar[data-foto] img{width:100%;height:100%;object-fit:cover}
