@@ -34,7 +34,7 @@
     var uid = APP.usuario.id;
     var pendiente = localStorage.getItem(LLAVE_INV);
     var ent = await DB.uno("entrenadores", { id: uid });
-    if (ent) { APP.rol = "entrenador"; APP.ent = ent; localStorage.removeItem(LLAVE_INV); return; }
+    if (ent) { APP.rol = "entrenador"; APP.ent = ent; localStorage.removeItem(LLAVE_INV); latido(); return; }
     var cli = await DB.miCliente(uid);
     if (!cli && pendiente) {
       try { await DB.rpc("reclamar_invitacion", { p_codigo: pendiente }); } catch (e) { UI.error(e); }
@@ -45,14 +45,16 @@
       APP.rol = "cliente"; APP.cli = cli;
       APP.ent = await DB.uno("entrenadores", { id: cli.entrenador_id });
     }
-    if (DB.modo === "supabase") latido();
+    latido();
   }
   APP.detectarRol = detectarRol;
 
   // Tiempo en línea: un "latido" al abrir y cada minuto mientras la app está visible
-  var tLatido = null;
+  var tLatido = null, ultLatido = 0;
   function latido() {
     if (DB.modo !== "supabase" || !APP.usuario || document.hidden) return;
+    if (Date.now() - ultLatido < 45000) return; // como máximo uno cada 45 s
+    ultLatido = Date.now();
     DB.rpc("registrar_acceso", {}).catch(function () {});
     if (!tLatido) tLatido = setInterval(latido, 60000);
   }

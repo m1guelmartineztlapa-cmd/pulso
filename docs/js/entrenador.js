@@ -908,7 +908,7 @@
   }
   function cabAdmin(volver, txt) {
     return '<div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/' + volver + '">' + ico("izq", ' width="22" height="22"') + esc(txt) +
-      '</a><button class="btn-redondo" id="recargar" aria-label="Actualizar">' + ico("reloj") + "</button></div>";
+      '</a><button class="btn-redondo" id="recargar" aria-label="Actualizar datos" title="Actualizar datos">' + ico("recargar") + "</button></div>";
   }
 
   V.admin = async function (entId) {
@@ -959,9 +959,10 @@
     }
     UI.$("#verTodo").onclick = function () { verTodo = !verTodo; this.textContent = verTodo ? "Ver menos" : "Ver todos"; UI.$("#busq").hidden = !verTodo; dibujarMov(); };
     UI.$("#qAdmin").oninput = function () { q = this.value; dibujarMov(); };
-    UI.$("#recargar").onclick = function () { A().recargar(); };
+    UI.$("#recargar").onclick = function () { window.__admRefrescar = true; A().recargar(); };
     dibujarMov();
     UI.cargarFotos(app());
+    if (window.__admRefrescar) { window.__admRefrescar = false; UI.aviso("Datos actualizados ✓"); }
   };
   function filaAlumno(c) {
     return '<a class="item" href="#/admin/' + c.ent + '"><span style="position:relative;flex:none">' + UI.avatarCli(c) + puntoEnLinea(c.en_linea) + '</span><span class="txt"><div class="t1">' +
@@ -1028,8 +1029,9 @@
       UI.$("#listaMov").innerHTML = html;
     }
     UI.$$("#filtros button").forEach(function (b) { b.onclick = function () { filtro = b.dataset.f; dibujar(); }; });
-    UI.$("#recargar").onclick = function () { A().recargar(); };
+    UI.$("#recargar").onclick = function () { window.__admRefrescar = true; A().recargar(); };
     dibujar();
     UI.cargarFotos(app());
+    if (window.__admRefrescar) { window.__admRefrescar = false; UI.aviso("Datos actualizados ✓"); }
   }
 })();
