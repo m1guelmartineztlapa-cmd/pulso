@@ -794,6 +794,8 @@
       '<button class="btn" id="guardarMarca">Guardar</button></div>' +
       '<div class="titulo-sec"><h2>Instalar en tu celular</h2></div><div class="tarjeta"><p><b style="color:#fff">iPhone:</b> en Safari, botón Compartir → «Agregar a pantalla de inicio».<br>' +
       '<b style="color:#fff">Android:</b> en Chrome, menú ⋮ → «Instalar app».<br>Tus clientes hacen lo mismo con su enlace.</p></div>' +
+      '<div class="tarjeta sin-relleno" id="adminLink" hidden><div class="lista"><a class="item" href="#/admin"><span class="ico">' + ico("grafica") +
+      '</span><span class="txt"><div class="t1">Panel de administrador</div><div class="t2">Quién usa Pulso y qué hace</div></span><span class="chev">' + ico("der") + "</span></a></div></div>" +
       '<div class="tarjeta sin-relleno"><div class="lista"><div class="item" id="salir"><span class="ico">' + ico("salir") + '</span><span class="txt"><div class="t1">Cerrar sesión</div><div class="t2">' +
       esc((A().usuario && A().usuario.email) || "") + "</div></span></div></div></div></div>";
     var color = e.color;
@@ -816,5 +818,73 @@
       } catch (er) { UI.error(er); }
     };
     UI.$("#salir").onclick = function () { A().salir(); };
+    if (DB.modo === "supabase") DB.rpc("es_admin", {}).then(function (si) { var l = UI.$("#adminLink"); if (si === true && l) l.hidden = false; }).catch(function () {});
+  };
+
+  /* ───────── Panel de administrador (solo el dueño de la plataforma) ───────── */
+  function cuando(iso) {
+    if (!iso) return "Nunca";
+    var d = new Date(iso), min = Math.round((Date.now() - d.getTime()) / 60000);
+    if (min < 1) return "Ahora";
+    if (min < 60) return "Hace " + min + " min";
+    if (min < 1440) return "Hace " + Math.round(min / 60) + " h";
+    var dias = Math.round(min / 1440);
+    if (dias < 7) return "Hace " + dias + (dias === 1 ? " día" : " días");
+    return UI.fecha(iso);
+  }
+  var ICO_TIPO = { entreno: "check", alumno: "persona", rutina: "rutinas", registro: "mas" };
+  V.admin = async function () {
+    UI.tabbar(TABS, "ajustes");
+    app().innerHTML = UI.cargando();
+    var d;
+    try { d = DB.modo === "demo" && window.__adminDemo ? window.__adminDemo : await DB.rpc("admin_resumen", {}); } catch (e) { d = null; }
+    if (!d) {
+      app().innerHTML = A().bandaDemo() + '<section class="hero"><a class="atras" href="#/ajustes">' + ico("izq", ' width="22" height="22"') + 'Ajustes</a><h1 class="titulo-pag">Administración</h1></section>' +
+        '<div class="contenido"><div class="tarjeta"><h3>Sin acceso</h3><p>Este panel es solo para el administrador de Pulso.</p></div></div>';
+      return;
+    }
+    var t = d.totales || {}, vista = "actividad", q = "";
+    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/ajustes">' +
+      ico("izq", ' width="22" height="22"') + 'Ajustes</a><button class="btn-redondo" id="recargar" aria-label="Actualizar">' + ico("reloj") + '</button></div>' +
+      '<div class="saldo" style="margin-top:22px"><div class="etq">Usuarios activos (últimos 7 días)</div><div class="cifra">' + (t.activos_7d || 0) + '</div><div class="sub">' +
+      ico("rayo") + (t.sesiones_7d || 0) + " entrenamientos esta semana</div></div></section>" +
+      '<div class="contenido"><div class="datos"><div class="dato"><div class="v">' + (t.entrenadores || 0) + '</div><div class="l">Entrenadores</div></div>' +
+      '<div class="dato"><div class="v">' + (t.alumnos || 0) + '</div><div class="l">Alumnos (' + (t.alumnos_con_cuenta || 0) + ' con cuenta)</div></div>' +
+      '<div class="dato"><div class="v">' + (t.sesiones || 0) + '</div><div class="l">Entrenamientos</div></div></div>' +
+      '<div class="segmento"><button data-v="actividad">Movimientos</button><button data-v="entrenadores">Entrenadores</button><button data-v="alumnos">Alumnos</button></div>' +
+      '<label class="buscador" style="background:var(--card);height:44px">' + ico("buscar", ' width="18" height="18"') + '<input id="qAdmin" placeholder="Buscar por nombre o correo"></label>' +
+      '<div class="tarjeta sin-relleno"><div class="lista" id="listaAdmin"></div></div></div>';
+    function coincide(o) { var n = UI.normal(q); return !n || UI.normal(JSON.stringify(o)).indexOf(n) >= 0; }
+    function dibujar() {
+      UI.$$(".segmento button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === vista); });
+      var html = "";
+      if (vista === "actividad") {
+        html = (d.actividad || []).filter(coincide).map(function (a) {
+          return '<div class="item"><span class="ico">' + ico(ICO_TIPO[a.tipo] || "info") + '</span><span class="txt"><div class="t1">' + esc(a.quien || "") +
+            (a.de ? ' <span style="color:var(--suave);font-weight:500">· ' + esc(a.de) + "</span>" : "") + '</div><div class="t2">' + esc(a.detalle || "") +
+            '</div></span><span class="der"><small>' + esc(cuando(a.cuando)) + "</small></span></div>";
+        }).join("");
+      } else if (vista === "entrenadores") {
+        html = (d.entrenadores || []).filter(coincide).map(function (e) {
+          return '<div class="item"><span class="ico">' + esc(UI.iniciales(e.nombre || e.marca)) + '</span><span class="txt"><div class="t1">' + esc(e.nombre || "(sin nombre)") +
+            ' <span style="color:var(--suave);font-weight:500">· ' + esc(e.marca || "") + '</span></div><div class="t2">' + esc(e.email || "") + " · " + e.alumnos + " alumnos (" +
+            e.alumnos_con_cuenta + " con cuenta) · " + e.rutinas + " rutinas · " + e.sesiones_7d + ' entrenos esta semana</div></span><span class="der"><small>' +
+            esc(cuando(e.ultimo_acceso)) + "</small></span></div>";
+        }).join("");
+      } else {
+        html = (d.alumnos || []).filter(coincide).map(function (c) {
+          return '<div class="item"><span class="ico">' + esc(UI.iniciales(c.nombre)) + '</span><span class="txt"><div class="t1">' + esc(c.nombre) +
+            ' <span style="color:var(--suave);font-weight:500">· ' + esc(c.marca || c.entrenador || "") + '</span></div><div class="t2">' +
+            (c.tiene_cuenta ? esc(c.email || "con cuenta") : "Aún no crea su cuenta") + " · " + c.sesiones + " entrenos" +
+            (c.ultima_sesion ? " · último " + esc(UI.fecha(c.ultima_sesion)) : "") + '</div></span><span class="der"><small>' +
+            (c.tiene_cuenta ? esc(cuando(c.ultimo_acceso)) : "—") + "</small></span></div>";
+        }).join("");
+      }
+      UI.$("#listaAdmin").innerHTML = html || '<div class="vacio">Nada que mostrar.</div>';
+    }
+    UI.$$(".segmento button").forEach(function (b) { b.onclick = function () { vista = b.dataset.v; dibujar(); }; });
+    UI.$("#qAdmin").oninput = function () { q = this.value; dibujar(); };
+    UI.$("#recargar").onclick = function () { A().recargar(); };
+    dibujar();
   };
 })();
