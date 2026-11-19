@@ -823,6 +823,7 @@
 
   /* ───────── Panel de administrador (solo el dueño de la plataforma) ───────── */
   var MESES_C = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  var DIA_C = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   function cuando(iso) {
     if (!iso) return "Nunca";
     var d = new Date(iso), min = Math.round((Date.now() - d.getTime()) / 60000);
@@ -835,28 +836,65 @@
   }
   function hora(iso) { var d = new Date(iso); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
   function fechaHora(iso) { if (!iso) return "Nunca"; var d = new Date(iso); return d.getDate() + " " + MESES_C[d.getMonth()] + " · " + hora(iso); }
+  function claveDia(iso) { var d = new Date(iso); return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(); }
   function diaDe(iso) {
     var d = new Date(iso), hoy = new Date(), ayer = new Date(); ayer.setDate(hoy.getDate() - 1);
     if (d.toDateString() === hoy.toDateString()) return "Hoy";
     if (d.toDateString() === ayer.toDateString()) return "Ayer";
     return UI.DIAS_L[d.getDay()].replace(/^./, function (x) { return x.toUpperCase(); }) + " " + d.getDate() + " de " + MESES_C[d.getMonth()];
   }
-  function mins(m) { m = Number(m) || 0; if (m < 60) return m + " min"; return Math.floor(m / 60) + " h " + (m % 60 ? (m % 60) + " min" : ""); }
-  var PUNTO_VERDE = '<span title="En línea" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);margin-left:6px;vertical-align:middle"></span>';
+  function mins(m) { m = Math.round(Number(m) || 0); if (m < 60) return m + " min"; return Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) + " min" : ""); }
   var ICO_TIPO = { entreno: "check", alumno: "persona", rutina: "rutinas", registro: "mas", asignacion: "calendario", medida: "regla", acceso: "reloj" };
-  var ES_ENT = { alumno: 1, rutina: 1, asignacion: 1 }; // movimientos que hace el entrenador
-  function filaMov(a, conQuien) {
-    return '<div class="item"><span class="ico">' + ico(ICO_TIPO[a.tipo] || "info") + '</span><span class="txt"><div class="t1">' +
-      (conQuien ? esc(a.quien || "") + (a.de ? ' <span style="color:var(--suave);font-weight:500">· ' + esc(a.de) + "</span>" : "") : esc(a.detalle || "")) +
-      '</div><div class="t2">' + (conQuien ? esc(a.detalle || "") : esc(a.quien || "")) + '</div></span><span class="der">' + hora(a.cuando) +
+  var ES_ENT = { alumno: 1, rutina: 1, asignacion: 1 };
+
+  function avatarAdm(e, clase) {
+    return '<span class="' + (clase || "ico") + '" style="position:relative">' + (e.logo_url ? '<img src="' + esc(e.logo_url) + '" alt="">' : esc(UI.iniciales(e.nombre || e.marca))) + "</span>";
+  }
+  function puntoEnLinea(on) { return on ? '<span class="adm-punto" title="En línea"></span>' : ""; }
+
+  /* Minutos de uso por día en los últimos 7 días: [{l, ent, alu}] */
+  function usoSemana(accesos) {
+    var dias = [], hoy = new Date();
+    for (var i = 6; i >= 0; i--) { var d = new Date(hoy); d.setDate(hoy.getDate() - i); dias.push({ k: claveDia(d), l: i === 0 ? "Hoy" : DIA_C[d.getDay()], ent: 0, alu: 0 }); }
+    accesos.forEach(function (a) {
+      var dia = dias.find(function (x) { return x.k === claveDia(a.cuando); });
+      if (dia) dia[a.rol === "entrenador" ? "ent" : "alu"] += Number(a.min) || 0;
+    });
+    return dias;
+  }
+  function graficaUso(dias, soloUno) {
+    var W = 340, H = 150, base = 120, top = 18, max = 1;
+    dias.forEach(function (d) { max = Math.max(max, soloUno ? d.ent + d.alu : Math.max(d.ent, d.alu)); });
+    var anchoDia = (W - 20) / dias.length, x0 = 10, svg = "";
+    dias.forEach(function (d, i) {
+      var cx = x0 + i * anchoDia + anchoDia / 2;
+      if (soloUno) {
+        var hT = (d.ent + d.alu) / max * (base - top);
+        svg += '<rect x="' + (cx - 11).toFixed(1) + '" y="' + (base - hT).toFixed(1) + '" width="22" height="' + Math.max(hT, 1.5).toFixed(1) + '" rx="5" fill="var(--brand-2)"/>';
+        if (d.ent + d.alu) svg += '<text x="' + cx.toFixed(1) + '" y="' + (base - hT - 5).toFixed(1) + '" text-anchor="middle" font-size="10" fill="var(--suave)">' + Math.round(d.ent + d.alu) + "</text>";
+      } else {
+        var hE = d.ent / max * (base - top), hA = d.alu / max * (base - top);
+        svg += '<rect x="' + (cx - 12).toFixed(1) + '" y="' + (base - hE).toFixed(1) + '" width="11" height="' + Math.max(hE, 1.5).toFixed(1) + '" rx="3" fill="var(--brand-2)"/>';
+        svg += '<rect x="' + (cx + 1).toFixed(1) + '" y="' + (base - hA).toFixed(1) + '" width="11" height="' + Math.max(hA, 1.5).toFixed(1) + '" rx="3" fill="var(--ok)"/>';
+      }
+      svg += '<text x="' + cx.toFixed(1) + '" y="' + (base + 18) + '" text-anchor="middle" font-size="11" fill="var(--suave)"' + (d.l === "Hoy" ? ' font-weight="700"' : "") + ">" + d.l + "</text>";
+    });
+    svg += '<line x1="6" x2="' + (W - 6) + '" y1="' + base + '" y2="' + base + '" stroke="var(--linea)"/>';
+    return '<svg class="grafica" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Minutos de uso por día">' + svg + "</svg>" +
+      (soloUno ? '<p class="nota-demo" style="text-align:left;margin-top:4px">Minutos de uso por día (todos los usuarios)</p>' :
+        '<div class="adm-leyenda"><span><i style="background:var(--brand-2)"></i>Entrenador</span><span><i style="background:var(--ok)"></i>Sus alumnos</span><span style="margin-left:auto">minutos por día</span></div>');
+  }
+  function filaMov(a) {
+    return '<div class="item"><span class="ico">' + ico(ICO_TIPO[a.tipo] || "info") + '</span><span class="txt"><div class="t1">' + esc(a.quien || "") +
+      (a.de ? ' <span class="adm-de">· ' + esc(a.de) + "</span>" : "") + '</div><div class="t2">' + esc(a.detalle || "") + '</div></span><span class="der">' + hora(a.cuando) +
       "<small>" + esc(cuando(a.cuando)) + "</small></span></div>";
   }
-  function porDia(lista, conQuien) {
+  function porDia(lista, render) {
     var html = "", dia = "";
     lista.forEach(function (a) {
       var d = diaDe(a.cuando);
-      if (d !== dia) { dia = d; html += '<div class="lbl" style="padding:14px 18px 2px">' + esc(d) + "</div>"; }
-      html += filaMov(a, conQuien);
+      if (d !== dia) { dia = d; html += '<div class="adm-dia">' + esc(d) + "</div>"; }
+      html += (render || filaMov)(a);
     });
     return html;
   }
@@ -868,92 +906,130 @@
     app().innerHTML = A().bandaDemo() + '<section class="hero"><a class="atras" href="#/ajustes">' + ico("izq", ' width="22" height="22"') + 'Ajustes</a><h1 class="titulo-pag">Administración</h1></section>' +
       '<div class="contenido"><div class="tarjeta"><h3>Sin acceso</h3><p>Este panel es solo para el administrador de Pulso.</p></div></div>';
   }
+  function cabAdmin(volver, txt) {
+    return '<div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/' + volver + '">' + ico("izq", ' width="22" height="22"') + esc(txt) +
+      '</a><button class="btn-redondo" id="recargar" aria-label="Actualizar">' + ico("reloj") + "</button></div>";
+  }
+
   V.admin = async function (entId) {
     UI.tabbar(TABS, "ajustes");
     app().innerHTML = UI.cargando();
     var d; try { d = await datosAdmin(); } catch (e) { d = null; }
     if (!d) return sinAcceso();
     if (entId) return adminEntrenador(d, entId);
-    var t = d.totales || {}, vista = "actividad", q = "";
-    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/ajustes">' +
-      ico("izq", ' width="22" height="22"') + 'Ajustes</a><button class="btn-redondo" id="recargar" aria-label="Actualizar">' + ico("reloj") + '</button></div>' +
-      '<div class="saldo" style="margin-top:22px"><div class="etq">En línea ahora</div><div class="cifra">' + (t.en_linea || 0) + '</div><div class="sub">' +
-      ico("persona") + (t.activos_7d || 0) + " usaron la app esta semana · " + (t.sesiones_7d || 0) + " entrenamientos</div></div></section>" +
-      '<div class="contenido"><div class="datos"><div class="dato"><div class="v">' + (t.entrenadores || 0) + '</div><div class="l">Entrenadores</div></div>' +
-      '<div class="dato"><div class="v">' + (t.alumnos || 0) + '</div><div class="l">Alumnos (' + (t.alumnos_con_cuenta || 0) + ' con cuenta)</div></div>' +
-      '<div class="dato"><div class="v">' + (t.sesiones || 0) + '</div><div class="l">Entrenamientos</div></div></div>' +
-      '<div class="segmento"><button data-v="actividad">Movimientos</button><button data-v="entrenadores">Entrenadores</button><button data-v="alumnos">Alumnos</button></div>' +
-      '<label class="buscador" style="background:var(--card);height:44px">' + ico("buscar", ' width="18" height="18"') + '<input id="qAdmin" placeholder="Buscar por nombre o correo"></label>' +
-      '<div class="tarjeta sin-relleno"><div class="lista" id="listaAdmin"></div></div></div>';
-    function coincide(o) { var n = UI.normal(q); return !n || UI.normal(JSON.stringify(o)).indexOf(n) >= 0; }
-    function dibujar() {
-      UI.$$(".segmento button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === vista); });
-      var html = "";
-      if (vista === "actividad") {
-        html = porDia((d.actividad || []).filter(coincide).slice(0, 200), true);
-      } else if (vista === "entrenadores") {
-        html = (d.entrenadores || []).filter(coincide).map(function (e) {
-          return '<a class="item" href="#/admin/' + e.id + '"><span class="ico">' + esc(UI.iniciales(e.nombre || e.marca)) + '</span><span class="txt"><div class="t1">' + esc(e.nombre || "(sin nombre)") +
-            ' <span style="color:var(--suave);font-weight:500">· ' + esc(e.marca || "") + "</span>" + (e.en_linea ? PUNTO_VERDE : "") + '</div><div class="t2">' + e.alumnos + " alumnos · " + e.rutinas + " rutinas · " +
-            mins(e.min_7d) + ' en línea esta semana</div></span><span class="der"><small>' + (e.en_linea ? "En línea" : "Último acceso") + "</small>" + (e.en_linea ? "ahora" : esc(cuando(e.ultimo_acceso))) +
-            '</span><span class="chev">' + ico("der") + "</span></a>";
-        }).join("");
-      } else {
-        html = (d.alumnos || []).filter(coincide).map(function (c) {
-          return '<a class="item" href="#/admin/' + c.ent + '"><span class="ico">' + esc(UI.iniciales(c.nombre)) + '</span><span class="txt"><div class="t1">' + esc(c.nombre) +
-            ' <span style="color:var(--suave);font-weight:500">· ' + esc(c.marca || c.entrenador || "") + "</span>" + (c.en_linea ? PUNTO_VERDE : "") + '</div><div class="t2">' +
-            (c.tiene_cuenta ? esc(c.email || "con cuenta") : "Aún no crea su cuenta") + " · " + c.sesiones + " entrenos" +
-            (c.ultima_sesion ? " · último " + esc(UI.fecha(c.ultima_sesion)) : "") + '</div></span><span class="der"><small>Último acceso</small>' +
-            (c.tiene_cuenta ? esc(cuando(c.ultimo_acceso)) : "—") + "</span></a>";
-        }).join("");
-      }
-      UI.$("#listaAdmin").innerHTML = html || '<div class="vacio">Nada que mostrar.</div>';
-    }
-    UI.$$(".segmento button").forEach(function (b) { b.onclick = function () { vista = b.dataset.v; dibujar(); }; });
-    UI.$("#qAdmin").oninput = function () { q = this.value; dibujar(); };
-    UI.$("#recargar").onclick = function () { A().recargar(); };
-    dibujar();
-  };
+    var t = d.totales || {}, act = d.actividad || [], ents = d.entrenadores || [], alus = d.alumnos || [];
+    var accesos = act.filter(function (a) { return a.tipo === "acceso"; });
+    var hoyK = claveDia(new Date());
+    var accHoy = accesos.filter(function (a) { return claveDia(a.cuando) === hoyK; });
+    var minHoy = accHoy.reduce(function (s, a) { return s + (Number(a.min) || 0); }, 0);
+    var entrenosHoy = act.filter(function (a) { return a.tipo === "entreno" && claveDia(a.cuando) === hoyK; }).length;
+    var enLinea = ents.filter(function (e) { return e.en_linea; }).map(function (e) { return { n: e.nombre, h: avatarAdm(e, "avatar chico") }; })
+      .concat(alus.filter(function (c) { return c.en_linea; }).map(function (c) { return { n: c.nombre, h: UI.avatarCli(c, "avatar chico") }; }));
+    var maxMin = Math.max.apply(null, [1].concat(ents.map(function (e) { return Number(e.min_7d) || 0; })));
+    var verTodo = false, q = "";
 
-  /* Detalle de un entrenador: qué hizo él y sus alumnos, día por día y a qué hora */
+    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:14px">' + cabAdmin("ajustes", "Ajustes") +
+      '<div class="saldo" style="margin-top:18px"><div class="etq">En línea ahora</div><div class="cifra">' + (t.en_linea || enLinea.length || 0) + '</div>' +
+      (enLinea.length ? '<div class="adm-enlinea">' + enLinea.slice(0, 8).map(function (p) { return '<span title="' + esc(p.n) + '">' + p.h + "</span>"; }).join("") + "</div>" :
+        '<div class="sub">' + ico("persona") + "Nadie conectado en este momento</div>") +
+      '</div></section><div class="contenido">' +
+      '<div class="adm-kpis"><div class="dato"><div class="v">' + mins(minHoy) + '</div><div class="l">Tiempo de uso hoy</div></div>' +
+      '<div class="dato"><div class="v">' + accHoy.length + '</div><div class="l">Visitas hoy</div></div>' +
+      '<div class="dato"><div class="v">' + (t.activos_7d || 0) + '</div><div class="l">Personas que la usaron (7 días)</div></div>' +
+      '<div class="dato"><div class="v">' + (t.sesiones_7d || 0) + '</div><div class="l">Entrenamientos (7 días) · ' + entrenosHoy + " hoy</div></div></div>" +
+      '<div class="titulo-sec"><h2>Uso de la semana</h2></div><div class="tarjeta">' + graficaUso(usoSemana(accesos), true) + "</div>" +
+      '<div class="titulo-sec"><h2>Entrenadores</h2><span class="adm-de">' + (t.entrenadores || ents.length) + "</span></div>" +
+      '<div class="tarjeta sin-relleno"><div class="lista">' + (ents.length ? ents.map(function (e) {
+        var pct = Math.round((Number(e.min_7d) || 0) / maxMin * 100);
+        return '<a class="item" href="#/admin/' + e.id + '"><span style="position:relative;flex:none">' + avatarAdm(e) + puntoEnLinea(e.en_linea) + '</span><span class="txt"><div class="t1">' +
+          esc(e.nombre || "(sin nombre)") + ' <span class="adm-de">· ' + esc(e.marca || "") + '</span></div><div class="t2">' + e.alumnos + " alumnos · " + e.rutinas + " rutinas · " +
+          e.sesiones_7d + ' entrenos</div><div class="adm-barra"><i style="width:' + pct + '%"></i></div></span><span class="der">' + mins(e.min_7d) +
+          "<small>" + (e.en_linea ? '<b style="color:var(--ok)">En línea</b>' : esc(cuando(e.ultimo_acceso))) + "</small></span>" + '<span class="chev">' + ico("der") + "</span></a>";
+      }).join("") : '<div class="vacio">Aún no hay entrenadores.</div>') + "</div></div>" +
+      '<p class="nota-demo" style="text-align:left;margin:-6px 4px 0">La barra y el tiempo son su uso de la app en los últimos 7 días.</p>' +
+      '<div class="titulo-sec"><h2>Movimientos</h2><button id="verTodo">Ver todos</button></div>' +
+      '<label class="buscador" id="busq" hidden style="background:var(--card);height:44px">' + ico("buscar", ' width="18" height="18"') + '<input id="qAdmin" placeholder="Buscar por nombre o marca"></label>' +
+      '<div class="tarjeta sin-relleno"><div class="lista" id="listaMov"></div></div>' +
+      '<div class="titulo-sec"><h2>Alumnos</h2><span class="adm-de">' + (t.alumnos_con_cuenta || 0) + " de " + (t.alumnos || 0) + " con cuenta</span></div>" +
+      '<div class="tarjeta sin-relleno"><div class="lista">' + alus.slice(0, 30).map(filaAlumno).join("") + (alus.length ? "" : '<div class="vacio">Aún no hay alumnos.</div>') + "</div></div></div>";
+    function dibujarMov() {
+      var n = UI.normal(q);
+      var l = act.filter(function (a) { return !n || UI.normal((a.quien || "") + " " + (a.de || "") + " " + (a.detalle || "")).indexOf(n) >= 0; });
+      UI.$("#listaMov").innerHTML = (l.length ? porDia(l.slice(0, verTodo ? 300 : 12)) : '<div class="vacio">Sin movimientos.</div>');
+    }
+    UI.$("#verTodo").onclick = function () { verTodo = !verTodo; this.textContent = verTodo ? "Ver menos" : "Ver todos"; UI.$("#busq").hidden = !verTodo; dibujarMov(); };
+    UI.$("#qAdmin").oninput = function () { q = this.value; dibujarMov(); };
+    UI.$("#recargar").onclick = function () { A().recargar(); };
+    dibujarMov();
+    UI.cargarFotos(app());
+  };
+  function filaAlumno(c) {
+    return '<a class="item" href="#/admin/' + c.ent + '"><span style="position:relative;flex:none">' + UI.avatarCli(c) + puntoEnLinea(c.en_linea) + '</span><span class="txt"><div class="t1">' +
+      esc(c.nombre) + ' <span class="adm-de">· ' + esc(c.marca || c.entrenador || "") + '</span></div><div class="t2">' +
+      (c.tiene_cuenta ? c.sesiones + " entrenos · " + mins(c.min_7d) + " de uso (7 días)" : "Aún no crea su cuenta") + '</div></span><span class="der"><small>' +
+      (c.en_linea ? '<b style="color:var(--ok)">En línea</b>' : c.tiene_cuenta ? esc(cuando(c.ultimo_acceso)) : "—") + "</small></span></a>";
+  }
+
+  /* Detalle de un entrenador: sus visitas (hora de entrada y salida) y lo que hizo en cada una */
   function adminEntrenador(d, entId) {
     var e = (d.entrenadores || []).find(function (x) { return x.id === entId; });
     if (!e) return A().ir("admin");
     var movs = (d.actividad || []).filter(function (a) { return a.ent === entId; });
     var alumnos = (d.alumnos || []).filter(function (c) { return c.ent === entId; });
-    var filtro = "todo";
-        app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/admin">' +
-      ico("izq", ' width="22" height="22"') + 'Administración</a><button class="btn-redondo" id="recargar" aria-label="Actualizar">' + ico("reloj") + '</button></div>' +
-      '<div class="saldo" style="margin-top:18px"><div class="avatar grande" style="margin:0 auto">' + esc(UI.iniciales(e.nombre || e.marca)) + '</div>' +
-      '<div class="cifra" style="font-size:30px;letter-spacing:-.5px;margin-top:12px">' + esc(e.nombre || "(sin nombre)") + '</div><div class="sub">' + esc(e.marca || "") + " · " + esc(e.email || "") + "</div>" +
-      (e.en_linea ? '<div class="centro"><span class="etiqueta" style="margin-top:10px">● En línea ahora</span></div>' : "") + "</div></section>" +
-      '<div class="contenido"><div class="datos"><div class="dato"><div class="v" style="font-size:17px">' + esc(fechaHora(e.ultimo_acceso)) + '</div><div class="l">Último acceso</div></div>' +
-      '<div class="dato"><div class="v">' + mins(e.min_hoy) + '</div><div class="l">En línea hoy</div></div>' +
-      '<div class="dato"><div class="v">' + mins(e.min_7d) + '</div><div class="l">En línea (7 días) · ' + (e.accesos_7d || 0) + ' visitas</div></div></div>' +
-      '<div class="datos"><div class="dato"><div class="v">' + e.alumnos + '</div><div class="l">Alumnos (' + e.alumnos_con_cuenta + ' con cuenta)</div></div>' +
-      '<div class="dato"><div class="v">' + e.rutinas + '</div><div class="l">Rutinas</div></div>' +
+    var accesos = movs.filter(function (a) { return a.tipo === "acceso"; });
+    var filtro = "ent";
+    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:12px">' + cabAdmin("admin", "Administración") +
+      '<div class="saldo" style="margin-top:14px"><span style="position:relative;display:inline-block">' + avatarAdm(e, "avatar grande") + "</span>" +
+      '<div class="cifra" style="font-size:28px;letter-spacing:-.5px;margin-top:10px">' + esc(e.nombre || "(sin nombre)") + '</div><div class="sub" style="flex-wrap:wrap;justify-content:center">' +
+      esc(e.marca || "") + " · " + esc(e.email || "") + "</div>" +
+      '<div class="centro" style="margin-top:10px">' + (e.en_linea ? '<span class="etiqueta">● En línea ahora</span>' : '<span class="etiqueta gris">Último acceso: ' + esc(fechaHora(e.ultimo_acceso)) + "</span>") + "</div>" +
+      "</div></section><div class=\"contenido\">" +
+      '<div class="adm-kpis"><div class="dato"><div class="v">' + mins(e.min_hoy) + '</div><div class="l">Uso hoy</div></div>' +
+      '<div class="dato"><div class="v">' + mins(e.min_7d) + '</div><div class="l">Uso en 7 días · ' + (e.accesos_7d || 0) + ' visitas</div></div>' +
+      '<div class="dato"><div class="v">' + e.alumnos + '</div><div class="l">Alumnos · ' + e.alumnos_con_cuenta + ' con cuenta</div></div>' +
       '<div class="dato"><div class="v">' + e.sesiones_7d + '</div><div class="l">Entrenos de sus alumnos (7 días)</div></div></div>' +
-      '<div class="chips scroll" id="filtros"><button class="chip on" data-f="todo">Todo</button><button class="chip" data-f="ent">Lo que hizo el entrenador</button>' +
-      '<button class="chip" data-f="acceso">Accesos</button><button class="chip" data-f="alum">Sus alumnos</button></div>' +
+      '<div class="titulo-sec"><h2>Uso por día</h2></div><div class="tarjeta">' + graficaUso(usoSemana(accesos)) + "</div>" +
+      '<div class="titulo-sec"><h2>Actividad</h2></div>' +
+      '<div class="segmento" id="filtros"><button data-f="ent">El entrenador</button><button data-f="alum">Sus alumnos</button><button data-f="todo">Todo</button></div>' +
       '<div class="tarjeta sin-relleno"><div class="lista" id="listaMov"></div></div>' +
-      '<div class="titulo-sec"><h2>Sus alumnos</h2></div><div class="tarjeta sin-relleno"><div class="lista">' +
-      (alumnos.length ? alumnos.map(function (c) {
-        return '<div class="item"><span class="ico">' + esc(UI.iniciales(c.nombre)) + '</span><span class="txt"><div class="t1">' + esc(c.nombre) + (c.en_linea ? PUNTO_VERDE : "") + '</div><div class="t2">' +
-          (c.tiene_cuenta ? c.sesiones + " entrenos · " + mins(c.min_7d) + " en línea (7 días)" + (c.ultima_sesion ? " · último entreno " + esc(UI.fecha(c.ultima_sesion)) : "") : "Aún no crea su cuenta") +
-          '</div></span><span class="der"><small>' + (c.en_linea ? "En línea" : "Último acceso") + "</small>" + (c.en_linea ? "ahora" : c.tiene_cuenta ? esc(fechaHora(c.ultimo_acceso)) : "—") + "</span></div>";
-      }).join("") : '<div class="vacio">Todavía no tiene alumnos.</div>') + "</div></div></div>";
-    function dibujar() {
-      UI.$$("#filtros .chip").forEach(function (b) { b.classList.toggle("on", b.dataset.f === filtro); });
-      var l = movs.filter(function (a) {
-        if (filtro === "ent") return ES_ENT[a.tipo] || (a.tipo === "acceso" && /entrenador/.test(a.detalle)) || (a.tipo === "registro" && /entrenador/.test(a.detalle));
-        if (filtro === "acceso") return a.tipo === "acceso";
-        if (filtro === "alum") return a.tipo === "entreno" || a.tipo === "medida" || (a.tipo === "acceso" && /alumno/.test(a.detalle)) || (a.tipo === "registro" && /alumno/.test(a.detalle));
-        return true;
-      });
-      UI.$("#listaMov").innerHTML = l.length ? porDia(l, true) : '<div class="vacio">Sin movimientos en este filtro.</div>';
+      '<div class="titulo-sec"><h2>Sus alumnos</h2><span class="adm-de">' + alumnos.length + "</span></div>" +
+      '<div class="tarjeta sin-relleno"><div class="lista">' + (alumnos.length ? alumnos.map(filaAlumno).join("") : '<div class="vacio">Todavía no tiene alumnos.</div>') + "</div></div></div>";
+
+    // Una "visita" del entrenador agrupa lo que hizo entre su hora de entrada y de salida
+    function bloqueVisita(v, acciones) {
+      return '<div class="adm-visita"><div class="adm-visita-cab"><span class="ico">' + ico("reloj") + '</span><span class="txt"><div class="t1">' + hora(v.cuando) + " – " +
+        (v.en_linea ? "ahora" : hora(v.fin || v.cuando)) + '</div><div class="t2">' + (v.en_linea ? "En línea ahora · " : "") + mins(v.min) + " en la app" +
+        (acciones.length ? " · " + acciones.length + (acciones.length === 1 ? " acción" : " acciones") : " · solo consultó") + "</div></span></div>" +
+        acciones.map(function (a) { return '<div class="adm-accion"><span>' + hora(a.cuando) + "</span>" + ico(ICO_TIPO[a.tipo] || "info") + "<em>" + esc(a.detalle || "") + "</em></div>"; }).join("") + "</div>";
     }
-    UI.$$("#filtros .chip").forEach(function (b) { b.onclick = function () { filtro = b.dataset.f; dibujar(); }; });
+    function dibujar() {
+      UI.$$("#filtros button").forEach(function (b) { b.classList.toggle("on", b.dataset.f === filtro); });
+      var html = "";
+      if (filtro === "ent") {
+        var visitas = accesos.filter(function (a) { return a.rol === "entrenador"; });
+        var acciones = movs.filter(function (a) { return ES_ENT[a.tipo] || (a.tipo === "registro" && /entrenador/.test(a.detalle)); });
+        var usadas = {};
+        var items = visitas.map(function (v) {
+          var ini = new Date(v.cuando).getTime() - 60000, fin = new Date(v.fin || v.cuando).getTime() + 120000;
+          var dentro = acciones.filter(function (a, i) { var t = new Date(a.cuando).getTime(); if (t >= ini && t <= fin && !usadas[i]) { usadas[i] = 1; return true; } return false; })
+            .sort(function (x, y) { return x.cuando < y.cuando ? -1 : 1; });
+          return { cuando: v.cuando, html: bloqueVisita(v, dentro) };
+        });
+        acciones.forEach(function (a, i) { if (!usadas[i]) items.push({ cuando: a.cuando, html: filaMov(a) }); });
+        items.sort(function (x, y) { return x.cuando < y.cuando ? 1 : -1; });
+        html = items.length ? porDia(items, function (x) { return x.html; }) : '<div class="vacio">Sin actividad registrada todavía. Las visitas se miden desde que activaste el registro.</div>';
+      } else {
+        var l = movs.filter(function (a) {
+          if (filtro === "alum") return a.tipo === "entreno" || a.tipo === "medida" || (a.tipo === "acceso" && a.rol === "alumno") || (a.tipo === "registro" && /alumno/.test(a.detalle));
+          return true;
+        });
+        html = l.length ? porDia(l) : '<div class="vacio">Sin movimientos.</div>';
+      }
+      UI.$("#listaMov").innerHTML = html;
+    }
+    UI.$$("#filtros button").forEach(function (b) { b.onclick = function () { filtro = b.dataset.f; dibujar(); }; });
     UI.$("#recargar").onclick = function () { A().recargar(); };
     dibujar();
+    UI.cargarFotos(app());
   }
 })();

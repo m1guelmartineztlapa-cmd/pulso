@@ -232,7 +232,26 @@
     if (esRecuperacion) { history.replaceState(null, "", location.pathname + location.search + "#/"); hojaNuevaClave(); }
     pintar();
     if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(function () {});
+    buscarVersionNueva();
   }
+
+  /* Actualización automática: si se publicó una versión nueva, la app se recarga sola
+     (al volver a abrirla o cada 5 minutos), salvo que haya una rutina sin guardar. */
+  var VERSION_ACTUAL = ((UI.$('script[src*="js/app.js"]') || {}).src || "").replace(/.*[?&]v=([^&]+).*/, "$1");
+  function buscarVersionNueva() {
+    if (!VERSION_ACTUAL || location.protocol !== "https:") return;
+    fetch("index.html?_=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.text(); }).then(function (html) {
+      var m = html.match(/js\/app\.js\?v=([^"&]+)/);
+      if (m && m[1] !== VERSION_ACTUAL && !window.onbeforeunload) {
+        var ult = 0; try { ult = Number(sessionStorage.getItem("pulso_recarga")) || 0; } catch (e) {}
+        if (Date.now() - ult < 60000) return; // evita recargar en bucle
+        try { sessionStorage.setItem("pulso_recarga", String(Date.now())); } catch (e) {}
+        location.reload();
+      }
+    }).catch(function () {});
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) buscarVersionNueva(); });
+  setInterval(buscarVersionNueva, 5 * 60000);
   APP.salir = async function () { await DB.salir(); APP.usuario = null; APP.rol = null; location.hash = "#/"; pintar(); };
   APP.enlaceInvitacion = function (codigo) { return location.href.split("#")[0] + "#/invitacion/" + codigo; };
 

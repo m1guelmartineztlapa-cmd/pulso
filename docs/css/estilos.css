@@ -247,3 +247,26 @@ select.entrada{appearance:none;-webkit-appearance:none}
 .foto-cam{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:#fff;color:#0A0F25;display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 .foto-cam svg{width:16px;height:16px}
 .ico[data-foto] img,.avatar[data-foto] img{width:100%;height:100%;object-fit:cover}
+
+/* Panel de administrador */
+.adm-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.adm-kpis .v{font-size:22px}
+.adm-de{color:var(--suave);font-weight:500;font-size:14px}
+.adm-punto{position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;background:var(--ok);border:2px solid var(--bg)}
+.adm-enlinea{display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap}
+.adm-enlinea .avatar{border:2px solid var(--ok)}
+.adm-barra{height:5px;border-radius:5px;background:var(--card-2);margin-top:7px;overflow:hidden}
+.adm-barra i{display:block;height:100%;border-radius:5px;background:var(--brand-2)}
+.adm-dia{padding:14px 18px 4px;font-size:13px;font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.04em}
+.adm-visita{margin:6px 12px;padding:10px 6px 8px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid var(--linea)}
+.adm-visita-cab{display:flex;align-items:center;gap:12px;padding:0 6px}
+.adm-visita-cab .ico{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--card-2)}
+.adm-visita-cab .ico svg{width:18px;height:18px}
+.adm-visita-cab .t1{font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
+.adm-visita-cab .t2{color:var(--suave);font-size:13.5px;margin-top:1px}
+.adm-accion{display:flex;align-items:center;gap:10px;padding:7px 8px 0 56px;font-size:14px;color:#fff}
+.adm-accion span{color:var(--suave);font-variant-numeric:tabular-nums;font-size:12.5px;width:38px;flex:none}
+.adm-accion svg{width:15px;height:15px;flex:none;color:var(--brand-2)}
+.adm-accion em{font-style:normal;min-width:0}
+.adm-leyenda{display:flex;gap:14px;align-items:center;font-size:12.5px;color:var(--suave);margin-top:4px;flex-wrap:wrap}
+.adm-leyenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
