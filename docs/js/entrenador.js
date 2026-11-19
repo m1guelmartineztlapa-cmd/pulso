@@ -841,6 +841,8 @@
     if (d.toDateString() === ayer.toDateString()) return "Ayer";
     return UI.DIAS_L[d.getDay()].replace(/^./, function (x) { return x.toUpperCase(); }) + " " + d.getDate() + " de " + MESES_C[d.getMonth()];
   }
+  function mins(m) { m = Number(m) || 0; if (m < 60) return m + " min"; return Math.floor(m / 60) + " h " + (m % 60 ? (m % 60) + " min" : ""); }
+  var PUNTO_VERDE = '<span title="En línea" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);margin-left:6px;vertical-align:middle"></span>';
   var ICO_TIPO = { entreno: "check", alumno: "persona", rutina: "rutinas", registro: "mas", asignacion: "calendario", medida: "regla", acceso: "reloj" };
   var ES_ENT = { alumno: 1, rutina: 1, asignacion: 1 }; // movimientos que hace el entrenador
   function filaMov(a, conQuien) {
@@ -875,8 +877,8 @@
     var t = d.totales || {}, vista = "actividad", q = "";
     app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/ajustes">' +
       ico("izq", ' width="22" height="22"') + 'Ajustes</a><button class="btn-redondo" id="recargar" aria-label="Actualizar">' + ico("reloj") + '</button></div>' +
-      '<div class="saldo" style="margin-top:22px"><div class="etq">Usuarios activos (últimos 7 días)</div><div class="cifra">' + (t.activos_7d || 0) + '</div><div class="sub">' +
-      ico("rayo") + (t.sesiones_7d || 0) + " entrenamientos esta semana</div></div></section>" +
+      '<div class="saldo" style="margin-top:22px"><div class="etq">En línea ahora</div><div class="cifra">' + (t.en_linea || 0) + '</div><div class="sub">' +
+      ico("persona") + (t.activos_7d || 0) + " usaron la app esta semana · " + (t.sesiones_7d || 0) + " entrenamientos</div></div></section>" +
       '<div class="contenido"><div class="datos"><div class="dato"><div class="v">' + (t.entrenadores || 0) + '</div><div class="l">Entrenadores</div></div>' +
       '<div class="dato"><div class="v">' + (t.alumnos || 0) + '</div><div class="l">Alumnos (' + (t.alumnos_con_cuenta || 0) + ' con cuenta)</div></div>' +
       '<div class="dato"><div class="v">' + (t.sesiones || 0) + '</div><div class="l">Entrenamientos</div></div></div>' +
@@ -892,13 +894,14 @@
       } else if (vista === "entrenadores") {
         html = (d.entrenadores || []).filter(coincide).map(function (e) {
           return '<a class="item" href="#/admin/' + e.id + '"><span class="ico">' + esc(UI.iniciales(e.nombre || e.marca)) + '</span><span class="txt"><div class="t1">' + esc(e.nombre || "(sin nombre)") +
-            ' <span style="color:var(--suave);font-weight:500">· ' + esc(e.marca || "") + '</span></div><div class="t2">' + e.alumnos + " alumnos · " + e.rutinas + " rutinas · " +
-            e.sesiones_7d + ' entrenos esta semana</div></span><span class="der"><small>Último acceso</small>' + esc(cuando(e.ultimo_acceso)) + '</span><span class="chev">' + ico("der") + "</span></a>";
+            ' <span style="color:var(--suave);font-weight:500">· ' + esc(e.marca || "") + "</span>" + (e.en_linea ? PUNTO_VERDE : "") + '</div><div class="t2">' + e.alumnos + " alumnos · " + e.rutinas + " rutinas · " +
+            mins(e.min_7d) + ' en línea esta semana</div></span><span class="der"><small>' + (e.en_linea ? "En línea" : "Último acceso") + "</small>" + (e.en_linea ? "ahora" : esc(cuando(e.ultimo_acceso))) +
+            '</span><span class="chev">' + ico("der") + "</span></a>";
         }).join("");
       } else {
         html = (d.alumnos || []).filter(coincide).map(function (c) {
           return '<a class="item" href="#/admin/' + c.ent + '"><span class="ico">' + esc(UI.iniciales(c.nombre)) + '</span><span class="txt"><div class="t1">' + esc(c.nombre) +
-            ' <span style="color:var(--suave);font-weight:500">· ' + esc(c.marca || c.entrenador || "") + '</span></div><div class="t2">' +
+            ' <span style="color:var(--suave);font-weight:500">· ' + esc(c.marca || c.entrenador || "") + "</span>" + (c.en_linea ? PUNTO_VERDE : "") + '</div><div class="t2">' +
             (c.tiene_cuenta ? esc(c.email || "con cuenta") : "Aún no crea su cuenta") + " · " + c.sesiones + " entrenos" +
             (c.ultima_sesion ? " · último " + esc(UI.fecha(c.ultima_sesion)) : "") + '</div></span><span class="der"><small>Último acceso</small>' +
             (c.tiene_cuenta ? esc(cuando(c.ultimo_acceso)) : "—") + "</span></a>";
@@ -919,15 +922,14 @@
     var movs = (d.actividad || []).filter(function (a) { return a.ent === entId; });
     var alumnos = (d.alumnos || []).filter(function (c) { return c.ent === entId; });
     var filtro = "todo";
-    var hoyISO = new Date().toDateString();
-    var hoyN = movs.filter(function (a) { return new Date(a.cuando).toDateString() === hoyISO; }).length;
-    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/admin">' +
+        app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/admin">' +
       ico("izq", ' width="22" height="22"') + 'Administración</a><button class="btn-redondo" id="recargar" aria-label="Actualizar">' + ico("reloj") + '</button></div>' +
       '<div class="saldo" style="margin-top:18px"><div class="avatar grande" style="margin:0 auto">' + esc(UI.iniciales(e.nombre || e.marca)) + '</div>' +
-      '<div class="cifra" style="font-size:30px;letter-spacing:-.5px;margin-top:12px">' + esc(e.nombre || "(sin nombre)") + '</div><div class="sub">' + esc(e.marca || "") + " · " + esc(e.email || "") + "</div></div></section>" +
+      '<div class="cifra" style="font-size:30px;letter-spacing:-.5px;margin-top:12px">' + esc(e.nombre || "(sin nombre)") + '</div><div class="sub">' + esc(e.marca || "") + " · " + esc(e.email || "") + "</div>" +
+      (e.en_linea ? '<div class="centro"><span class="etiqueta" style="margin-top:10px">● En línea ahora</span></div>' : "") + "</div></section>" +
       '<div class="contenido"><div class="datos"><div class="dato"><div class="v" style="font-size:17px">' + esc(fechaHora(e.ultimo_acceso)) + '</div><div class="l">Último acceso</div></div>' +
-      '<div class="dato"><div class="v">' + (e.accesos_7d || 0) + '</div><div class="l">Veces que abrió la app (7 días)</div></div>' +
-      '<div class="dato"><div class="v">' + hoyN + '</div><div class="l">Movimientos hoy</div></div></div>' +
+      '<div class="dato"><div class="v">' + mins(e.min_hoy) + '</div><div class="l">En línea hoy</div></div>' +
+      '<div class="dato"><div class="v">' + mins(e.min_7d) + '</div><div class="l">En línea (7 días) · ' + (e.accesos_7d || 0) + ' visitas</div></div></div>' +
       '<div class="datos"><div class="dato"><div class="v">' + e.alumnos + '</div><div class="l">Alumnos (' + e.alumnos_con_cuenta + ' con cuenta)</div></div>' +
       '<div class="dato"><div class="v">' + e.rutinas + '</div><div class="l">Rutinas</div></div>' +
       '<div class="dato"><div class="v">' + e.sesiones_7d + '</div><div class="l">Entrenos de sus alumnos (7 días)</div></div></div>' +
@@ -936,9 +938,9 @@
       '<div class="tarjeta sin-relleno"><div class="lista" id="listaMov"></div></div>' +
       '<div class="titulo-sec"><h2>Sus alumnos</h2></div><div class="tarjeta sin-relleno"><div class="lista">' +
       (alumnos.length ? alumnos.map(function (c) {
-        return '<div class="item"><span class="ico">' + esc(UI.iniciales(c.nombre)) + '</span><span class="txt"><div class="t1">' + esc(c.nombre) + '</div><div class="t2">' +
-          (c.tiene_cuenta ? c.sesiones + " entrenos" + (c.ultima_sesion ? " · último " + esc(UI.fecha(c.ultima_sesion)) : "") : "Aún no crea su cuenta") +
-          '</div></span><span class="der"><small>Último acceso</small>' + (c.tiene_cuenta ? esc(fechaHora(c.ultimo_acceso)) : "—") + "</span></div>";
+        return '<div class="item"><span class="ico">' + esc(UI.iniciales(c.nombre)) + '</span><span class="txt"><div class="t1">' + esc(c.nombre) + (c.en_linea ? PUNTO_VERDE : "") + '</div><div class="t2">' +
+          (c.tiene_cuenta ? c.sesiones + " entrenos · " + mins(c.min_7d) + " en línea (7 días)" + (c.ultima_sesion ? " · último entreno " + esc(UI.fecha(c.ultima_sesion)) : "") : "Aún no crea su cuenta") +
+          '</div></span><span class="der"><small>' + (c.en_linea ? "En línea" : "Último acceso") + "</small>" + (c.en_linea ? "ahora" : c.tiene_cuenta ? esc(fechaHora(c.ultimo_acceso)) : "—") + "</span></div>";
       }).join("") : '<div class="vacio">Todavía no tiene alumnos.</div>') + "</div></div></div>";
     function dibujar() {
       UI.$$("#filtros .chip").forEach(function (b) { b.classList.toggle("on", b.dataset.f === filtro); });

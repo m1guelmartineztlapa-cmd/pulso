@@ -1,7 +1,7 @@
 /* Pulso · funciona como app instalada. Red primero; si no hay conexión, usa la copia guardada. */
-var VERSION = "pulso-20261119d";
-var BASE = ["./", "index.html", "css/estilos.css?v=20261119d", "js/config.js?v=20261119d", "js/db.js?v=20261119d", "js/ui.js?v=20261119d",
-  "js/entrenador.js?v=20261119d", "js/cliente.js?v=20261119d", "js/app.js?v=20261119d", "datos/ejercicios.json", "manifest.webmanifest", "iconos/icono-192.png"];
+var VERSION = "pulso-20261119e";
+var BASE = ["./", "index.html", "css/estilos.css?v=20261119e", "js/config.js?v=20261119e", "js/db.js?v=20261119e", "js/ui.js?v=20261119e",
+  "js/entrenador.js?v=20261119e", "js/cliente.js?v=20261119e", "js/app.js?v=20261119e", "datos/ejercicios.json", "manifest.webmanifest", "iconos/icono-192.png"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(BASE); }).then(function () { return self.skipWaiting(); }));

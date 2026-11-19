@@ -45,9 +45,18 @@
       APP.rol = "cliente"; APP.cli = cli;
       APP.ent = await DB.uno("entrenadores", { id: cli.entrenador_id });
     }
-    if (DB.modo === "supabase") DB.rpc("registrar_acceso", {}).catch(function () {});
+    if (DB.modo === "supabase") latido();
   }
   APP.detectarRol = detectarRol;
+
+  // Tiempo en línea: un "latido" al abrir y cada minuto mientras la app está visible
+  var tLatido = null;
+  function latido() {
+    if (DB.modo !== "supabase" || !APP.usuario || document.hidden) return;
+    DB.rpc("registrar_acceso", {}).catch(function () {});
+    if (!tLatido) tLatido = setInterval(latido, 60000);
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) latido(); });
 
   async function pintar() {
     var r = ruta(), app = UI.$("#app");
