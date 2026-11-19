@@ -342,12 +342,13 @@
     var campos = [["peso", "Peso (kg)"], ["cintura", "Cintura (cm)"], ["cadera", "Cadera (cm)"], ["pecho", "Pecho (cm)"], ["brazo", "Brazo (cm)"], ["pierna", "Pierna (cm)"], ["grasa", "Grasa (%)"]];
     UI.hoja("Nueva medida", '<div class="form"><div class="rejilla">' + campos.map(function (k) {
       return '<div class="campo"><label>' + k[1] + '</label><input class="entrada" inputmode="decimal" data-k="' + k[0] + '"></div>'; }).join("") +
-      '</div><div class="campo"><label>Foto de progreso (opcional)</label><input class="entrada" type="file" accept="image/*" id="mFoto" style="padding-top:12px"></div>' +
+      '</div><div class="campo"><label>Foto de progreso <span class="opc">opcional</span></label>' + UI.selector("mFoto", { tipo: "foto", ayuda: "Solo la ven el alumno y su entrenador." }) + "</div>" +
       '<button class="btn" id="mGuardar">Guardar</button></div>', function (h, cerrar) {
+      var selM = UI.enlazarSelector(h, "mFoto");
       h.querySelector("#mGuardar").onclick = async function () {
         var fila = { entrenador_id: c.entrenador_id, cliente_id: c.id, fecha: DB.hoyISO() }, alguno = false;
         UI.$$("[data-k]", h).forEach(function (i) { var v = i.value.replace(",", ".").trim(); if (v) { fila[i.dataset.k] = Number(v); alguno = true; } });
-        var f = h.querySelector("#mFoto").files[0];
+        var f = selM.archivo();
         if (!alguno && !f) return UI.aviso("Escribe al menos una medida o sube una foto", true);
         this.disabled = true;
         try {
@@ -704,19 +705,24 @@
 
   function hojaEjercicio(e) {
     e = e || {};
-    UI.hoja(e.id ? "Editar ejercicio" : "Ejercicio propio", '<div class="form">' +
-      '<div class="campo"><label>Nombre</label><input class="entrada" id="xN" value="' + esc(e.nombre || "") + '"></div>' +
-      '<div class="rejilla"><div class="campo"><label>Músculo</label><input class="entrada" id="xM" value="' + esc(e.musculo || "") + '" placeholder="Pierna"></div>' +
-      '<div class="campo"><label>Equipo</label><input class="entrada" id="xE" value="' + esc(e.equipo || "") + '" placeholder="Mancuernas"></div></div>' +
-      '<div class="campo"><label>Video (opcional)</label><div class="segmento" id="xVM"><button type="button" data-m="archivo">Subir mi video</button><button type="button" data-m="yt">Enlace de YouTube</button></div>' +
-      '<div id="xVyt"><input class="entrada" id="xV" value="' + esc(UI.youtube(e.video_url) ? e.video_url : "") + '" placeholder="https://youtu.be/…"></div>' +
-      '<div id="xVar">' + (UI.esVideoArchivo(e.video_url) ? '<video class="video-ej" src="' + esc(e.video_url) + '" controls playsinline preload="metadata"></video>' : "") +
-      '<input class="entrada" type="file" accept="video/mp4,video/quicktime,video/webm,video/*" id="xF" style="padding-top:12px;margin-top:8px">' +
-      '<p class="nota-demo" style="text-align:left;margin-top:6px">Hasta 2 minutos. La app lo optimiza antes de subirlo (unos 5 MB por cada 30 segundos, sin sonido): deja la app abierta mientras tanto, tarda lo que dura el video.</p></div></div>' +
-      '<div class="campo"><label>Imagen (opcional)</label><input class="entrada" type="file" accept="image/*" id="xI" style="padding-top:12px"></div>' +
-      '<div class="campo"><label>Instrucciones</label><textarea class="entrada" id="xT">' + esc(e.instrucciones || "") + "</textarea></div>" +
-      '<button class="btn" id="xG">Guardar</button>' + (e.id ? '<button class="btn peligro" id="xB">Eliminar</button>' : "") + "</div>", function (h, cerrar) {
-      var modoV = UI.youtube(e.video_url) ? "yt" : "archivo";
+    var tieneVideoArchivo = UI.esVideoArchivo(e.video_url), tieneYt = !!UI.youtube(e.video_url);
+    UI.hoja(e.id ? "Editar ejercicio" : "Nuevo ejercicio", '<div class="form">' +
+      '<div class="campo"><label>Nombre del ejercicio</label><input class="entrada" id="xN" value="' + esc(e.nombre || "") + '" placeholder="Ej. Sentadilla búlgara"></div>' +
+      '<div class="rejilla"><div class="campo"><label>Músculo</label><input class="entrada" id="xM" value="' + esc(e.musculo || "") + '" placeholder="Ej. Pierna"></div>' +
+      '<div class="campo"><label>Equipo</label><input class="entrada" id="xE" value="' + esc(e.equipo || "") + '" placeholder="Ej. Mancuernas"></div></div>' +
+      '<div class="campo"><label>1. Foto del ejercicio <span class="opc">opcional</span></label>' +
+      UI.selector("xI", { tipo: "foto", actual: e.imagen_url, ayuda: "Se ve en tu lista de ejercicios y en las rutinas." }) + "</div>" +
+      '<div class="campo"><label>2. Video de cómo se hace <span class="opc">opcional</span></label>' +
+      '<div class="segmento" id="xVM"><button type="button" data-m="archivo">Subir un video</button><button type="button" data-m="yt">Enlace de YouTube</button></div>' +
+      '<div id="xVar">' + UI.selector("xF", { tipo: "video", actual: tieneVideoArchivo ? e.video_url : "",
+        ayuda: "Hasta 2 minutos. La app lo hace más ligero antes de subirlo (sin sonido). Deja la app abierta mientras se sube." }) + "</div>" +
+      '<div id="xVyt"><input class="entrada" id="xV" value="' + esc(tieneYt ? e.video_url : "") + '" placeholder="Pega aquí el enlace, ej. https://youtu.be/…">' +
+      '<p class="ayuda">En YouTube: botón Compartir › Copiar enlace.</p></div></div>' +
+      '<div class="campo"><label>3. Instrucciones <span class="opc">opcional</span></label><textarea class="entrada" id="xT" placeholder="Ej. Baja lento, la rodilla alineada con el pie.">' + esc(e.instrucciones || "") + "</textarea></div>" +
+      '<button class="btn" id="xG">' + ico("check") + (e.id ? "Guardar cambios" : "Guardar ejercicio") + "</button>" +
+      (e.id ? '<button class="btn peligro" id="xB">' + ico("basura") + "Eliminar ejercicio</button>" : "") + "</div>", function (h, cerrar) {
+      var selFoto = UI.enlazarSelector(h, "xI"), selVideo = UI.enlazarSelector(h, "xF");
+      var modoV = tieneYt ? "yt" : "archivo";
       function pintarModo() {
         UI.$$("#xVM button", h).forEach(function (b) { b.classList.toggle("on", b.dataset.m === modoV); });
         h.querySelector("#xVyt").hidden = modoV !== "yt"; h.querySelector("#xVar").hidden = modoV !== "archivo";
@@ -727,46 +733,48 @@
         var btn = this;
         var d = { nombre: h.querySelector("#xN").value.trim(), musculo: h.querySelector("#xM").value.trim(), equipo: h.querySelector("#xE").value.trim(),
           instrucciones: h.querySelector("#xT").value.trim() };
-        if (!d.nombre) return UI.aviso("Escribe el nombre", true);
-        var fv = h.querySelector("#xF").files[0];
+        if (!d.nombre) { h.querySelector("#xN").focus(); return UI.aviso("Escribe el nombre del ejercicio", true); }
+        var fv = selVideo.archivo();
         if (modoV === "yt") {
           d.video_url = h.querySelector("#xV").value.trim();
-          if (d.video_url && !UI.youtube(d.video_url)) return UI.aviso("Ese enlace no parece de YouTube", true);
+          if (d.video_url && !UI.youtube(d.video_url)) return UI.aviso("Ese enlace no es de YouTube. Cópialo con Compartir › Copiar enlace.", true);
         } else if (!fv) {
-          d.video_url = UI.esVideoArchivo(e.video_url) ? e.video_url : "";
+          d.video_url = selVideo.quitado() ? "" : (tieneVideoArchivo ? e.video_url : "");
         } else {
           if (DB.modo === "demo") return UI.aviso("En el modo demo no se pueden subir videos", true);
           if (fv.size > 400 * 1024 * 1024) return UI.aviso("El video pesa " + Math.round(fv.size / 1048576) + " MB. Recórtalo o grábalo más corto.", true);
         }
+        if (selFoto.quitado() && !selFoto.archivo()) d.imagen_url = null;
         btn.disabled = true;
+        var giro = '<span class="girar" style="width:18px;height:18px;border-width:2px;border-color:rgba(10,15,37,.2);border-top-color:#0A0F25"></span>';
         try {
           if (modoV === "archivo" && fv) {
-            var giro = '<span class="girar" style="width:18px;height:18px;border-width:2px;border-color:rgba(10,15,37,.2);border-top-color:#0A0F25"></span>';
-            btn.innerHTML = giro + "Optimizando video…";
+            btn.innerHTML = giro + "Preparando video…";
             var subir = fv;
             try {
-              subir = await UI.comprimirVideo(fv, function (pct) { btn.innerHTML = giro + "Optimizando video… " + pct + "%"; });
-              if (subir.size > fv.size) subir = fv; // si salió más pesado, nos quedamos con el original
+              subir = await UI.comprimirVideo(fv, function (pct) { btn.innerHTML = giro + "Preparando video… " + pct + "%"; });
+              if (subir.size > fv.size) subir = fv;
             } catch (ev) {
               if (/2 minutos/.test(ev.message)) throw ev;
-              subir = fv; // el navegador no pudo optimizar: se intenta subir el original
+              subir = fv;
             }
             if (subir.size > 50 * 1024 * 1024) throw new Error("El video sigue pesando " + Math.round(subir.size / 1048576) + " MB y el máximo es 50 MB. Recórtalo o grábalo más corto.");
-            btn.innerHTML = giro + "Subiendo video (" + Math.max(1, Math.round(subir.size / 1048576)) + " MB)…";
+            btn.innerHTML = giro + "Subiendo video…";
             var ext = subir === fv ? ((fv.name.split(".").pop() || "mp4").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4") : (/webm/.test(subir.type) ? "webm" : "mp4");
             var rutaV = eid() + "/" + DB.uuid() + "." + ext;
             await DB.subir("videos", rutaV, subir);
             d.video_url = DB.urlPublica("videos", rutaV);
           }
-          var f = h.querySelector("#xI").files[0];
+          var f = selFoto.archivo();
           if (f) {
+            btn.innerHTML = giro + "Subiendo foto…";
             var ruta = eid() + "/ej-" + DB.uuid() + ".jpg";
             await DB.subir("logos", ruta, await UI.comprimir(f, 800));
             d.imagen_url = DB.urlPublica("logos", ruta);
           }
           if (e.id) await DB.upd("ejercicios", e.id, d); else await DB.ins("ejercicios", Object.assign({ entrenador_id: eid() }, d));
           cerrar(); UI.aviso("Ejercicio guardado ✓"); A().recargar();
-        } catch (er) { UI.error(er); btn.disabled = false; btn.textContent = "Guardar"; }
+        } catch (er) { UI.error(er); btn.disabled = false; btn.innerHTML = ico("check") + (e.id ? "Guardar cambios" : "Guardar ejercicio"); }
       };
       var b = h.querySelector("#xB");
       if (b) b.onclick = async function () {
@@ -948,6 +956,7 @@
       '<div class="dato"><div class="v">' + accHoy.length + '</div><div class="l">Visitas hoy</div></div>' +
       '<div class="dato"><div class="v">' + (t.activos_7d || 0) + '</div><div class="l">Personas que la usaron (7 días)</div></div>' +
       '<div class="dato"><div class="v">' + (t.sesiones_7d || 0) + '</div><div class="l">Entrenamientos (7 días) · ' + entrenosHoy + " hoy</div></div></div>" +
+      (esModoAdmin() ? '<button class="btn vidrio" id="verComo2">' + ico("persona") + "Ver la app como entrenador</button>" : "") +
       '<div class="titulo-sec"><h2>Uso de la semana</h2></div><div class="tarjeta">' + graficaUso(usoSemana(accesos), true) + "</div>" +
       '<div class="titulo-sec"><h2>Entrenadores</h2><span class="adm-de">' + (t.entrenadores || ents.length) + "</span></div>" +
       '<div class="tarjeta sin-relleno"><div class="lista">' + (ents.length ? ents.map(function (e) {
@@ -968,6 +977,7 @@
       var l = act.filter(function (a) { return !n || UI.normal((a.quien || "") + " " + (a.de || "") + " " + (a.detalle || "")).indexOf(n) >= 0; });
       UI.$("#listaMov").innerHTML = (l.length ? porDia(l.slice(0, verTodo ? 300 : 12)) : '<div class="vacio">Sin movimientos.</div>');
     }
+    var vc = UI.$("#verComo2"); if (vc) vc.onclick = function () { A().verComoEntrenador(true); };
     UI.$("#verTodo").onclick = function () { verTodo = !verTodo; this.textContent = verTodo ? "Ver menos" : "Ver todos"; UI.$("#busq").hidden = !verTodo; dibujarMov(); };
     UI.$("#qAdmin").oninput = function () { q = this.value; dibujarMov(); };
     UI.$("#recargar").onclick = function () { window.__admRefrescar = true; A().recargar(); };
@@ -980,8 +990,11 @@
     app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><h1 class="titulo-pag" style="margin-top:30px">Ajustes</h1></section><div class="contenido">' +
       '<div class="tarjeta"><div class="promo"><span class="avatar grande">' + ico("ajustes", ' width="34" height="34"') + '</span><div><h3>Cuenta de administrador</h3><p>' +
       esc((A().usuario && A().usuario.email) || "") + '</p></div></div><p style="margin-top:14px">Ves el uso de todos los entrenadores y alumnos. Tu propio uso no se registra ni cuenta en las estadísticas.</p></div>' +
+      '<div class="tarjeta"><h3>Ver la app como entrenador</h3><p>Navega la app igual que un entrenador para revisar cómo está acomodada. Lo que hagas ahí no cuenta en las estadísticas.</p>' +
+      '<button class="btn" id="verComo" style="margin-top:14px">' + ico("persona") + "Entrar como entrenador</button></div>" +
       '<div class="tarjeta sin-relleno"><div class="lista"><div class="item" id="salir"><span class="ico">' + ico("salir") + '</span><span class="txt"><div class="t1">Cerrar sesión</div></span></div></div></div></div>';
     UI.$("#salir").onclick = function () { A().salir(); };
+    UI.$("#verComo").onclick = function () { A().verComoEntrenador(true); };
   }
   var VIS_ADMIN = (window.VISTAS = window.VISTAS || {}).admin = {};
   VIS_ADMIN[""] = function () { return V.admin(); };

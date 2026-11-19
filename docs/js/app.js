@@ -19,17 +19,25 @@
   APP.app = function () { return UI.$("#app"); };
 
   function bandaDemo() {
+    if (APP.esAdmin && APP.rol === "entrenador")
+      return '<div class="banda-demo banda-admin">Estás viendo la app como entrenador<button data-volver-admin>Volver al panel</button></div>';
     if (DB.modo !== "demo") return "";
     return '<div class="banda-demo">Modo demo · los datos solo viven en este navegador<button data-reinicio>Reiniciar</button></div>';
   }
   APP.bandaDemo = bandaDemo;
+  APP.verComoEntrenador = async function (si) {
+    try { if (si) sessionStorage.setItem("pulso_ver_como", "1"); else sessionStorage.removeItem("pulso_ver_como"); } catch (e) {}
+    await detectarRol(); location.hash = "#/"; pintar();
+    if (si) UI.aviso("Modo entrenador · usa «Volver al panel» arriba para regresar");
+  };
   document.addEventListener("click", function (e) {
+    if (e.target.closest("[data-volver-admin]")) { APP.verComoEntrenador(false); return; }
     if (e.target.closest("[data-reinicio]")) { DB.reiniciar(); DB.salir(); location.hash = "#/"; location.reload(); }
   });
 
   async function detectarRol() {
     APP.usuario = await DB.usuario();
-    APP.rol = null; APP.ent = null; APP.cli = null;
+    APP.rol = null; APP.ent = null; APP.cli = null; APP.esAdmin = false;
     if (!APP.usuario) return;
     var uid = APP.usuario.id;
     var pendiente = localStorage.getItem(LLAVE_INV);
@@ -38,7 +46,16 @@
     var esAdmin = false;
     if (DB.modo === "supabase") { try { esAdmin = (await DB.rpc("es_admin", {})) === true; } catch (e) {} }
     else esAdmin = !!window.__adminDemo;
-    if (esAdmin) { APP.rol = "admin"; APP.ent = ent; localStorage.removeItem(LLAVE_INV); return; }
+    APP.esAdmin = esAdmin;
+    if (esAdmin) {
+      localStorage.removeItem(LLAVE_INV);
+      var verComo = false; try { verComo = sessionStorage.getItem("pulso_ver_como") === "1"; } catch (e) {}
+      if (verComo) {
+        if (!ent) { try { ent = await DB.ins("entrenadores", { nombre: (APP.usuario.email || "").split("@")[0] }); } catch (e) {} }
+        if (ent) { APP.rol = "entrenador"; APP.ent = ent; return; }
+      }
+      APP.rol = "admin"; APP.ent = ent; return;
+    }
     if (ent) { APP.rol = "entrenador"; APP.ent = ent; localStorage.removeItem(LLAVE_INV); latido(); return; }
     var cli = await DB.miCliente(uid);
     if (!cli && pendiente) {
@@ -57,7 +74,7 @@
   // Tiempo en línea: un "latido" al abrir y cada minuto mientras la app está visible
   var tLatido = null, ultLatido = 0;
   function latido() {
-    if (DB.modo !== "supabase" || !APP.usuario || APP.rol === "admin" || document.hidden) return;
+    if (DB.modo !== "supabase" || !APP.usuario || APP.esAdmin || document.hidden) return;
     if (Date.now() - ultLatido < 45000) return; // como máximo uno cada 45 s
     ultLatido = Date.now();
     DB.rpc("registrar_acceso", {}).catch(function () {});

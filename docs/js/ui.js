@@ -172,6 +172,38 @@
     });
   };
   UI.esVideoArchivo = function (url) { return !!url && !UI.youtube(url) && /^https?:|^blob:|^data:video/.test(url); };
+  /* Selector de archivo claro: vista previa + botón "Elegir"/"Cambiar" + "Quitar" */
+  UI.selector = function (id, o) {
+    o = o || {};
+    var esVideo = o.tipo === "video";
+    var prev = o.actual ? (esVideo ? '<video src="' + UI.esc(o.actual) + '" muted playsinline preload="metadata"></video>' : '<img src="' + UI.esc(o.actual) + '" alt="">')
+      : UI.ico(esVideo ? "video" : "camara");
+    return '<div class="selector" id="' + id + '-caja"><div class="sel-prev">' + prev + '</div><div class="sel-txt"><div class="t1" id="' + id + '-nom">' +
+      (o.actual ? (esVideo ? "Video actual" : "Foto actual") : (esVideo ? "Ningún video elegido" : "Ninguna foto elegida")) + '</div><div class="t2">' + UI.esc(o.ayuda || "") + "</div>" +
+      '<div class="sel-btns"><label class="btn chico">' + UI.ico(esVideo ? "video" : "camara") + '<span id="' + id + '-et">' + (o.actual ? "Cambiar" : (esVideo ? "Elegir video" : "Elegir foto")) + "</span>" +
+      '<input type="file" class="oculto-vista" id="' + id + '" accept="' + (esVideo ? "video/mp4,video/quicktime,video/webm,video/*" : "image/*") + '"></label>' +
+      '<button type="button" class="btn chico vidrio" id="' + id + '-quitar"' + (o.actual ? "" : " hidden") + ">Quitar</button></div></div></div>";
+  };
+  UI.enlazarSelector = function (raiz, id) {
+    var inp = raiz.querySelector("#" + id), quitado = false, url = null;
+    var caja = raiz.querySelector("#" + id + "-caja"), prev = caja.querySelector(".sel-prev"), nom = raiz.querySelector("#" + id + "-nom");
+    var et = raiz.querySelector("#" + id + "-et"), q = raiz.querySelector("#" + id + "-quitar");
+    var esVideo = /video/.test(inp.accept);
+    inp.onchange = function () {
+      var f = inp.files[0]; if (!f) return;
+      quitado = false; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(f);
+      prev.innerHTML = esVideo ? '<video src="' + url + '" muted playsinline preload="metadata"></video>' : '<img src="' + url + '" alt="">';
+      nom.textContent = f.name.length > 28 ? f.name.slice(0, 25) + "…" : f.name;
+      nom.textContent += " · " + (f.size > 1048576 ? (f.size / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(f.size / 1024)) + " KB");
+      et.textContent = "Cambiar"; q.hidden = false; caja.classList.add("listo");
+    };
+    q.onclick = function () {
+      inp.value = ""; quitado = true; if (url) URL.revokeObjectURL(url); url = null;
+      prev.innerHTML = UI.ico(esVideo ? "video" : "camara"); nom.textContent = esVideo ? "Sin video" : "Sin foto";
+      et.textContent = esVideo ? "Elegir video" : "Elegir foto"; q.hidden = true; caja.classList.remove("listo");
+    };
+    return { archivo: function () { return inp.files[0] || null; }, quitado: function () { return quitado; } };
+  };
   UI.num = function (n) { var x = Number(n); return isFinite(x) ? (Math.round(x * 10) / 10).toString() : "–"; };
   UI.hace = function (iso) {
     if (!iso) return "Sin entrenar";

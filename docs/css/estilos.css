@@ -270,3 +270,21 @@ select.entrada{appearance:none;-webkit-appearance:none}
 .adm-accion em{font-style:normal;min-width:0}
 .adm-leyenda{display:flex;gap:14px;align-items:center;font-size:12.5px;color:var(--suave);margin-top:4px;flex-wrap:wrap}
 .adm-leyenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+/* Selector de archivo con vista previa */
+.selector{display:flex;gap:14px;align-items:flex-start;padding:12px;border-radius:18px;background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.18)}
+.selector.listo{border-style:solid;border-color:color-mix(in srgb,var(--ok) 50%,transparent)}
+.sel-prev{flex:none;width:78px;height:78px;border-radius:14px;overflow:hidden;background:var(--card-2);display:grid;place-items:center;color:var(--suave)}
+.sel-prev svg{width:28px;height:28px}
+.sel-prev img,.sel-prev video{width:100%;height:100%;object-fit:cover}
+.sel-txt{flex:1;min-width:0}
+.sel-txt .t1{font-weight:600;font-size:15px;word-break:break-word}
+.sel-txt .t2{color:var(--suave);font-size:13px;margin-top:3px;line-height:1.35}
+.sel-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.sel-btns .btn{cursor:pointer}
+.opc{font-weight:500;color:var(--tenue);font-size:12px;margin-left:4px}
+.ayuda{font-size:13px;color:var(--suave);margin:6px 0 0 4px}
+.banda-admin{background:linear-gradient(90deg,#34D399,#10B981);color:#032B1E}
+.banda-admin button{color:#032B1E}
+.campo .sel-btns label.btn{color:#0A0F25;font-size:15px;padding:0 16px;font-weight:600}
+.campo .sel-btns label.btn svg{width:18px;height:18px}
