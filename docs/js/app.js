@@ -34,6 +34,11 @@
     var uid = APP.usuario.id;
     var pendiente = localStorage.getItem(LLAVE_INV);
     var ent = await DB.uno("entrenadores", { id: uid });
+    // El administrador (dueño de Pulso) entra directo a su panel; su uso no se registra.
+    var esAdmin = false;
+    if (DB.modo === "supabase") { try { esAdmin = (await DB.rpc("es_admin", {})) === true; } catch (e) {} }
+    else esAdmin = !!window.__adminDemo;
+    if (esAdmin) { APP.rol = "admin"; APP.ent = ent; localStorage.removeItem(LLAVE_INV); return; }
     if (ent) { APP.rol = "entrenador"; APP.ent = ent; localStorage.removeItem(LLAVE_INV); latido(); return; }
     var cli = await DB.miCliente(uid);
     if (!cli && pendiente) {
@@ -52,7 +57,7 @@
   // Tiempo en línea: un "latido" al abrir y cada minuto mientras la app está visible
   var tLatido = null, ultLatido = 0;
   function latido() {
-    if (DB.modo !== "supabase" || !APP.usuario || document.hidden) return;
+    if (DB.modo !== "supabase" || !APP.usuario || APP.rol === "admin" || document.hidden) return;
     if (Date.now() - ultLatido < 45000) return; // como máximo uno cada 45 s
     ultLatido = Date.now();
     DB.rpc("registrar_acceso", {}).catch(function () {});

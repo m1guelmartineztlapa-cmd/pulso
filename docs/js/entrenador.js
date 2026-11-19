@@ -822,6 +822,12 @@
   };
 
   /* ───────── Panel de administrador (solo el dueño de la plataforma) ───────── */
+  var TABS_ADMIN = [
+    { id: "panel", ruta: "", ico: "grafica", txt: "Panel" },
+    { id: "ajustes", ruta: "ajustes", ico: "ajustes", txt: "Ajustes" }
+  ];
+  function esModoAdmin() { return A().rol === "admin"; }
+  function tabsAdmin(activa) { if (esModoAdmin()) UI.tabbar(TABS_ADMIN, activa === "ajustes" ? "ajustes" : "panel"); else UI.tabbar(TABS, "ajustes"); }
   var MESES_C = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
   var DIA_C = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   function cuando(iso) {
@@ -907,12 +913,17 @@
       '<div class="contenido"><div class="tarjeta"><h3>Sin acceso</h3><p>Este panel es solo para el administrador de Pulso.</p></div></div>';
   }
   function cabAdmin(volver, txt) {
+    if (esModoAdmin() && volver === "ajustes") {
+      return '<div class="barra-sup" style="justify-content:space-between"><span class="atras" style="cursor:default">' + ico("pulso", ' width="22" height="22"') + "Pulso · Administración</span>" +
+        '<button class="btn-redondo" id="recargar" aria-label="Actualizar datos" title="Actualizar datos">' + ico("recargar") + "</button></div>";
+    }
+    if (esModoAdmin() && volver === "admin") volver = "";
     return '<div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/' + volver + '">' + ico("izq", ' width="22" height="22"') + esc(txt) +
       '</a><button class="btn-redondo" id="recargar" aria-label="Actualizar datos" title="Actualizar datos">' + ico("recargar") + "</button></div>";
   }
 
   V.admin = async function (entId) {
-    UI.tabbar(TABS, "ajustes");
+    tabsAdmin("panel");
     app().innerHTML = UI.cargando();
     var d; try { d = await datosAdmin(); } catch (e) { d = null; }
     if (!d) return sinAcceso();
@@ -964,6 +975,19 @@
     UI.cargarFotos(app());
     if (window.__admRefrescar) { window.__admRefrescar = false; UI.aviso("Datos actualizados ✓"); }
   };
+  function adminAjustes() {
+    tabsAdmin("ajustes");
+    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><h1 class="titulo-pag" style="margin-top:30px">Ajustes</h1></section><div class="contenido">' +
+      '<div class="tarjeta"><div class="promo"><span class="avatar grande">' + ico("ajustes", ' width="34" height="34"') + '</span><div><h3>Cuenta de administrador</h3><p>' +
+      esc((A().usuario && A().usuario.email) || "") + '</p></div></div><p style="margin-top:14px">Ves el uso de todos los entrenadores y alumnos. Tu propio uso no se registra ni cuenta en las estadísticas.</p></div>' +
+      '<div class="tarjeta sin-relleno"><div class="lista"><div class="item" id="salir"><span class="ico">' + ico("salir") + '</span><span class="txt"><div class="t1">Cerrar sesión</div></span></div></div></div></div>';
+    UI.$("#salir").onclick = function () { A().salir(); };
+  }
+  var VIS_ADMIN = (window.VISTAS = window.VISTAS || {}).admin = {};
+  VIS_ADMIN[""] = function () { return V.admin(); };
+  VIS_ADMIN.admin = function (id) { return V.admin(id); };
+  VIS_ADMIN.ajustes = adminAjustes;
+
   function filaAlumno(c) {
     return '<a class="item" href="#/admin/' + c.ent + '"><span style="position:relative;flex:none">' + UI.avatarCli(c) + puntoEnLinea(c.en_linea) + '</span><span class="txt"><div class="t1">' +
       esc(c.nombre) + ' <span class="adm-de">· ' + esc(c.marca || c.entrenador || "") + '</span></div><div class="t2">' +
@@ -974,7 +998,7 @@
   /* Detalle de un entrenador: sus visitas (hora de entrada y salida) y lo que hizo en cada una */
   function adminEntrenador(d, entId) {
     var e = (d.entrenadores || []).find(function (x) { return x.id === entId; });
-    if (!e) return A().ir("admin");
+    if (!e) return A().ir(esModoAdmin() ? "" : "admin");
     var movs = (d.actividad || []).filter(function (a) { return a.ent === entId; });
     var alumnos = (d.alumnos || []).filter(function (c) { return c.ent === entId; });
     var accesos = movs.filter(function (a) { return a.tipo === "acceso"; });
