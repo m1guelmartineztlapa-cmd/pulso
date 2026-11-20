@@ -287,7 +287,12 @@
     }
     t0 = setInterval(crono, 1000); crono();
     var tDesc = null;
-    A().alSalirVista = function () { clearInterval(t0); clearInterval(tDesc); var d = UI.$(".descanso"); if (d) d.remove(); };
+    // Que la pantalla no se apague mientras entrena (si el celular lo permite)
+    var wl = null;
+    function pedirPantalla() { try { if (navigator.wakeLock && document.visibilityState === "visible") navigator.wakeLock.request("screen").then(function (x) { wl = x; }).catch(function () {}); } catch (e) {} }
+    function alVolver() { if (document.visibilityState === "visible") pedirPantalla(); }
+    pedirPantalla(); document.addEventListener("visibilitychange", alVolver);
+    A().alSalirVista = function () { clearInterval(t0); clearInterval(tDesc); var d = UI.$(".descanso"); if (d) d.remove(); document.removeEventListener("visibilitychange", alVolver); try { if (wl) wl.release(); } catch (e) {} };
     // La siguiente serie que falta (para mostrarla durante el descanso)
     function siguiente() {
       for (var k = 0; k < todos.length; k++) {
@@ -415,9 +420,9 @@
       (vol >= 10000 ? UI.num(vol / 1000) + "t" : Math.round(vol).toLocaleString("es-MX")) + '</div><div class="l">kg levantados</div></div><div class="dato"><div class="v">' + (ult && ult.peso ? UI.num(ult.peso) : "–") +
       '</div><div class="l">Peso (kg)</div></div></div>' +
       '<div class="segmento pegado" id="segP">' + P.map(function (p) { return '<button data-p="' + p.id + '">' + p.t + "</button>"; }).join("") + "</div>" +
-      '<div data-pan="resumen"><div class="tarjeta" id="resumenYo"></div></div>' +
+      '<div data-pan="resumen"><div class="tarjeta" id="resumenYo"></div>' + logrosHTML(ses, med, vol) + "</div>" +
       '<div data-pan="fuerza"><div class="tarjeta">' +
-      (ejs.length ? '<div class="lbl" style="margin-bottom:8px">Elige un ejercicio</div><div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
+      (ejs.length ? recordsHTML(ses) + '<div class="lbl" style="margin-bottom:8px">Elige un ejercicio</div><div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
         '</div><div id="graf" style="margin-top:12px"></div>' : '<div class="vacio" style="padding:10px">Registra tus pesos al entrenar y aquí verás cómo subes.</div>') + "</div></div>" +
       '<div data-pan="cuerpo"><div class="titulo-sec"><h2>Medidas y fotos</h2><button id="medir">+ Agregar</button></div><div class="tarjeta">' + VIS.entrenador.resumenMedidas(med) + "</div></div>" +
       '<div data-pan="comida"><div class="titulo-sec"><h2>Mi alimentación</h2><a href="#/comida">Ver hoy</a></div><div class="tarjeta" id="alimYo"></div></div></div>';
@@ -439,6 +444,56 @@
     ver(P.some(function (p) { return p.id === panel; }) ? panel : "resumen");
     UI.$$("#segP button").forEach(function (b) { b.onclick = function () { ver(b.dataset.p); }; });
   };
+
+  /* Mejor peso de cada ejercicio y cuándo lo lograste */
+  function recordsHTML(ses) {
+    var m = {};
+    ses.slice().sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; }).forEach(function (s) {
+      (s.series || []).forEach(function (x) {
+        var p = Number(x.peso) || 0; if (!p) return;
+        var r = m[x.ref] || (m[x.ref] = { n: x.nombre, kg: 0, f: "", ini: p, reps: 0 });
+        if (p > r.kg) { r.kg = p; r.f = s.fecha; r.reps = Number(x.reps) || 0; }
+      });
+    });
+    var L = Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return a.f < b.f ? 1 : -1; });
+    if (!L.length) return "";
+    return '<div class="lbl" style="margin-bottom:8px">🏆 Mis récords</div><div class="recs-lista">' + L.slice(0, 6).map(function (r) {
+      var sube = r.kg - r.ini;
+      return '<div class="rec"><span class="txt"><b>' + esc(r.n) + "</b><small>" + esc(UI.fecha(r.f)) + (r.reps ? " · " + r.reps + " reps" : "") + '</small></span><span class="kg">' + UI.num(r.kg) + " kg" + (sube > 0 ? "<small>+" + UI.num(sube) + " desde el inicio</small>" : "") + "</span></div>";
+    }).join("") + "</div>" + (L.length > 6 ? '<p class="ayuda" style="margin:6px 0 12px">Y ' + (L.length - 6) + " ejercicios más en la gráfica.</p>" : '<div style="height:12px"></div>');
+  }
+  /* Logros: metas que se van desbloqueando */
+  function logrosHTML(ses, med, vol) {
+    var racha = rachaSemanas(ses), recs = 0, mejor = {};
+    ses.slice().sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; }).forEach(function (s) {
+      var vistos = {};
+      (s.series || []).forEach(function (x) { var p = Number(x.peso) || 0; if (!p) return; if (mejor[x.ref] && p > mejor[x.ref] && !vistos[x.ref]) { recs++; vistos[x.ref] = 1; } mejor[x.ref] = Math.max(mejor[x.ref] || 0, p); });
+    });
+    var maxRacha = (function () {
+      var sem = {}; ses.forEach(function (s) { var d = new Date(s.fecha + "T12:00:00"); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); sem[DB.hoyISO(d)] = 1; });
+      var ks = Object.keys(sem).sort(), mx = 0, cur = 0, prev = null;
+      ks.forEach(function (k) { var d = new Date(k + "T12:00:00"); cur = prev && (d - prev) / 864e5 === 7 ? cur + 1 : 1; mx = Math.max(mx, cur); prev = d; });
+      return Math.max(mx, racha);
+    })();
+    var G = [
+      ["👟", "Primer paso", "Tu primer entrenamiento", ses.length, 1],
+      ["💪", "Constante", "10 entrenamientos", ses.length, 10],
+      ["🏅", "Disciplina", "25 entrenamientos", ses.length, 25],
+      ["👑", "Imparable", "50 entrenamientos", ses.length, 50],
+      ["🔥", "En racha", "4 semanas seguidas", maxRacha, 4],
+      ["⚡", "Hábito de hierro", "12 semanas seguidas", maxRacha, 12],
+      ["🏆", "Rompe marcas", "Tu primer récord", recs, 1],
+      ["🚀", "Imparable en fuerza", "10 récords", recs, 10],
+      ["🏋️", "10 toneladas", "Levantadas en total", Math.round(vol / 1000), 10],
+      ["📏", "Me mido", "Registra tus medidas", med.length, 1]
+    ];
+    var hechos = G.filter(function (g) { return g[3] >= g[4]; }).length;
+    return '<div class="titulo-sec"><h2>Logros</h2><span class="ayuda">' + hechos + " de " + G.length + '</span></div><div class="logros">' + G.map(function (g) {
+      var ok = g[3] >= g[4], p = Math.min(1, g[3] / g[4]);
+      return '<div class="logro' + (ok ? " ok" : "") + '"><span class="lg-ico">' + g[0] + "</span><b>" + esc(g[1]) + "</b><small>" + esc(g[2]) + "</small>" +
+        (ok ? '<i class="lg-ok">✓</i>' : '<span class="lg-barra"><i style="width:' + Math.round(p * 100) + '%"></i></span><small class="lg-n">' + Math.min(g[3], g[4]) + " / " + g[4] + "</small>") + "</div>";
+    }).join("") + "</div>";
+  }
 
   /* ───────── Perfil (agrupado como Ajustes de iPhone) ───────── */
   V.perfil = async function () {

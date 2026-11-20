@@ -946,3 +946,23 @@ input.switch:checked::after{transform:translateX(20px)}
 .fin-recs div:not(.lbl){display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:14.5px}
 .fin-recs span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fin-recs b small{color:var(--ok);font-weight:700;margin-left:4px}
+/* ── Récords y logros del alumno ── */
+.recs-lista{display:flex;flex-direction:column;gap:2px;margin:0 -4px}
+.rec{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(255,255,255,.06)}
+.rec:last-child{border-bottom:0}
+.rec .txt{flex:1;min-width:0}
+.rec .txt b{display:block;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .txt small{color:var(--suave);font-size:12.5px}
+.rec .kg{flex:none;text-align:right;font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.rec .kg small{display:block;font-size:11.5px;font-weight:700;color:var(--ok)}
+.logros{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.logro{position:relative;display:flex;flex-direction:column;gap:2px;padding:14px;border-radius:20px;background:var(--card);border:1px solid rgba(255,255,255,.06)}
+.logro .lg-ico{font-size:26px;filter:grayscale(1);opacity:.45;margin-bottom:4px}
+.logro b{font-size:14.5px}
+.logro small{color:var(--suave);font-size:12.5px;line-height:1.3}
+.logro.ok{background:linear-gradient(150deg,color-mix(in srgb,var(--sec) 18%,var(--card)),var(--card));border-color:color-mix(in srgb,var(--sec) 35%,transparent)}
+.logro.ok .lg-ico{filter:none;opacity:1}
+.lg-ok{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;background:var(--ok);color:#06281A;font-style:normal;font-weight:900;font-size:12px;display:grid;place-items:center}
+.lg-barra{display:block;height:5px;border-radius:5px;background:rgba(255,255,255,.08);margin-top:8px;overflow:hidden}
+.lg-barra i{display:block;height:100%;border-radius:5px;background:var(--sec)}
+.logro .lg-n{font-size:11.5px;margin-top:3px;font-variant-numeric:tabular-nums}
