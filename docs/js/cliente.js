@@ -69,14 +69,14 @@
       (principal ? '<a class="accion" href="#/entrenar/' + principal.id + '"><span class="circ">' + ico("play") + "</span>" + (hechaHoy ? "Repetir" : "Empezar") + "</a>" :
         '<button class="accion" disabled style="opacity:.4"><span class="circ">' + ico("play") + "</span>Empezar</button>") +
       '<button class="accion" id="semana2"><span class="circ">' + ico("calendario") + "</span>Semana</button>" +
-      '<a class="accion" href="#/progreso"><span class="circ">' + ico("grafica") + "</span>Progreso</a>" +
-      '<a class="accion" href="#/perfil"><span class="circ">' + ico("puntos") + "</span>Más</a></div></section><div class=\"contenido\">";
+      '<a class="accion" href="#/comida"><span class="circ">' + ico("plato") + "</span>Comida</a>" +
+      '<a class="accion" href="#/progreso"><span class="circ">' + ico("grafica") + "</span>Progreso</a></div></section><div class=\"contenido\">";
     var c = 2 * Math.PI * 25, pct = Math.min(1, semana / meta);
     html += '<div class="tarjeta"><div class="promo"><div class="anillo"><svg viewBox="0 0 58 58"><circle cx="29" cy="29" r="25" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4"/>' +
       '<circle cx="29" cy="29" r="25" fill="none" stroke="var(--brand-2)" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + (c * (1 - pct)).toFixed(1) + '"/></svg>' +
       semana + "/" + meta + '</div><div><h3>' + (semana >= meta ? "¡Semana completa! 🔥" : "Tu meta de la semana") + "</h3><p>" +
       (semana >= meta ? "Cumpliste todas tus sesiones. Tu entrenador lo verá." : "Llevas " + semana + " de " + meta + " sesiones. ¡Sigue así!") + "</p></div></div>" +
-      (principal && !hechaHoy ? '<a class="btn" style="margin-top:16px" href="#/entrenar/' + principal.id + '">Empezar entrenamiento</a>' : "") + "</div>";
+      tiraSemana(d, lunes) + (principal && !hechaHoy ? '<a class="btn" style="margin-top:16px" href="#/entrenar/' + principal.id + '">Empezar entrenamiento</a>' : "") + "</div>";
     var dowHoy = new Date().getDay();
     if ((dowHoy === 0 || dowHoy === 6) && semana > 0) {
       var volS = d.ses.filter(function (s) { return s.fecha >= DB.hoyISO(lunes); }).reduce(function (t, s) { return t + (s.series || []).reduce(function (u, x) { return u + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0); }, 0);
@@ -90,13 +90,24 @@
         '</div><div class="t2">' + esc(UI.diasTxt(a.dias)) + " · " + contar(a.rutina) + ' ejercicios</div></span><span class="chev">' + ico("der") + "</span></a>";
     }).join("") : '<div class="vacio">' + ico("rutinas") + "Cuando tu entrenador te asigne rutinas, aparecerán aquí.</div>") + "</div></div>";
     html += '<div class="titulo-sec"><h2>Últimas sesiones</h2><a href="#/progreso">Ver todo</a></div><div class="tarjeta sin-relleno"><div class="lista">' +
-      (d.ses.length ? d.ses.slice(0, 5).map(filaSesion).join("") : '<div class="vacio">Aquí verás tus entrenamientos terminados.</div>') + "</div></div></div>";
+      (d.ses.length ? d.ses.slice(0, 3).map(filaSesion).join("") : '<div class="vacio">Aquí verás tus entrenamientos terminados.</div>') + "</div></div></div>";
     app().innerHTML = html;
     UI.cargarFotos(app());
     if (V.tarjetaAlimHoy) V.tarjetaAlimHoy(UI.$("#alimHoy"));
     enlazarSesiones(d.ses);
     ["#semana", "#semana2"].forEach(function (s) { UI.$(s).onclick = function () { hojaSemana(d.asig); }; });
   };
+  // Lunes a domingo: qué días toca entrenar y cuáles ya entrenó
+  function tiraSemana(d, lunes) {
+    var L = ["L", "M", "M", "J", "V", "S", "D"], hoyISO = DB.hoyISO(), html = '<div class="semana-tira">';
+    for (var i = 0; i < 7; i++) {
+      var f = new Date(lunes); f.setDate(f.getDate() + i); var iso = DB.hoyISO(f), dow = f.getDay();
+      var hecho = d.ses.some(function (s) { return s.fecha === iso; });
+      var toca = d.asig.some(function (a) { return (a.dias || []).indexOf(dow) >= 0; });
+      html += '<div class="' + [hecho ? "hecho" : "", toca ? "toca" : "", iso === hoyISO ? "hoy" : ""].join(" ") + '"><span>' + (hecho ? "✓" : f.getDate()) + "</span>" + L[i] + "</div>";
+    }
+    return html + "</div>";
+  }
   function filaSesion(s) {
     var vol = (s.series || []).reduce(function (t, x) { return t + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0);
     return '<div class="item" data-ses="' + s.id + '"><span class="ico">' + ico("check") + '</span><span class="txt"><div class="t1">' + esc(s.rutina_nombre || "Rutina") +

@@ -7,5 +7,5 @@ window.PULSO_CONFIG = {
   // true cuando la función de IA esté desplegada en Supabase con su clave de Anthropic
   IA_ACTIVA: false,
   MARCA: "Pulso",
-  COLOR: "#2F6BFF"
+  COLOR: "#3B7BFF"
 };

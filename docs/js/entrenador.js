@@ -56,8 +56,8 @@
       '<div class="acciones">' +
       '<button class="accion" id="aCliente"><span class="circ">' + ico("mas") + "</span>Cliente</button>" +
       '<a class="accion" href="#/rutina/nueva"><span class="circ">' + ico("rutinas") + "</span>Rutina</a>" +
-      '<button class="accion" id="aAsignar"><span class="circ">' + ico("calendario") + "</span>Asignar</button>" +
-      '<a class="accion" href="#/ajustes"><span class="circ">' + ico("puntos") + "</span>Más</a></div></section>" +
+      '<a class="accion" href="#/dieta/nueva"><span class="circ">' + ico("plato") + "</span>Dieta</a>" +
+      '<button class="accion" id="aAsignar"><span class="circ">' + ico("calendario") + "</span>Asignar</button></div></section>" +
       '<div class="contenido">';
     if (pendientes.length) {
       var hechos = activos.length - pendientes.length, pct = activos.length ? hechos / activos.length : 0;
@@ -69,8 +69,16 @@
       html += '<div class="tarjeta"><div class="promo">' + anillo("0/1", 0) + '<div><h3>Crea tu primera rutina</h3><p>Arma bloques con la biblioteca de ejercicios y asígnala a tus clientes.</p></div></div>' +
         '<a class="btn" style="margin-top:16px" href="#/rutina/nueva">Crear rutina</a></div>';
     }
+    var hace7 = new Date(); hace7.setDate(hace7.getDate() - 7); hace7 = DB.hoyISO(hace7);
+    var atn = activos.filter(function (c) { if (!c.user_id) return false; var u = ultimaSesion(d.ses, c.id); return !u || u < hace7; })
+      .map(function (c) { return { c: c, u: ultimaSesion(d.ses, c.id) }; }).sort(function (a, b) { return (a.u || "") < (b.u || "") ? -1 : 1; });
+    if (atn.length) html += '<div class="titulo-sec"><h2>Necesitan atención</h2><a href="#/clientes">Ver todos</a></div><div class="tarjeta sin-relleno atencion"><div class="lista">' +
+      atn.slice(0, 4).map(function (x) {
+        return '<a class="item" href="#/cliente/' + x.c.id + '">' + UI.avatarCli(x.c) + '<span class="txt"><div class="t1">' + esc(x.c.nombre) + '</div><div class="t2">' +
+          (x.u ? "Último entrenamiento " + esc(UI.hace(x.u).toLowerCase()) : "Todavía no entrena") + '</div></span><span class="der">' + (x.u ? "+7 días" : "Nuevo") + "</span></a>";
+      }).join("") + "</div></div>";
     html += '<div class="tarjeta sin-relleno"><div class="titulo-sec" style="margin:12px 18px 4px"><h2>Actividad reciente</h2></div><div class="lista">';
-    var rec = d.ses.slice(0, 12);
+    var rec = d.ses.slice(0, 8);
     if (!rec.length) html += '<div class="vacio">' + ico("fuego") + "Cuando tus clientes terminen una rutina, la verás aquí.</div>";
     rec.forEach(function (s) {
       var vol = (s.series || []).reduce(function (t, x) { return t + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0);
@@ -235,24 +243,26 @@
       '<button class="accion" id="medir"><span class="circ">' + ico("regla") + "</span>Medidas</button>" +
       '<a class="accion" ' + (c.telefono ? 'target="_blank" rel="noopener" href="https://wa.me/' + (function (t) { t = t.replace(/\D/g, ""); return t.length === 10 ? "52" + t : t; })(c.telefono) + '"' : 'href="javascript:void 0" id="sinTel"') +
       '><span class="circ">' + ico("whatsapp") + "</span>Mensaje</a></div></section>" +
-      '<div class="contenido"><div class="datos"><div class="dato"><div class="v">' + ses.length + '</div><div class="l">Sesiones</div></div>' +
+      '<div class="contenido"><div class="segmento pegado" id="segF"><button data-p="resumen">Resumen</button><button data-p="entreno">Entreno</button><button data-p="comida">Comida</button><button data-p="medidas">Medidas</button></div>' +
+      '<div data-pan="resumen"><div class="datos"><div class="dato"><div class="v">' + ses.length + '</div><div class="l">Sesiones</div></div>' +
       '<div class="dato"><div class="v">' + semana + '</div><div class="l">Esta semana</div></div><div class="dato"><div class="v">' + (prom ? "★ " + UI.num(prom) : "–") +
       '</div><div class="l">Calificación</div></div></div>';
     if (!c.user_id) html += '<div class="tarjeta"><h3>Aún no entra a la app</h3><p>Mándale su enlace para que cree su cuenta y vea sus rutinas.</p><button class="btn" style="margin-top:14px" id="invitar2">' + ico("whatsapp") + "Mandar invitación</button></div>";
-    html += '<div class="titulo-sec"><h2>Rutinas asignadas</h2><button id="asignar2">+ Asignar</button></div><div class="tarjeta sin-relleno"><div class="lista">';
+    html += '</div><div data-pan="entreno"><div class="titulo-sec"><h2>Rutinas asignadas</h2><button id="asignar2">+ Asignar</button></div><div class="tarjeta sin-relleno"><div class="lista">';
     html += asig.length ? asig.map(function (a) {
       var rt = rutPorId[a.rutina_id] || { nombre: "Rutina eliminada" };
       var n = (rt.bloques || []).reduce(function (t, b) { return t + b.items.length; }, 0);
       return '<div class="item" data-asig="' + a.id + '"><span class="ico cuadro">' + ico("rutinas") + '</span><span class="txt"><div class="t1">' + esc(rt.nombre) +
         '</div><div class="t2">' + esc(UI.diasTxt(a.dias)) + " · " + n + ' ejercicios</div></span><span class="chev">' + ico("der") + "</span></div>";
     }).join("") : '<div class="vacio">Sin rutinas todavía.</div>';
-    html += "</div></div>";
+    html += "</div></div></div><div data-pan=\"resumen\">";
     if (iaActiva() && (ses.length || med.length)) html += '<div class="tarjeta" id="iaResumen"><div class="promo"><span class="avatar" style="background:var(--brand)">' + ico("chispa", ' width="22" height="22"') +
       '</span><div><h3>¿Cómo va ' + esc(c.nombre.split(" ")[0]) + '?</h3><p>La IA lee sus sesiones, comentarios y medidas y te da un resumen con sugerencias.</p></div></div>' +
       '<button class="btn vidrio" style="margin-top:14px" id="pedirResumen">' + ico("chispa") + "Resumen con IA</button></div>";
     html += '<div class="titulo-sec"><h2>Resumen de progreso</h2></div><div class="tarjeta" id="resumenCli"></div>';
-    html += '<div class="titulo-sec"><h2>Alimentación</h2></div><div class="tarjeta" id="alimCli">' + UI.cargando().replace("cargando", "cargando chico") + "</div>";
-    html += '<div class="titulo-sec"><h2>Progreso de fuerza</h2></div><div class="tarjeta">';
+    if (c.notas) html += '<div class="titulo-sec"><h2>Notas</h2></div><div class="tarjeta"><p style="white-space:pre-wrap">' + esc(c.notas) + "</p></div>";
+    html += '</div><div data-pan="comida"><div class="titulo-sec"><h2>Alimentación</h2></div><div class="tarjeta" id="alimCli">' + UI.cargando().replace("cargando", "cargando chico") + "</div></div>";
+    html += '<div data-pan="entreno"><div class="titulo-sec"><h2>Progreso de fuerza</h2></div><div class="tarjeta">';
     if (ejs.length) {
       html += '<div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
         '</div><div id="graf" style="margin-top:12px"></div>';
@@ -264,11 +274,18 @@
         '</div><div class="t2">' + esc(UI.fecha(s.fecha)) + (s.comentario ? " · “" + esc(s.comentario) + "”" : "") + '</div></span><span class="der">' + (s.calificacion ? "★ " + s.calificacion : "") + "</span></div>";
     }).join("") : '<div class="vacio">Aún no ha entrenado.</div>';
     html += "</div></div>";
-    html += '<div class="titulo-sec"><h2>Medidas y fotos</h2><button id="medir2">+ Agregar</button></div><div class="tarjeta" id="medidas">' + resumenMedidas(med) + "</div>";
-    if (c.notas) html += '<div class="titulo-sec"><h2>Notas</h2></div><div class="tarjeta"><p style="white-space:pre-wrap">' + esc(c.notas) + "</p></div>";
+    html += '</div><div data-pan="medidas"><div class="titulo-sec"><h2>Medidas y fotos</h2><button id="medir2">+ Agregar</button></div><div class="tarjeta" id="medidas">' + resumenMedidas(med) + "</div></div>";
     html += "</div>";
     app().innerHTML = html;
     pintarFotos(med);
+    function verPanel(pn) {
+      UI.$$("#segF button").forEach(function (b) { b.classList.toggle("on", b.dataset.p === pn); });
+      UI.$$("[data-pan]").forEach(function (el) { el.hidden = el.dataset.pan !== pn; });
+      try { sessionStorage.setItem("pulso_ficha_panel", pn); } catch (e) {}
+    }
+    var panel = "resumen"; try { panel = sessionStorage.getItem("pulso_ficha_panel") || "resumen"; } catch (e) {}
+    verPanel(panel);
+    UI.$$("#segF button").forEach(function (b) { b.onclick = function () { verPanel(b.dataset.p); }; });
 
     function graf(ref) { UI.$("#graf").innerHTML = UI.grafica(UI.serieFuerza(ses, ref), "kg"); }
     if (ejs.length) {
@@ -790,7 +807,7 @@
   }
 
   /* ───────── Ajustes ───────── */
-  var COLORES = ["#2F6BFF", "#1E40AF", "#0EA5E9", "#6366F1", "#7C3AED", "#0F766E", "#16A34A", "#DC2626", "#DB2777", "#111827"];
+  var COLORES = ["#3B7BFF", "#1E40AF", "#0EA5E9", "#6366F1", "#7C3AED", "#14B8A6", "#22C55E", "#FF7A59", "#DB2777", "#64748B"];
   V.ajustes = async function () {
     UI.tabbar(TABS, "ajustes");
     var e = A().ent;
@@ -803,7 +820,7 @@
       '<div class="campo"><label>Tu nombre</label><input class="entrada" id="nombre" value="' + esc(e.nombre || "") + '"></div>' +
       '<div class="campo"><label>Color</label><div class="colores" id="colores">' + COLORES.map(function (c) {
         return '<button style="background:' + c + '" data-c="' + c + '" class="' + (c.toLowerCase() === String(e.color).toLowerCase() ? "on" : "") + '" aria-label="Color ' + c + '"></button>'; }).join("") +
-      '<input type="color" id="colorLibre" value="' + esc(e.color || "#2F6BFF") + '" style="width:40px;height:40px;border:0;background:none;padding:0;cursor:pointer" aria-label="Otro color"></div></div>' +
+      '<input type="color" id="colorLibre" value="' + esc(e.color || "#3B7BFF") + '" style="width:40px;height:40px;border:0;background:none;padding:0;cursor:pointer" aria-label="Otro color"></div></div>' +
       '<button class="btn" id="guardarMarca">Guardar</button></div>' +
       '<div class="titulo-sec"><h2>Instalar en tu celular</h2></div><div class="tarjeta"><p><b style="color:#fff">iPhone:</b> en Safari, botón Compartir → «Agregar a pantalla de inicio».<br>' +
       '<b style="color:#fff">Android:</b> en Chrome, menú ⋮ → «Instalar app».<br>Tus clientes hacen lo mismo con su enlace.</p></div>' +

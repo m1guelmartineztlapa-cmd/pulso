@@ -422,7 +422,8 @@
 
   /* Marca del entrenador */
   UI.aplicarMarca = function (color) {
-    var c = color || (window.PULSO_CONFIG || {}).COLOR || "#2F6BFF";
+    var def = (window.PULSO_CONFIG || {}).COLOR || "#3B7BFF";
+    var c = (!color || String(color).toUpperCase() === "#2F6BFF") ? def : color;
     document.documentElement.style.setProperty("--brand", c);
     document.documentElement.style.setProperty("--brand-2", "color-mix(in srgb," + c + " 70%, white 30%)");
   };

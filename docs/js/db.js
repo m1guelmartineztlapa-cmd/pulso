@@ -98,7 +98,7 @@
   function semilla() {
     var t = {}; TABLAS.forEach(function (k) { t[k] = []; });
     var ahora = new Date().toISOString();
-    t.entrenadores.push({ id: ENT, nombre: "Profe Demo", marca: "Pulso", logo_url: null, color: "#2F6BFF", creado: ahora });
+    t.entrenadores.push({ id: ENT, nombre: "Profe Demo", marca: "Pulso", logo_url: null, color: "#3B7BFF", creado: ahora });
     var c1 = { id: uuid(), entrenador_id: ENT, user_id: USR_CLI, nombre: "Ana López", email: "ana@ejemplo.com", telefono: "", objetivo: "Ganar fuerza", notas: "", activo: true, codigo: "demo01", creado: ahora };
     var c2 = { id: uuid(), entrenador_id: ENT, user_id: null, nombre: "Carlos Ruiz", email: "", telefono: "", objetivo: "Bajar de peso", notas: "", activo: true, codigo: "demo02", creado: ahora };
     var c3 = { id: uuid(), entrenador_id: ENT, user_id: null, nombre: "Sofía Méndez", email: "", telefono: "", objetivo: "Tonificar", notas: "", activo: true, codigo: "demo03", creado: ahora };
