@@ -48,7 +48,7 @@
 
   async function detectarRol() {
     APP.usuario = await DB.usuario();
-    APP.rol = null; APP.ent = null; APP.cli = null; APP.esAdmin = false; APP.suplanta = null; window.__suplanta = null;
+    APP.rol = null; APP.ent = null; APP.cli = null; APP.esAdmin = false; APP.suplanta = null; window.__suplanta = null; UI.badges = {};
     if (!APP.usuario) return;
     var uid = APP.usuario.id;
     var pendiente = localStorage.getItem(LLAVE_INV);

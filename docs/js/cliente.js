@@ -72,6 +72,11 @@
     if (principal) {
       html += '<div class="tarjeta entreno-hoy"><div class="lbl">' + (hoy ? "Entrenamiento de hoy" : "Tu rutina") + "</div><h2>" + esc(principal.rutina.nombre) + "</h2><p>" +
         (hechaHoy ? "✓ Ya entrenaste hoy. ¡Bien hecho!" : contar(principal.rutina) + " ejercicios · ~" + minutos(principal.rutina) + " min") + "</p>" +
+        (function () {
+          var its = []; (principal.rutina.bloques || []).forEach(function (b) { (b.items || []).forEach(function (it) { its.push(it); }); });
+          if (!its.length) return "";
+          return '<div class="ej-mini-tira">' + its.slice(0, 5).map(function (it) { return '<span title="' + esc(it.nombre) + '">' + UI.miniEj(it) + "</span>"; }).join("") + (its.length > 5 ? "<span class=\"mas\">+" + (its.length - 5) + "</span>" : "") + "</div>";
+        })() +
         '<a class="btn' + (hechaHoy ? " vidrio" : "") + '" href="#/entrenar/' + principal.id + '">' + ico("play") + (hechaHoy ? "Repetir" : "Empezar") + "</a></div>";
     } else if (d.asig.length) {
       html += '<div class="tarjeta entreno-hoy"><div class="lbl">Hoy</div><h2>Día de descanso 😌</h2><p>Recupera para volver con todo. Si quieres, puedes hacer otra rutina.</p><a class="btn vidrio" href="#/entrenos">Ver mis rutinas</a></div>';
@@ -84,6 +89,8 @@
       return '<a class="item tarea ' + (cls || "") + (ok ? " ok" : "") + '" href="' + href + '"><span class="ico">' + (ok ? ico("check") : icono) + '</span><span class="txt"><div class="t1">' + t1 + '</div><div class="t2">' + t2 + '</div></span><span class="chev">' + ico("der") + "</span></a>";
     }
     var okEnt = hechaHoy || (!hoy && d.asig.length > 0);
+    UI.badge("entrenos", hoy && !hechaHoy ? 1 : 0);
+    UI.badge("comida", (al && al.total ? Math.max(0, al.total - al.hechas) : 0) + (al && !al.sentir ? 1 : 0));
     var aros = [{ x: "var(--c-entreno)", t: "Entreno", v: okEnt ? 1 : 0, txt: hechaHoy ? "Hecho" : hoy ? "Pendiente" : "Descanso" }];
     if (al && al.total) aros.push({ x: "var(--c-comida)", t: "Comidas", v: al.hechas / al.total, txt: al.hechas + "/" + al.total });
     aros.push({ x: "var(--c-bienestar)", t: "Bienestar", v: al && al.sentir ? 1 : 0, txt: al && al.sentir ? "Listo" : "Pendiente" });

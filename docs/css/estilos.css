@@ -824,3 +824,26 @@ input.switch:checked::after{transform:translateX(20px)}
 .hoja .cerrar:active{background:rgba(255,255,255,.2)}
 .hoja .cerrar svg{width:16px;height:16px}
 @media (prefers-reduced-motion:reduce){.aurora i,.marca-grande .logo{animation:none}}
+/* ── Globitos rojos del menú ── */
+.tab{position:relative}
+.tab .badge{position:absolute;top:3px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#FF3B30;color:#fff;font-size:11px;font-weight:800;line-height:18px;text-align:center;border:2px solid rgba(16,20,34,.95);font-style:normal;animation:pop .35s cubic-bezier(.3,.9,.3,1.3)}
+/* ── Filas deslizables ── */
+.swipe-fila{position:relative;overflow:hidden}
+.swipe-fila .cli-fila{background:var(--card);position:relative;z-index:1;transition:transform .3s cubic-bezier(.2,.9,.3,1)}
+.swipe-acc{position:absolute;top:0;right:0;bottom:0;width:150px;display:flex}
+.swipe-acc>*{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:#fff}
+.swipe-acc svg{width:22px;height:22px}
+.sw-wa{background:#25D366}
+.sw-wa.off{background:#3A4152;color:var(--suave)}
+.sw-ver{background:var(--sec)}
+.swipe-fila+.swipe-fila .cli-fila::before{content:"";position:absolute;top:0;left:72px;right:18px;height:1px;background:var(--linea)}
+/* ── Miniaturas de ejercicios en el entrenamiento de hoy ── */
+.ej-mini-tira{display:flex;margin-top:14px}
+.ej-mini-tira span{width:40px;height:40px;border-radius:12px;overflow:hidden;background:#fff;border:2px solid rgba(255,255,255,.85);margin-right:-8px;display:grid;place-items:center;color:#0A0F25;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+.ej-mini-tira span img{width:100%;height:100%;object-fit:cover}
+.ej-mini-tira span svg{width:18px;height:18px}
+.ej-mini-tira .mas{background:rgba(255,255,255,.25);color:#fff;font-weight:800;font-size:13px;backdrop-filter:blur(8px)}
+/* ── Estado vacío grande ── */
+.vacio-grande{text-align:center;padding:26px 20px}
+.vg-ico{display:grid;place-items:center;width:72px;height:72px;margin:0 auto 12px;border-radius:50%;font-size:34px;background:color-mix(in srgb,var(--sec) 16%,transparent);box-shadow:0 0 0 8px color-mix(in srgb,var(--sec) 7%,transparent)}
+.vacio-grande h3{margin-bottom:6px}

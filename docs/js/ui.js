@@ -465,7 +465,8 @@
     t.hidden = false;
     document.body.setAttribute("data-sec", activa || "");
     t.innerHTML = tabs.map(function (x) {
-      return '<a class="tab' + (x.id === activa ? " on" : "") + '" href="#/' + x.ruta + '">' + UI.ico(x.ico) + "<span>" + x.txt + "</span></a>";
+      var n = (UI.badges || {})[x.id];
+      return '<a class="tab' + (x.id === activa ? " on" : "") + '" data-tab="' + x.id + '" href="#/' + x.ruta + '">' + UI.ico(x.ico) + "<span>" + x.txt + "</span>" + (n ? '<b class="badge">' + (n > 9 ? "9+" : n) + "</b>" : "") + "</a>";
     }).join("");
   };
 
@@ -482,6 +483,15 @@
     c.innerHTML = h; document.body.appendChild(c);
     if (navigator.vibrate) navigator.vibrate(60);
     setTimeout(function () { c.remove(); }, 3600);
+  };
+  // Globito rojo en una pestaña (pendientes), como los avisos del iPhone
+  UI.badge = function (id, n) {
+    UI.badges = UI.badges || {}; UI.badges[id] = n || 0;
+    var t = document.querySelector('#tabbar [data-tab="' + id + '"]'); if (!t) return;
+    var b = t.querySelector(".badge");
+    if (!n) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement("b"); b.className = "badge"; t.appendChild(b); }
+    b.textContent = n > 9 ? "9+" : n;
   };
   UI.cargando = function () { return '<div class="cargando"><div class="esq esq-cab"></div><div class="esq esq-t"></div><div class="esq esq-t"></div><div class="esq esq-t corta"></div></div>'; };
 

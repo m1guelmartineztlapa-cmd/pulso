@@ -196,7 +196,7 @@
       '</span><div style="text-align:left"><h3>¿Cómo te sientes ' + (fecha === hoy ? "hoy" : "ese día") + "?</h3><p>" +
       (hechos.length ? hechos.map(function (n) { return esc(n) + " " + CARITAS[sentir[n] - 1]; }).join(" · ") : "Toca para calificar tu energía, digestión y más. Toma 1 minuto.") + "</p></div></div></button>";
     if (!plan) {
-      html += '<div class="tarjeta"><h3>Aún no tienes plan de alimentación</h3><p>Cuando tu entrenador te asigne uno, aquí verás tus comidas de cada día. Mientras, puedes registrar cómo te sientes.</p></div></div>';
+      html += '<div class="tarjeta vacio-grande"><span class="vg-ico">🥗</span><h3>Aún no tienes plan de alimentación</h3><p>Cuando tu entrenador te asigne uno, aquí verás tus comidas de cada día con sus recetas. Mientras, puedes registrar cómo te sientes.</p></div></div>';
       app().innerHTML = html; enlazarComun(); return;
     }
     var comidas = (dia && dia.comidas) || [], estados = (reg && reg.comidas) || {};

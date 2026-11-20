@@ -79,6 +79,7 @@
       var dias = Math.round((hoyMs - new Date(u + "T12:00:00").getTime()) / 864e5);
       return dias > 7 ? { c: c, t: dias + " días sin entrenar", g: dias > 14 ? 3 : 2 } : null;
     }).filter(Boolean).sort(function (a, b) { return b.g - a.g; });
+    UI.badge("clientes", atn.length);
     if (atn.length) html += '<div class="titulo-sec"><h2>Necesitan atención</h2><a href="#/clientes">Ver todos</a></div><div class="tarjeta sin-relleno"><div class="lista">' +
       atn.slice(0, 5).map(function (x) {
         return '<a class="item" href="#/cliente/' + x.c.id + '"><span style="position:relative;flex:none">' + UI.avatarCli(x.c) + '<i class="alerta g' + x.g + '"></i></span><span class="txt"><div class="t1">' + esc(x.c.nombre) +
@@ -177,6 +178,7 @@
     }).sort(function (a, b) { return (ORDEN[a.est] - ORDEN[b.est]) || a.c.nombre.localeCompare(b.c.nombre); });
     var F = [{ id: "todos", t: "Todos" }, { id: "atencion", t: "⚠️ Atención" }, { id: "aldia", t: "Al día" }, { id: "sinentrar", t: "Sin entrar" }, { id: "pausado", t: "Pausados" }];
     var activos = d.clientes.filter(function (c) { return c.activo; }).length;
+    UI.badge("clientes", filas.filter(function (x) { return x.est === "atencion"; }).length);
     app().innerHTML = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag">' + avatarEnt() + '<div class="cab-txt"><small>' + activos + (activos === 1 ? " cliente activo" : " clientes activos") +
       '</small><h1>Clientes</h1></div><button class="btn-redondo" id="nuevo" aria-label="Nuevo cliente">' + ico("mas") + "</button></div></section>" +
       '<div class="contenido"><label class="buscador buscador-c">' + ico("buscar", ' width="19" height="19"') + '<input id="buscar" placeholder="Buscar cliente" autocomplete="off"></label>' +
@@ -195,10 +197,13 @@
         var c = x.c, t2 = x.est === "aldia" ? UI.hace(x.u) : TXT[x.est];
         var der = x.est === "pausado" ? '<span class="etiqueta gris">Pausado</span>' : x.est === "sinentrar" ? '<span class="etiqueta ambar">Invitar</span>' :
           x.pct == null ? '<span class="etiqueta gris">Sin rutina</span>' : '<span class="cumple ' + cumpleClase(x.pct) + '">' + x.pct + "%</span><small>esta semana</small>";
-        return '<a class="item cli-fila est-' + x.est + '" href="#/cliente/' + c.id + '"><span style="position:relative;flex:none">' + UI.avatarCli(c) + (x.est === "atencion" ? '<i class="alerta"></i>' : "") + "</span>" +
+        var tel = c.telefono ? (function (t) { t = t.replace(/\D/g, ""); return t.length === 10 ? "52" + t : t; })(c.telefono) : "";
+        return '<div class="swipe-fila"><div class="swipe-acc">' + (tel ? '<a class="sw-wa" target="_blank" rel="noopener" href="https://wa.me/' + tel + '">' + ico("whatsapp") + "<span>Mensaje</span></a>" : '<span class="sw-wa off">' + ico("whatsapp") + "<span>Sin tel.</span></span>") +
+          '<a class="sw-ver" href="#/cliente/' + c.id + '">' + ico("persona") + "<span>Ficha</span></a></div>" +
+          '<a class="item cli-fila est-' + x.est + '" href="#/cliente/' + c.id + '"><span style="position:relative;flex:none">' + UI.avatarCli(c) + (x.est === "atencion" ? '<i class="alerta"></i>' : "") + "</span>" +
           '<span class="txt"><div class="t1">' + esc(c.nombre) + '</div><div class="t2">' + esc(t2) + '</div><div class="cli-tags">' +
           (x.asA.length ? '<span class="tag t-entreno">' + ico("pesa") + x.hechas + "/" + (x.meta || x.asA.length) + "</span>" : "") + (x.dieta ? '<span class="tag t-comida">🥗 Dieta</span>' : "") +
-          '</div></span><span class="der">' + der + "</span></a>";
+          '</div></span><span class="der">' + der + "</span></a></div>";
       }).join("") : '<div class="vacio">' + ico("clientes") + (d.clientes.length ? "Nadie coincide." : "Aún no tienes clientes. Pulsa + para dar de alta al primero.") + "</div>";
       UI.cargarFotos(UI.$("#lista"));
     }
