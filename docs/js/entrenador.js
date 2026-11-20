@@ -63,11 +63,11 @@
     var porDia = [0, 0, 0, 0, 0, 0, 0]; semana.forEach(function (s) { porDia[(new Date(s.fecha + "T12:00:00").getDay() + 6) % 7]++; });
     var maxD = Math.max.apply(null, [1].concat(porDia)), hoyIdx = (hoyD.getDay() + 6) % 7, Lt = ["L", "M", "M", "J", "V", "S", "D"];
     var cc = 2 * Math.PI * 34, pct = cumple || 0;
-    html += '<div class="tarjeta semana-card"><div class="sc-top"><div class="sc-anillo"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="8"/>' +
-      '<circle cx="40" cy="40" r="34" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + cc.toFixed(1) + '" stroke-dashoffset="' + (cc * (1 - pct / 100)).toFixed(1) + '"/></svg><b>' + (cumple == null ? "–" : cumple + "%") + "</b></div>" +
+    html += '<div class="tarjeta semana-card"><div class="sc-top"><div class="sc-anillo"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="8"/>' +
+      '<circle cx="40" cy="40" r="34" fill="none" stroke="var(--sec)" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + cc.toFixed(1) + '" stroke-dashoffset="' + (cc * (1 - pct / 100)).toFixed(1) + '"/></svg><b>' + (cumple == null ? "–" : cumple + "%") + "</b></div>" +
       '<div style="flex:1;min-width:0"><div class="lbl">Cumplimiento de la semana</div><h2>' + semana.length + (metaSem ? " de " + metaSem : "") + " entrenos</h2><p>" + activos.length + (activos.length === 1 ? " cliente activo" : " clientes activos") + "</p></div></div>" +
       '<div class="sc-barras">' + porDia.map(function (n, i) {
-        return '<div class="' + (i === hoyIdx ? "hoy" : i > hoyIdx ? "fut" : "") + '"><span><i style="height:' + Math.max(6, Math.round(n / maxD * 100)) + '%"></i></span><small>' + Lt[i] + "</small>" + (n ? "<em>" + n + "</em>" : "") + "</div>";
+        return '<div class="' + (i === hoyIdx ? "hoy" : i > hoyIdx ? "fut" : "") + '"><span><i style="height:' + (n ? Math.max(10, Math.round(n / maxD * 100)) : 0) + '%"></i></span><small>' + Lt[i] + "</small>" + (n ? "<em>" + n + "</em>" : "") + "</div>";
       }).join("") + "</div></div>";
 
     // Necesitan atención (con el motivo)

@@ -575,3 +575,23 @@ body[data-sec="ajustes"],body[data-sec="perfil"]{--sec:#7C8DB5}
 .salud small{color:var(--suave);font-size:12.5px;line-height:1.25}
 .orden-fila{display:flex;align-items:center;gap:10px;color:var(--suave);font-size:14px}
 .orden-fila select{flex:1;height:42px}
+/* Tarjeta de la semana del entrenador: sobria, con un brillo suave del color de la sección */
+.semana-card{background:var(--card);border:1px solid var(--linea);position:relative;overflow:hidden;isolation:isolate}
+.semana-card::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(90% 70% at 100% 0%,color-mix(in srgb,var(--sec) 22%,transparent) 0%,transparent 70%)}
+.semana-card .lbl{color:var(--suave)}
+.semana-card p{color:var(--suave)}
+.sc-anillo b{color:#fff}
+.sc-barras span{background:rgba(255,255,255,.06)}
+.sc-barras i{background:linear-gradient(180deg,var(--sec-2),var(--sec))}
+.sc-barras small{color:var(--tenue)}
+.sc-barras .hoy small{color:var(--sec-2);text-decoration:none}
+.sc-barras .hoy span{box-shadow:0 0 0 1.5px color-mix(in srgb,var(--sec) 60%,transparent)}
+.sc-barras em{color:var(--sec-2)}
+/* Detalles de acabado */
+@keyframes aparecer{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.contenido>*{animation:aparecer .32s ease both}
+.contenido>*:nth-child(2){animation-delay:.03s}.contenido>*:nth-child(3){animation-delay:.06s}.contenido>*:nth-child(4){animation-delay:.09s}.contenido>*:nth-child(n+5){animation-delay:.12s}
+.tab svg{transition:transform .2s}
+.tab.on svg{transform:scale(1.08)}
+.item:active,.tarjeta[href]:active,a.tarjeta:active{transform:scale(.985);transition:transform .1s}
+@media (prefers-reduced-motion:reduce){.contenido>*{animation:none}}

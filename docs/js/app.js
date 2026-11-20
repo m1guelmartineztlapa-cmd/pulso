@@ -298,7 +298,7 @@
   }
   document.addEventListener("visibilitychange", function () { if (!document.hidden) buscarVersionNueva(); });
   setInterval(buscarVersionNueva, 5 * 60000);
-  APP.salir = async function () { await DB.salir(); APP.usuario = null; APP.rol = null; location.hash = "#/"; pintar(); };
+  APP.salir = async function () { document.body.removeAttribute("data-sec"); await DB.salir(); APP.usuario = null; APP.rol = null; location.hash = "#/"; pintar(); };
   APP.enlaceInvitacion = function (codigo) { return location.href.split("#")[0] + "#/invitacion/" + codigo; };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", arrancar); else arrancar();

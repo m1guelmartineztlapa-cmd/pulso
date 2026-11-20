@@ -366,15 +366,16 @@
   };
 
   /* ───────── ENTRENADOR: Dietas (Mis planes · Recetario · Plantillas) ───────── */
-  var SEGS = [{ id: "planes", txt: "Mis planes" }, { id: "recetario", txt: "Recetario" }, { id: "plantillas", txt: "Plantillas" }];
+  var SEGS = [{ id: "recetario", txt: "Recetario" }, { id: "planes", txt: "Mis planes" }, { id: "plantillas", txt: "Plantillas" }];
   VE.dietas = async function (seg) {
     UI.tabbar(VE.__TABS(), "dietas");
-    seg = SEGS.some(function (s) { return s.id === seg; }) ? seg : "planes";
+    seg = SEGS.some(function (s) { return s.id === seg; }) ? seg : "recetario";
     app().innerHTML = UI.cargando();
     var r = await Promise.all([DB.sel("planes_alim", { entrenador_id: A().ent.id }, { orden: "actualizado", desc: true }), DB.sel("asig_alim", { entrenador_id: A().ent.id }), cargarPlantillas(), cargarRecetario()]);
     var planes = r[0], asig = r[1], pls = r[2], recetas = r[3], cat = "", q = "";
-    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><h1 class="titulo-pag" style="margin:6px 0 0">Nutrición</h1>' +
-      '<a class="btn-redondo" href="#/dieta/nueva" aria-label="Nuevo plan">' + ico("mas") + '</a></div><div class="segmento" id="segD" style="margin-top:14px">' +
+    var avE = A().ent || {};
+    app().innerHTML = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag"><a class="avatar" href="#/ajustes" aria-label="Ajustes">' + (avE.logo_url ? '<img src="' + esc(avE.logo_url) + '" alt="">' : esc(UI.iniciales(avE.nombre || avE.marca))) + "</a>" +
+      '<div class="cab-txt"><small>' + recetas.length + " recetas · " + planes.length + (planes.length === 1 ? " plan" : " planes") + '</small><h1>Nutrición</h1></div><a class="btn-redondo" href="#/dieta/nueva" aria-label="Nuevo plan">' + ico("mas") + '</a></div><div class="segmento" id="segD" style="margin-top:16px">' +
       SEGS.map(function (s) { return '<button data-s="' + s.id + '">' + s.txt + "</button>"; }).join("") + '</div></section><div class="contenido" id="contD"></div>';
     var cont = UI.$("#contD");
 
@@ -429,7 +430,7 @@
     function mostrar(s) {
       seg = s;
       UI.$$("#segD button").forEach(function (b) { b.classList.toggle("on", b.dataset.s === s); });
-      try { history.replaceState(null, "", "#/dietas" + (s === "planes" ? "" : "/" + s)); } catch (e) {}
+      try { history.replaceState(null, "", "#/dietas" + (s === "recetario" ? "" : "/" + s)); } catch (e) {}
       if (s === "recetario") verRecetario(); else if (s === "plantillas") verPlantillas(); else verPlanes();
       UI.$$("[data-ir]", cont).forEach(function (b) { b.onclick = function () { mostrar(b.dataset.ir); }; });
     }
@@ -468,7 +469,7 @@
     UI.tabbar(null); document.body.classList.add("ancho");
     app().innerHTML = UI.cargando();
     var p = id === "nueva" ? { nombre: "", descripcion: "", indicadores: INDICADORES_BASE.slice(), dias: [] } : await DB.uno("planes_alim", { id: id });
-    if (!p) return A().ir("dietas");
+    if (!p) return A().ir("dietas/planes");
     p.dias = semanaCompleta(p.dias); p.indicadores = p.indicadores || INDICADORES_BASE.slice();
     var cambios = false, sel = diaSemanaIdx(DB.hoyISO());
     function marcar() { cambios = true; window.onbeforeunload = function () { return "Hay cambios sin guardar"; }; }
@@ -480,7 +481,7 @@
     }
     function dibujar() {
       var d = p.dias[sel];
-      app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:6px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/dietas">' + ico("izq", ' width="22" height="22"') + "Dietas</a>" +
+      app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:6px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/dietas/planes">' + ico("izq", ' width="22" height="22"') + "Mis planes</a>" +
         (p.id ? '<button class="btn-redondo" id="borrarP" aria-label="Eliminar plan">' + ico("basura") + "</button>" : "") + "</div>" +
         '<input class="titulo-pag" id="pNombre" value="' + esc(p.nombre) + '" placeholder="Nombre del plan" style="background:none;border:0;outline:0;width:100%;color:#fff">' +
         '<input id="pDesc" value="' + esc(p.descripcion || "") + '" placeholder="Descripción (opcional)" style="background:none;border:0;outline:0;width:100%;color:var(--suave);font-size:16px;margin-top:4px">' +
@@ -560,10 +561,10 @@
       var bo = UI.$("#borrarP");
       if (bo) bo.onclick = async function () {
         if (!(await UI.confirmar("¿Eliminar “" + p.nombre + "”?", "Los alumnos que lo tienen asignado dejarán de verlo. Sus registros se conservan."))) return;
-        try { await DB.del("planes_alim", p.id); cambios = false; window.onbeforeunload = null; A().ir("dietas"); } catch (e) { UI.error(e); }
+        try { await DB.del("planes_alim", p.id); cambios = false; window.onbeforeunload = null; A().ir("dietas/planes"); } catch (e) { UI.error(e); }
       };
       var salir = UI.$(".hero .atras");
-      salir.onclick = async function (e) { if (!cambios) return; e.preventDefault(); if (await UI.confirmar("¿Salir sin guardar?", "Tienes cambios en este plan que todavía no guardaste.", "Salir sin guardar")) { cambios = false; window.onbeforeunload = null; A().ir("dietas"); } };
+      salir.onclick = async function (e) { if (!cambios) return; e.preventDefault(); if (await UI.confirmar("¿Salir sin guardar?", "Tienes cambios en este plan que todavía no guardaste.", "Salir sin guardar")) { cambios = false; window.onbeforeunload = null; A().ir("dietas/planes"); } };
     }
     async function guardar(silencio) {
       if (!p.nombre.trim()) { UI.aviso("Ponle nombre al plan", true); return UI.$("#pNombre").focus(); }
