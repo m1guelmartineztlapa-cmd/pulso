@@ -563,7 +563,7 @@
     }
     function item(b, it, i) {
       var sigUnido = b.items[i + 1] && it.grupo && b.items[i + 1].grupo === it.grupo;
-      return '<div class="ej' + (it.grupo ? " super" : "") + '" data-i="' + i + '"><div class="ej-cab"><span class="ico">' + UI.miniEj(it) + '</span><div class="nom">' + esc(it.nombre) +
+      return '<div class="ej' + (it.grupo ? " super" : "") + '" data-i="' + i + '"><div class="ej-cab"><span class="ico">' + UI.miniEj(it) + '<b class="ej-num">' + (i + 1) + '</b></span><div class="nom">' + esc(it.nombre) +
         "<small>" + esc([it.series && it.series + " series", it.reps && it.reps + " reps", it.tiempo, it.intTipo && it.int && it.intTipo + " " + it.int].filter(Boolean).join(" · ")) + "</small></div>" +
         '<button class="mini" data-acc="sube" aria-label="Subir">' + ico("arriba") + '</button><button class="mini" data-acc="quita" aria-label="Quitar">' + ico("x") + "</button></div>" +
         '<div class="ej-campos">' +
@@ -580,12 +580,14 @@
       return '<div class="campo ' + (cls || "") + '"><label>' + lbl + '</label><input class="entrada" data-k="' + k + '" value="' + esc(v == null ? "" : v) + '" inputmode="' + modo + '"' + (ph ? ' placeholder="' + ph + '"' : "") + "></div>";
     }
     function dibujar() {
-      app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:6px"><div class="barra-sup" style="justify-content:space-between">' + atras("rutinas", "Rutinas") +
+      var nEj = r.bloques.reduce(function (t, b) { return t + b.items.length; }, 0), nSer = r.bloques.reduce(function (t, b) { return t + b.items.reduce(function (u, it) { return u + (Number(it.series) || 0); }, 0); }, 0);
+      app().innerHTML = A().bandaDemo() + '<section class="hero compacto editor-cab"><div class="barra-sup" style="justify-content:space-between">' + atras("rutinas", "Rutinas") +
         '<div style="display:flex;gap:8px">' + (iaActiva() ? '<button class="btn-redondo" id="ajustarIA" aria-label="Ajustar con IA" title="Ajustar con IA">' + ico("chispa") + "</button>" : "") + (r.id ? '<button class="btn-redondo" id="duplicar" aria-label="Duplicar">' + ico("duplicar") + '</button><button class="btn-redondo" id="borrar" aria-label="Eliminar">' + ico("basura") + "</button>" : "") +
         '</div></div><input class="titulo-pag" id="rNombre" value="' + esc(r.nombre) + '" placeholder="Nombre de la rutina" style="background:none;border:0;outline:0;width:100%;color:#fff">' +
-        '<input id="rDesc" value="' + esc(r.descripcion || "") + '" placeholder="Descripción (opcional)" style="background:none;border:0;outline:0;width:100%;color:var(--suave);font-size:16px;margin-top:4px"></section>' +
+        '<input id="rDesc" value="' + esc(r.descripcion || "") + '" placeholder="Descripción (opcional)" style="background:none;border:0;outline:0;width:100%;color:var(--suave);font-size:16px;margin-top:4px">' +
+        '<div class="cli-tags" style="margin-top:12px"><span class="tag t-entreno">' + ico("pesa") + nEj + (nEj === 1 ? " ejercicio" : " ejercicios") + '</span><span class="tag">' + nSer + ' series</span><span class="tag">~' + minutosRutina(r) + ' min</span><span class="tag">' + r.bloques.length + (r.bloques.length === 1 ? " bloque" : " bloques") + "</span></div></section>" +
         '<div class="contenido" id="bloques">' + r.bloques.map(function (b, bi) {
-          return '<div class="bloque" data-b="' + bi + '"><div class="bloque-cab"><input data-bn value="' + esc(b.nombre) + '" placeholder="Nombre del bloque">' +
+          return '<div class="bloque" data-b="' + bi + '"><div class="bloque-cab"><span class="bloque-num">' + (bi + 1) + '</span><input data-bn value="' + esc(b.nombre) + '" placeholder="Nombre del bloque">' +
             (bi > 0 ? '<button class="mini" data-bacc="sube" aria-label="Subir bloque">' + ico("arriba") + "</button>" : "") + '<button class="mini" data-bacc="quita" aria-label="Quitar bloque">' + ico("basura") + "</button></div>" +
             b.items.map(function (it, i) { return item(b, it, i); }).join("") +
             '<button class="btn vidrio chico" data-bacc="agrega" style="margin-top:10px;width:100%">' + ico("mas") + "Agregar ejercicio</button></div>";

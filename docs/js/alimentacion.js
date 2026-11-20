@@ -481,7 +481,7 @@
     }
     function dibujar() {
       var d = p.dias[sel];
-      app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:6px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/dietas/planes">' + ico("izq", ' width="22" height="22"') + "Mis planes</a>" +
+      app().innerHTML = A().bandaDemo() + '<section class="hero compacto editor-cab"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/dietas/planes">' + ico("izq", ' width="22" height="22"') + "Mis planes</a>" +
         (p.id ? '<button class="btn-redondo" id="borrarP" aria-label="Eliminar plan">' + ico("basura") + "</button>" : "") + "</div>" +
         '<input class="titulo-pag" id="pNombre" value="' + esc(p.nombre) + '" placeholder="Nombre del plan" style="background:none;border:0;outline:0;width:100%;color:#fff">' +
         '<input id="pDesc" value="' + esc(p.descripcion || "") + '" placeholder="Descripción (opcional)" style="background:none;border:0;outline:0;width:100%;color:var(--suave);font-size:16px;margin-top:4px">' +

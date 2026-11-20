@@ -211,6 +211,19 @@
     }
   });
 
+  /* ── 9. Editores: aviso de "cambios sin guardar" en la barra de abajo ── */
+  function barraGuardar() { return app.querySelector('.fila-btns[style*="sticky"]'); }
+  function ensuciar(e) {
+    if (!e.target.closest || !e.target.closest(".editor-cab, .bloque, .ej, #bloques, .contenido")) return;
+    var b = barraGuardar(); if (b && app.querySelector(".editor-cab")) b.classList.add("sucio");
+  }
+  app.addEventListener("input", ensuciar); app.addEventListener("change", ensuciar);
+  app.addEventListener("click", function (e) { if (e.target.closest("[data-acc],[data-bacc],[data-dacc],[data-cacc],#nuevoBloque,#nuevoDia,#inds .chip")) setTimeout(function () { var b = barraGuardar(); if (b && app.querySelector(".editor-cab")) b.classList.add("sucio"); }, 30); });
+  if (window.UI && UI.aviso) {
+    var avisoOrig = UI.aviso;
+    UI.aviso = function (msg, error) { if (!error && /guardad|copiad/i.test(String(msg))) { var b = barraGuardar(); if (b) b.classList.remove("sucio"); } return avisoOrig.apply(this, arguments); };
+  }
+
   alCambiar();
   interruptores();
   new MutationObserver(function () { interruptores(capa); }).observe(capa || document.body, { childList: true, subtree: true });
