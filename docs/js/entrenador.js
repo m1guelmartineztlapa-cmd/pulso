@@ -266,8 +266,10 @@
     var dias = (a.dias || []).slice();
     var cli = o.clienteId || a.cliente_id || "", rut = o.rutinaId || a.rutina_id || "";
     UI.hoja(a.id ? "Editar asignación" : "Asignar rutina", '<div class="form">' +
-      (o.clienteId || a.id ? "" : '<div class="campo"><label>Cliente</label><select class="entrada" id="aCli"><option value="">Elige un cliente</option>' +
-        (o.clientes || []).filter(function (c) { return c.activo; }).map(function (c) { return '<option value="' + c.id + '"' + (c.id === cli ? " selected" : "") + ">" + esc(c.nombre) + "</option>"; }).join("") + "</select></div>") +
+      (o.clienteId || a.id ? "" : '<div class="campo"><label style="display:flex;justify-content:space-between;align-items:center">Alumnos <button type="button" class="link-btn" id="aTodos">Elegir a todos</button></label>' +
+        '<div class="cli-multi" id="aClis">' + (o.clientes || []).filter(function (c) { return c.activo; }).map(function (c) {
+          return '<button type="button" data-c="' + c.id + '" class="' + (c.id === cli ? "on" : "") + '">' + UI.avatarCli(c, "avatar chico") + "<span>" + esc(c.nombre.split(" ")[0]) + "</span><i>✓</i></button>"; }).join("") + "</div>" +
+        '<p class="nota-demo" style="text-align:left;padding-left:4px" id="aCuantos">Toca uno o varios. Ideal para grupos.</p></div>') +
       (o.rutinaId || a.id ? "" : '<div class="campo"><label>Rutina</label><select class="entrada" id="aRut"><option value="">Elige una rutina</option>' +
         (o.rutinas || []).map(function (r) { return '<option value="' + r.id + '"' + (r.id === rut ? " selected" : "") + ">" + esc(r.nombre) + "</option>"; }).join("") + "</select></div>") +
       '<div class="campo"><label>¿Qué días le toca?</label><div class="dias" id="aDias">' + [1, 2, 3, 4, 5, 6, 0].map(function (d) {
@@ -275,18 +277,31 @@
       '<p class="nota-demo" style="text-align:left;padding-left:4px">Sin días marcados, la rutina queda disponible para cuando quiera.</p></div>' +
       '<button class="btn" id="aGuardar">' + (a.id ? "Guardar" : "Asignar") + "</button>" +
       (a.id ? '<button class="btn peligro" id="aQuitar">Quitar rutina al cliente</button>' : "") + "</div>", function (h, cerrar) {
+      function cuantos() { var n = UI.$$("#aClis button.on", h).length, p = h.querySelector("#aCuantos"); if (p) p.textContent = n ? n + (n === 1 ? " alumno elegido" : " alumnos elegidos") : "Toca uno o varios. Ideal para grupos."; }
+      UI.$$("#aClis button", h).forEach(function (b) { b.onclick = function () { b.classList.toggle("on"); cuantos(); }; });
+      var tod = h.querySelector("#aTodos");
+      if (tod) tod.onclick = function () { var bs = UI.$$("#aClis button", h), todos = bs.every(function (b) { return b.classList.contains("on"); }); bs.forEach(function (b) { b.classList.toggle("on", !todos); }); tod.textContent = todos ? "Elegir a todos" : "Quitar a todos"; cuantos(); };
+      UI.$$("#aClis", h).forEach(function () { UI.cargarFotos(h); });
       UI.$$("#aDias button", h).forEach(function (b) {
         b.onclick = function () { var d = Number(b.dataset.d), i = dias.indexOf(d); if (i >= 0) dias.splice(i, 1); else dias.push(d); b.classList.toggle("on"); };
       });
       h.querySelector("#aGuardar").onclick = async function () {
-        var c = o.clienteId || a.cliente_id || h.querySelector("#aCli").value;
+        var lista = o.clienteId || a.cliente_id ? [o.clienteId || a.cliente_id] : UI.$$("#aClis button.on", h).map(function (b) { return b.dataset.c; });
         var r = o.rutinaId || a.rutina_id || h.querySelector("#aRut").value;
-        if (!c || !r) return UI.aviso("Elige cliente y rutina", true);
+        if (!lista.length || !r) return UI.aviso(lista.length ? "Elige la rutina" : "Elige al menos un alumno", true);
+        this.disabled = true;
         try {
           if (a.id) await DB.upd("asignaciones", a.id, { dias: dias });
-          else await DB.ins("asignaciones", { entrenador_id: eid(), cliente_id: c, rutina_id: r, dias: dias, activa: true });
-          cerrar(); UI.aviso("Rutina asignada ✓"); A().recargar();
-        } catch (e) { UI.error(e); }
+          else {
+            var ya = await DB.sel("asignaciones", { rutina_id: r });
+            for (var k = 0; k < lista.length; k++) {
+              var ex = ya.find(function (x) { return x.cliente_id === lista[k] && x.activa; });
+              if (ex) await DB.upd("asignaciones", ex.id, { dias: dias });
+              else await DB.ins("asignaciones", { entrenador_id: eid(), cliente_id: lista[k], rutina_id: r, dias: dias, activa: true });
+            }
+          }
+          cerrar(); UI.aviso(lista.length > 1 ? "Rutina asignada a " + lista.length + " alumnos ✓" : "Rutina asignada ✓"); A().recargar();
+        } catch (e) { UI.error(e); this.disabled = false; }
       };
       var q = h.querySelector("#aQuitar");
       if (q) q.onclick = async function () { try { await DB.del("asignaciones", a.id); cerrar(); UI.aviso("Rutina quitada"); A().recargar(); } catch (e) { UI.error(e); } };
@@ -597,6 +612,40 @@
     }
     lista("");
     UI.$("#buscar").oninput = function () { lista(this.value); };
+    // Plantillas listas para copiar
+    fetch("datos/plantillas-rutinas.json").then(function (x) { return x.json(); }).then(function (pls) {
+      var cont = document.createElement("div");
+      cont.innerHTML = '<div class="titulo-sec"><h2>Empieza con una plantilla</h2></div><div class="plant-tira">' + pls.map(function (p) {
+        var n = p.bloques.reduce(function (t, b) { return t + b.items.length; }, 0);
+        return '<button class="plant-card" data-pl="' + esc(p.id) + '"><span class="pc-emoji">' + p.emoji + "</span><b>" + esc(p.nombre) + "</b><small>" + esc(p.descripcion) + '</small><span class="cli-tags"><span class="tag">' + n + ' ejercicios</span><span class="tag">' + esc(p.nivel) + "</span></span></button>";
+      }).join("") + "</div>";
+      var c = UI.$(".contenido"); if (!c) return;
+      c.appendChild(cont);
+      UI.$$("[data-pl]", cont).forEach(function (b) {
+        b.onclick = function () { verPlantilla(pls.find(function (p) { return p.id === b.dataset.pl; })); };
+      });
+    }).catch(function () {});
+    function verPlantilla(p) {
+      UI.hoja(p.emoji + " " + p.nombre, '<p class="ayuda" style="margin:-8px 0 10px">' + esc(p.descripcion) + " · " + esc(p.dias) + "</p>" +
+        p.bloques.map(function (b) {
+          return '<div class="lbl" style="margin:12px 4px 6px">' + esc(b.nombre) + '</div><div class="tarjeta sin-relleno"><div class="lista">' + b.items.map(function (it) {
+            return '<div class="item"><span class="ico cuadro">' + UI.miniEj(it) + '</span><span class="txt"><div class="t1">' + esc(it.nombre) + '</div><div class="t2">' +
+              esc([it.series + " series", it.reps && it.reps + " reps", it.tiempo, it.intTipo && it.int && it.intTipo + " " + it.int].filter(Boolean).join(" · ")) + "</div></span></div>";
+          }).join("") + "</div></div>";
+        }).join("") + '<button class="btn" id="usarPl" style="margin-top:16px">' + ico("mas") + "Usar esta plantilla</button>" +
+        '<p class="nota-demo">Se copia a tus rutinas y la puedes cambiar como quieras.</p>', function (h, cerrar) {
+        h.querySelector("#usarPl").onclick = async function () {
+          this.disabled = true;
+          try {
+            var bl = p.bloques.map(function (b) {
+              return { id: DB.uuid(), nombre: b.nombre, items: b.items.map(function (it) { return Object.assign({ id: DB.uuid(), video: "", peso: "", grupo: "" }, it); }) };
+            });
+            var n = await DB.ins("rutinas", { entrenador_id: eid(), nombre: p.nombre, descripcion: p.descripcion, bloques: bl });
+            cerrar(); UI.aviso("Plantilla copiada ✓ Ajústala a tu gusto"); A().ir("rutina/" + n.id);
+          } catch (e) { UI.error(e); this.disabled = false; }
+        };
+      });
+    }
   };
 
   /* Editor */

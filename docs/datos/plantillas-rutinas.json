@@ -1,0 +1,783 @@
+[
+ {
+  "id": "full-principiante",
+  "nombre": "Cuerpo completo · principiante",
+  "nivel": "Principiante",
+  "dias": "3 días por semana",
+  "emoji": "🌱",
+  "descripcion": "Todo el cuerpo con mancuernas, ideal para empezar.",
+  "bloques": [
+   {
+    "nombre": "Calentamiento",
+    "items": [
+     {
+      "ref": "lib:Bodyweight_Squat",
+      "nombre": "Sentadilla libre",
+      "img": "Bodyweight_Squat/0.jpg",
+      "series": 2,
+      "reps": "15",
+      "descanso": 30,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Pushups",
+      "nombre": "Lagartijas",
+      "img": "Pushups/0.jpg",
+      "series": 2,
+      "reps": "8-10",
+      "descanso": 30,
+      "tiempo": "",
+      "nota": "Si cuesta, apoya rodillas",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Plank",
+      "nombre": "Plancha",
+      "img": "Plank/0.jpg",
+      "series": 2,
+      "reps": "",
+      "descanso": 30,
+      "tiempo": "30 s",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   },
+   {
+    "nombre": "Principal",
+    "items": [
+     {
+      "ref": "lib:Goblet_Squat",
+      "nombre": "Sentadilla goblet",
+      "img": "Goblet_Squat/0.jpg",
+      "series": 3,
+      "reps": "12",
+      "descanso": 75,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Dumbbell_Bench_Press",
+      "nombre": "Press de banca con mancuernas",
+      "img": "Dumbbell_Bench_Press/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 75,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:One-Arm_Dumbbell_Row",
+      "nombre": "Remo a una mano con mancuerna",
+      "img": "One-Arm_Dumbbell_Row/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 75,
+      "tiempo": "",
+      "nota": "Cada brazo",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Romanian_Deadlift",
+      "nombre": "Peso muerto rumano",
+      "img": "Romanian_Deadlift/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 75,
+      "tiempo": "",
+      "nota": "Espalda recta, cadera hacia atrás",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Dumbbell_Shoulder_Press",
+      "nombre": "Press de hombro con mancuernas",
+      "img": "Dumbbell_Shoulder_Press/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Crunches",
+      "nombre": "Abdominales (crunch)",
+      "img": "Crunches/0.jpg",
+      "series": 3,
+      "reps": "15",
+      "descanso": 45,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "torso",
+  "nombre": "Torso",
+  "nivel": "Intermedio",
+  "dias": "2 días por semana",
+  "emoji": "💪",
+  "descripcion": "Pecho, espalda, hombros y brazos.",
+  "bloques": [
+   {
+    "nombre": "Fuerza",
+    "items": [
+     {
+      "ref": "lib:Barbell_Bench_Press_-_Medium_Grip",
+      "nombre": "Press de banca con barra",
+      "img": "Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+      "series": 4,
+      "reps": "8",
+      "descanso": 120,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "RIR",
+      "int": "2"
+     },
+     {
+      "ref": "lib:Bent_Over_Barbell_Row",
+      "nombre": "Remo inclinado con barra",
+      "img": "Bent_Over_Barbell_Row/0.jpg",
+      "series": 4,
+      "reps": "8",
+      "descanso": 120,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "RIR",
+      "int": "2"
+     }
+    ]
+   },
+   {
+    "nombre": "Accesorios",
+    "items": [
+     {
+      "ref": "lib:Incline_Dumbbell_Press",
+      "nombre": "Press inclinado con mancuernas",
+      "img": "Incline_Dumbbell_Press/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 90,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Wide-Grip_Lat_Pulldown",
+      "nombre": "Jalón al pecho agarre abierto",
+      "img": "Wide-Grip_Lat_Pulldown/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 90,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Side_Lateral_Raise",
+      "nombre": "Elevación lateral",
+      "img": "Side_Lateral_Raise/0.jpg",
+      "series": 3,
+      "reps": "15",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Barbell_Curl",
+      "nombre": "Curl con barra",
+      "img": "Barbell_Curl/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Triceps_Pushdown",
+      "nombre": "Jalón de tríceps",
+      "img": "Triceps_Pushdown/0.jpg",
+      "series": 3,
+      "reps": "12",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "pierna-gluteo",
+  "nombre": "Pierna y glúteo",
+  "nivel": "Intermedio",
+  "dias": "2 días por semana",
+  "emoji": "🍑",
+  "descripcion": "Tren inferior completo con énfasis en glúteo.",
+  "bloques": [
+   {
+    "nombre": "Fuerza",
+    "items": [
+     {
+      "ref": "lib:Barbell_Squat",
+      "nombre": "Sentadilla con barra",
+      "img": "Barbell_Squat/0.jpg",
+      "series": 4,
+      "reps": "8",
+      "descanso": 120,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "RIR",
+      "int": "2"
+     },
+     {
+      "ref": "lib:Romanian_Deadlift",
+      "nombre": "Peso muerto rumano",
+      "img": "Romanian_Deadlift/0.jpg",
+      "series": 4,
+      "reps": "10",
+      "descanso": 120,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   },
+   {
+    "nombre": "Accesorios",
+    "items": [
+     {
+      "ref": "lib:Barbell_Hip_Thrust",
+      "nombre": "Hip thrust con barra",
+      "img": "Barbell_Hip_Thrust/0.jpg",
+      "series": 4,
+      "reps": "10",
+      "descanso": 90,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Dumbbell_Lunges",
+      "nombre": "Zancadas con mancuernas",
+      "img": "Dumbbell_Lunges/0.jpg",
+      "series": 3,
+      "reps": "12",
+      "descanso": 75,
+      "tiempo": "",
+      "nota": "Cada pierna",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Lying_Leg_Curls",
+      "nombre": "Curl femoral acostado",
+      "img": "Lying_Leg_Curls/0.jpg",
+      "series": 3,
+      "reps": "12",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Standing_Calf_Raises",
+      "nombre": "Pantorrilla de pie",
+      "img": "Standing_Calf_Raises/0.jpg",
+      "series": 4,
+      "reps": "15",
+      "descanso": 45,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "empuje",
+  "nombre": "Empuje (push)",
+  "nivel": "Intermedio",
+  "dias": "Rutina de 3 días: empuje, jalón y pierna",
+  "emoji": "🏋️",
+  "descripcion": "Pecho, hombro y tríceps.",
+  "bloques": [
+   {
+    "nombre": "Principal",
+    "items": [
+     {
+      "ref": "lib:Barbell_Bench_Press_-_Medium_Grip",
+      "nombre": "Press de banca con barra",
+      "img": "Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+      "series": 4,
+      "reps": "6-8",
+      "descanso": 120,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "RIR",
+      "int": "2"
+     },
+     {
+      "ref": "lib:Dumbbell_Shoulder_Press",
+      "nombre": "Press de hombro con mancuernas",
+      "img": "Dumbbell_Shoulder_Press/0.jpg",
+      "series": 3,
+      "reps": "8-10",
+      "descanso": 90,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Incline_Dumbbell_Press",
+      "nombre": "Press inclinado con mancuernas",
+      "img": "Incline_Dumbbell_Press/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 90,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Side_Lateral_Raise",
+      "nombre": "Elevación lateral",
+      "img": "Side_Lateral_Raise/0.jpg",
+      "series": 3,
+      "reps": "15",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Dips_-_Triceps_Version",
+      "nombre": "Fondos para tríceps",
+      "img": "Dips_-_Triceps_Version/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 75,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Triceps_Pushdown",
+      "nombre": "Jalón de tríceps",
+      "img": "Triceps_Pushdown/0.jpg",
+      "series": 3,
+      "reps": "12",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "jalon",
+  "nombre": "Jalón (pull)",
+  "nivel": "Intermedio",
+  "dias": "Rutina de 3 días: empuje, jalón y pierna",
+  "emoji": "🧗",
+  "descripcion": "Espalda, hombro posterior y bíceps.",
+  "bloques": [
+   {
+    "nombre": "Principal",
+    "items": [
+     {
+      "ref": "lib:Pullups",
+      "nombre": "Dominadas",
+      "img": "Pullups/0.jpg",
+      "series": 4,
+      "reps": "6-8",
+      "descanso": 120,
+      "tiempo": "",
+      "nota": "Con liga si hace falta",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Bent_Over_Barbell_Row",
+      "nombre": "Remo inclinado con barra",
+      "img": "Bent_Over_Barbell_Row/0.jpg",
+      "series": 4,
+      "reps": "8",
+      "descanso": 120,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Seated_Cable_Rows",
+      "nombre": "Remo sentado en polea",
+      "img": "Seated_Cable_Rows/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 90,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Face_Pull",
+      "nombre": "Face pull",
+      "img": "Face_Pull/0.jpg",
+      "series": 3,
+      "reps": "15",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Barbell_Curl",
+      "nombre": "Curl con barra",
+      "img": "Barbell_Curl/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Hammer_Curls",
+      "nombre": "Curl martillo",
+      "img": "Hammer_Curls/0.jpg",
+      "series": 3,
+      "reps": "12",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "casa",
+  "nombre": "En casa sin equipo",
+  "nivel": "Todos",
+  "dias": "3 a 4 días por semana",
+  "emoji": "🏠",
+  "descripcion": "Circuito con el peso del cuerpo, en 30 minutos.",
+  "bloques": [
+   {
+    "nombre": "Circuito (3 vueltas)",
+    "items": [
+     {
+      "ref": "lib:Bodyweight_Squat",
+      "nombre": "Sentadilla libre",
+      "img": "Bodyweight_Squat/0.jpg",
+      "series": 3,
+      "reps": "20",
+      "descanso": 20,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Pushups",
+      "nombre": "Lagartijas",
+      "img": "Pushups/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 20,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Freehand_Jump_Squat",
+      "nombre": "Sentadilla con salto",
+      "img": "Freehand_Jump_Squat/0.jpg",
+      "series": 3,
+      "reps": "12",
+      "descanso": 20,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Mountain_Climbers",
+      "nombre": "Mountain Climbers",
+      "img": "Mountain_Climbers/0.jpg",
+      "series": 3,
+      "reps": "",
+      "descanso": 20,
+      "tiempo": "30 s",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Superman",
+      "nombre": "Superman",
+      "img": "Superman/0.jpg",
+      "series": 3,
+      "reps": "12",
+      "descanso": 20,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Plank",
+      "nombre": "Plancha",
+      "img": "Plank/0.jpg",
+      "series": 3,
+      "reps": "",
+      "descanso": 60,
+      "tiempo": "40 s",
+      "nota": "Al terminar descansa 1 min y repite el circuito",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "core",
+  "nombre": "Core y abdomen",
+  "nivel": "Todos",
+  "dias": "Al final de cualquier rutina",
+  "emoji": "🎯",
+  "descripcion": "Abdomen fuerte y espalda baja estable.",
+  "bloques": [
+   {
+    "nombre": "Core",
+    "items": [
+     {
+      "ref": "lib:Plank",
+      "nombre": "Plancha",
+      "img": "Plank/0.jpg",
+      "series": 3,
+      "reps": "",
+      "descanso": 45,
+      "tiempo": "45 s",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Crunches",
+      "nombre": "Abdominales (crunch)",
+      "img": "Crunches/0.jpg",
+      "series": 3,
+      "reps": "20",
+      "descanso": 45,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Russian_Twist",
+      "nombre": "Giros rusos",
+      "img": "Russian_Twist/0.jpg",
+      "series": 3,
+      "reps": "20",
+      "descanso": 45,
+      "tiempo": "",
+      "nota": "10 por lado",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Hanging_Leg_Raise",
+      "nombre": "Hanging Leg Raise",
+      "img": "Hanging_Leg_Raise/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 60,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Air_Bike",
+      "nombre": "Bicicleta en el aire",
+      "img": "Air_Bike/0.jpg",
+      "series": 3,
+      "reps": "20",
+      "descanso": 45,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Superman",
+      "nombre": "Superman",
+      "img": "Superman/0.jpg",
+      "series": 3,
+      "reps": "12",
+      "descanso": 45,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "acondicionamiento",
+  "nombre": "Acondicionamiento físico",
+  "nivel": "Intermedio",
+  "dias": "2 días por semana",
+  "emoji": "⚡",
+  "descripcion": "Potencia, resistencia y agarre para deportistas.",
+  "bloques": [
+   {
+    "nombre": "Calentamiento",
+    "items": [
+     {
+      "ref": "lib:Rope_Jumping",
+      "nombre": "Rope Jumping",
+      "img": "Rope_Jumping/0.jpg",
+      "series": 3,
+      "reps": "",
+      "descanso": 30,
+      "tiempo": "1 min",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   },
+   {
+    "nombre": "Potencia",
+    "items": [
+     {
+      "ref": "lib:Freehand_Jump_Squat",
+      "nombre": "Sentadilla con salto",
+      "img": "Freehand_Jump_Squat/0.jpg",
+      "series": 4,
+      "reps": "8",
+      "descanso": 90,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:One-Arm_Kettlebell_Swings",
+      "nombre": "Swing a una mano con kettlebell",
+      "img": "One-Arm_Kettlebell_Swings/0.jpg",
+      "series": 3,
+      "reps": "12",
+      "descanso": 75,
+      "tiempo": "",
+      "nota": "Cada brazo",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Pullups",
+      "nombre": "Dominadas",
+      "img": "Pullups/0.jpg",
+      "series": 4,
+      "reps": "6-8",
+      "descanso": 120,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   },
+   {
+    "nombre": "Resistencia",
+    "items": [
+     {
+      "ref": "lib:Mountain_Climbers",
+      "nombre": "Mountain Climbers",
+      "img": "Mountain_Climbers/0.jpg",
+      "series": 3,
+      "reps": "",
+      "descanso": 30,
+      "tiempo": "30 s",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Freehand_Jump_Squat",
+      "nombre": "Sentadilla con salto",
+      "img": "Freehand_Jump_Squat/0.jpg",
+      "series": 3,
+      "reps": "10",
+      "descanso": 45,
+      "tiempo": "",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     },
+     {
+      "ref": "lib:Plank",
+      "nombre": "Plancha",
+      "img": "Plank/0.jpg",
+      "series": 3,
+      "reps": "",
+      "descanso": 45,
+      "tiempo": "45 s",
+      "nota": "",
+      "intTipo": "",
+      "int": ""
+     }
+    ]
+   }
+  ]
+ }
+]
