@@ -24,6 +24,49 @@
     if (!plantillas) plantillas = fetch("datos/plantillas-alimentacion.json").then(function (r) { return r.json(); }).catch(function () { plantillas = null; return []; });
     return plantillas;
   }
+  var recetario = null;
+  function cargarRecetario() {
+    if (!recetario) recetario = fetch("datos/recetario.json").then(function (r) { return r.json(); }).catch(function () { recetario = null; return []; });
+    return recetario;
+  }
+  var CATS = [
+    { id: "", txt: "Todas" }, { id: "frasco", txt: "🫙 Ensaladas en frasco" }, { id: "proteina", txt: "🍗 Proteínas" }, { id: "base", txt: "🍱 Bases de la semana" },
+    { id: "salsa", txt: "🥣 Salsas y untables" }, { id: "topping", txt: "🥜 Toppings crujientes" }
+  ];
+  function sinAcentos(x) { return String(x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+  function macros(c) {
+    if (c.kcal == null && c.prot == null) return "";
+    var m = []; if (c.kcal != null) m.push("<b>" + c.kcal + "</b> kcal"); if (c.prot != null) m.push("<b>" + c.prot + "</b> g proteína");
+    if (c.carbs != null) m.push("<b>" + c.carbs + "</b> g carbs"); if (c.grasa != null) m.push("<b>" + c.grasa + "</b> g grasa");
+    return '<div class="macros">' + m.join("<span>·</span>") + "</div>";
+  }
+  /* Recetario: buscar y elegir (o solo ver si no hay alElegir) */
+  async function hojaRecetario(alElegir) {
+    var lista = await cargarRecetario(), cat = "", q = "";
+    UI.hoja("Recetario", '<p class="ayuda" style="margin:-8px 0 10px">' + lista.length + (alElegir ? " recetas. Toca una para usarla en esta comida; después la puedes ajustar." : " recetas listas para armar tus planes.") + "</p>" +
+      '<input class="entrada" id="rB" type="search" placeholder="Buscar: pollo, aguacate, frasco…" style="margin-bottom:10px">' +
+      '<div class="chips" id="rC" style="flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px">' + CATS.map(function (k) { return '<button type="button" class="chip' + (k.id === "" ? " on" : "") + '" data-k="' + k.id + '" style="flex:none">' + k.txt + "</button>"; }).join("") + "</div>" +
+      '<div class="lista" id="rL" style="margin-top:8px"></div>', function (h, cerrar) {
+      function pintar() {
+        var qq = sinAcentos(q), vis = lista.filter(function (r) { return (!cat || r.categoria === cat) && (!qq || sinAcentos(r.nombre + " " + (r.ingredientes || []).join(" ")).indexOf(qq) >= 0); });
+        h.querySelector("#rL").innerHTML = vis.length ? vis.map(function (r) {
+          var k = CATS.find(function (x) { return x.id === r.categoria; }) || {};
+          return '<button class="item" data-r="' + esc(r.id) + '" style="width:100%;text-align:left;background:none;border:0;color:inherit;font:inherit;cursor:pointer"><span class="ico cuadro" style="font-size:20px">' + (k.txt || "🍽️").split(" ")[0] + '</span><span class="txt"><div class="t1">' + esc(r.nombre) +
+            '</div><div class="t2">' + esc([r.porcion, r.kcal != null ? r.kcal + " kcal" : "", r.prot != null ? r.prot + " g proteína" : ""].filter(Boolean).join(" · ")) + "</div></span><span class=\"chev\">" + ico("der") + "</span></button>";
+        }).join("") : '<div class="vacio">No encontré recetas con eso.</div>';
+        UI.$$("[data-r]", h).forEach(function (b) {
+          b.onclick = function () {
+            var r = lista.find(function (x) { return x.id === b.dataset.r; });
+            if (alElegir) { cerrar(); alElegir(JSON.parse(JSON.stringify(r))); } else hojaReceta(r);
+          };
+        });
+      }
+      h.querySelector("#rB").oninput = function () { q = this.value; pintar(); };
+      UI.$$("#rC .chip", h).forEach(function (b) { b.onclick = function () { cat = b.dataset.k; UI.$$("#rC .chip", h).forEach(function (x) { x.classList.toggle("on", x === b); }); pintar(); }; });
+      pintar();
+    });
+  }
+  VE.hojaRecetario = hojaRecetario;
   function diasEntre(a, b) { return Math.round((new Date(b + "T12:00:00") - new Date(a + "T12:00:00")) / 864e5); }
   function sumarDias(iso, n) { var d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return DB.hoyISO(d); }
   // Qué día del plan toca en una fecha (el plan se repite en ciclo)
@@ -78,10 +121,11 @@
   function hojaReceta(c) {
     UI.hoja(c.nombre, (c.img ? '<img class="foto-ej" src="' + esc(c.img) + '" alt="" style="object-fit:cover">' : "") +
       '<div class="chips" style="margin:10px 0">' + '<span class="chip on">' + esc((T[c.tiempo] || {}).txt || "Comida") + "</span>" + (c.porcion ? '<span class="chip">' + esc(c.porcion) + "</span>" : "") +
-      (c.clave ? '<span class="chip">⭐ ' + esc(c.clave) + "</span>" : "") + "</div>" +
+      (c.clave ? '<span class="chip">⭐ ' + esc(c.clave) + "</span>" : "") + (c.dura ? '<span class="chip">🧊 ' + esc(c.dura) + "</span>" : "") + "</div>" + macros(c) +
       ((c.ingredientes || []).length ? '<div class="lbl">Ingredientes</div><ul class="receta-lista">' + c.ingredientes.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "") +
       (c.preparacion ? '<div class="lbl" style="margin-top:12px">Preparación</div><p class="receta-txt">' + esc(c.preparacion) + "</p>" : "") +
-      (c.sustitucion ? '<div class="tarjeta" style="margin-top:12px;padding:12px"><p>🔄 <b style="color:#fff">Puedes cambiarlo por:</b> ' + esc(c.sustitucion) + "</p></div>" : ""));
+      (c.sustitucion ? '<div class="tarjeta" style="margin-top:12px;padding:12px"><p>🔄 <b style="color:#fff">Puedes cambiarlo por:</b> ' + esc(c.sustitucion) + "</p></div>" : "") +
+      (c.nota ? '<p class="ayuda" style="margin-top:10px">💡 ' + esc(c.nota) + "</p>" : ""));
   }
 
   /* ───────── ALUMNO: pestaña Comida ───────── */
@@ -277,10 +321,12 @@
           (p.dias || []).length + " días · " + (p.dias || []).reduce(function (t, d) { return t + (d.comidas || []).length; }, 0) + ' comidas</div></span><span class="der">' + n + "<small>" + (n === 1 ? "alumno" : "alumnos") + "</small></span></a>";
       }).join("") : '<div class="vacio">Aún no tienes planes de alimentación. Empieza con una plantilla o crea uno desde cero.</div>') + "</div></div>" +
       '<a class="btn azul" href="#/dieta/nueva">' + ico("mas") + "Nuevo plan desde cero</a>" +
+      '<button class="tarjeta" id="verRecetario" style="width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit;margin-top:14px"><div class="promo"><span class="avatar" style="background:var(--brand);font-size:22px">📖</span><div style="flex:1"><h3>Recetario</h3><p>Ensaladas en frasco, proteínas, salsas, toppings y bases para cocinar el domingo.</p></div><span class=\"chev\">' + ico("der") + "</span></div></button>" +
       '<div class="titulo-sec"><h2>Plantillas listas</h2></div>' + pls.map(function (p) {
         return '<div class="tarjeta"><div class="promo"><span class="avatar" style="background:var(--ok);font-size:22px">🌿</span><div><h3>' + esc(p.nombre) + "</h3><p>" + esc(p.descripcion) + '</p></div></div><button class="btn" data-pl="' + esc(p.id) +
           '" style="margin-top:14px">Usar esta plantilla</button></div>';
       }).join("") + "</div>";
+    UI.$("#verRecetario").onclick = function () { hojaRecetario(); };
     UI.$$("[data-pl]").forEach(function (b) {
       b.onclick = async function () {
         var p = pls.find(function (x) { return x.id === b.dataset.pl; }); b.disabled = true;
@@ -389,21 +435,33 @@
   /* Editar una comida */
   function hojaComida(c, alGuardar) {
     UI.hoja(c.nombre ? "Editar comida" : "Nueva comida", '<div class="form">' +
+      '<button type="button" class="btn vidrio" id="cR">📖 Elegir del recetario</button>' +
       '<div class="campo"><label>Momento del día</label><div class="chips" id="cT">' + TIEMPOS.map(function (t) { return '<button type="button" class="chip' + (c.tiempo === t.id ? " on" : "") + '" data-t="' + t.id + '">' + t.ico + " " + t.txt + "</button>"; }).join("") + "</div></div>" +
       '<div class="campo"><label>Nombre del platillo</label><input class="entrada" id="cN" value="' + esc(c.nombre || "") + '" placeholder="Ej. Bowl de quinoa con pollo"></div>' +
       '<div class="campo"><label>Foto <span class="opc">opcional</span></label>' + UI.selector("cF", { tipo: "foto", actual: c.img, ayuda: "Así el alumno sabe cómo debe verse." }) + "</div>" +
       '<div class="campo"><label>Ingredientes <span class="opc">uno por renglón</span></label><textarea class="entrada" id="cI" rows="5" placeholder="120 g de pechuga de pollo&#10;3/4 taza de quinoa cocida">' + esc((c.ingredientes || []).join("\n")) + "</textarea></div>" +
       '<div class="campo"><label>Preparación</label><textarea class="entrada" id="cP" placeholder="Pasos para prepararlo">' + esc(c.preparacion || "") + "</textarea></div>" +
-      '<div class="rejilla"><div class="campo"><label>Porción</label><select class="entrada" id="cPo">' + PORCIONES.map(function (x) { return '<option value="' + esc(x) + '"' + ((c.porcion || "") === x ? " selected" : "") + ">" + (x || "—") + "</option>"; }).join("") + "</select></div>" +
+      '<div class="rejilla"><div class="campo"><label>Porción</label><select class="entrada" id="cPo">' + PORCIONES.concat(c.porcion && PORCIONES.indexOf(c.porcion) < 0 ? [c.porcion] : []).map(function (x) { return '<option value="' + esc(x) + '"' + ((c.porcion || "") === x ? " selected" : "") + ">" + (x || "—") + "</option>"; }).join("") + "</select></div>" +
       '<div class="campo"><label>Ingrediente clave <span class="opc">opcional</span></label><input class="entrada" id="cK" value="' + esc(c.clave || "") + '" placeholder="Ej. Omega-3"></div></div>' +
       '<div class="campo"><label>Puede cambiarlo por <span class="opc">opcional</span></label><input class="entrada" id="cS" value="' + esc(c.sustitucion || "") + '" placeholder="Ej. Arroz integral en lugar de quinoa"></div>' +
       '<button class="btn" id="cG">' + ico("check") + "Listo</button></div>", function (h, cerrar) {
-      var sel = UI.enlazarSelector(h, "cF"), tiempo = c.tiempo || "desayuno";
+      var sel = UI.enlazarSelector(h, "cF"), tiempo = c.tiempo || "desayuno", extra = { kcal: c.kcal, prot: c.prot, carbs: c.carbs, grasa: c.grasa, nota: c.nota, dura: c.dura };
+      h.querySelector("#cR").onclick = function () {
+        hojaRecetario(function (r) {
+          h.querySelector("#cN").value = r.nombre; h.querySelector("#cI").value = (r.ingredientes || []).join("\n"); h.querySelector("#cP").value = r.preparacion || "";
+          h.querySelector("#cK").value = r.clave || ""; h.querySelector("#cS").value = r.sustitucion || "";
+          var po = h.querySelector("#cPo"); if (r.porcion && !Array.prototype.some.call(po.options, function (o) { return o.value === r.porcion; })) po.add(new Option(r.porcion, r.porcion)); po.value = r.porcion || "";
+          extra = { kcal: r.kcal, prot: r.prot, carbs: r.carbs, grasa: r.grasa, nota: r.nota, dura: r.dura };
+          if (!c.nombre && r.tiempo) { tiempo = r.tiempo; UI.$$("#cT .chip", h).forEach(function (x) { x.classList.toggle("on", x.dataset.t === tiempo); }); }
+          UI.aviso("Receta cargada ✓ Ajústala si quieres");
+        });
+      };
       UI.$$("#cT .chip", h).forEach(function (b) { b.onclick = function () { tiempo = b.dataset.t; UI.$$("#cT .chip", h).forEach(function (x) { x.classList.toggle("on", x === b); }); }; });
       h.querySelector("#cG").onclick = async function () {
         var n = h.querySelector("#cN").value.trim(); if (!n) return UI.aviso("Escribe el nombre del platillo", true);
         var out = { tiempo: tiempo, nombre: n, ingredientes: h.querySelector("#cI").value.split("\n").map(function (x) { return x.trim(); }).filter(Boolean),
           preparacion: h.querySelector("#cP").value.trim(), porcion: h.querySelector("#cPo").value, clave: h.querySelector("#cK").value.trim(), sustitucion: h.querySelector("#cS").value.trim(), img: sel.quitado() ? "" : (c.img || "") };
+        Object.keys(extra).forEach(function (k) { if (extra[k] != null && extra[k] !== "") out[k] = extra[k]; });
         var f = sel.archivo(); this.disabled = true;
         try {
           if (f) { var ruta = A().ent.id + "/comida-" + DB.uuid() + ".jpg"; await DB.subir("logos", ruta, await UI.comprimir(f, 900)); out.img = DB.urlPublica("logos", ruta); }

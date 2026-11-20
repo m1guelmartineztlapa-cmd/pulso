@@ -335,3 +335,9 @@ select.entrada{appearance:none;-webkit-appearance:none}
 .ind{display:flex;align-items:center;gap:10px;font-size:14px}
 .ind span{width:96px;flex:none;color:var(--suave)}
 .ind b{width:58px;text-align:right;flex:none;font-size:13px}
+.macros{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 12px;color:var(--suave);font-size:13.5px}
+.macros b{color:#fff}
+.macros span{opacity:.5}
+.chev{flex:none;display:inline-flex;color:var(--tenue);width:18px;height:18px}
+.chev svg{width:100%;height:100%}
+#rL .t1{white-space:normal;line-height:1.25}
