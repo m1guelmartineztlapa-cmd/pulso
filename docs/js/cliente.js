@@ -33,6 +33,23 @@
     (r.bloques || []).forEach(function (b) { b.items.forEach(function (it) { var n = Number(it.series) || 1; s += n * (40 + (Number(it.descanso) || 60)); }); });
     return Math.max(10, Math.round(s / 60 / 5) * 5);
   }
+  // Semanas seguidas con al menos un entrenamiento
+  function rachaSemanas(ses) {
+    var sem = {}; ses.forEach(function (s) { var d = new Date(s.fecha + "T12:00:00"); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); sem[DB.hoyISO(d)] = 1; });
+    var cur = new Date(); cur.setDate(cur.getDate() - ((cur.getDay() + 6) % 7)); var racha = 0;
+    if (!sem[DB.hoyISO(cur)]) cur.setDate(cur.getDate() - 7);
+    while (sem[DB.hoyISO(cur)]) { racha++; cur.setDate(cur.getDate() - 7); }
+    return racha;
+  }
+  // Entrenamiento empezado y sin guardar (se guarda en el celular mientras entrenas)
+  function enCurso(a) {
+    var est; try { est = JSON.parse(localStorage.getItem("pulso_en_curso_" + a.id)); } catch (e) { est = null; }
+    if (!est || !est.v || est.rutina_id !== a.rutina.id || Date.now() - est.inicio > 36 * 3600000) return null;
+    var hechas = 0; Object.keys(est.v).forEach(function (k) { (est.v[k] || []).forEach(function (s) { if (s && s.ok) hechas++; }); });
+    if (!hechas) return null;
+    var total = 0; (a.rutina.bloques || []).forEach(function (b) { (b.items || []).forEach(function (it) { total += Number(it.series) || 1; }); });
+    return { hechas: hechas, total: total };
+  }
   function deHoy(asig) {
     var dow = new Date().getDay();
     return asig.find(function (a) { return (a.dias || []).indexOf(dow) >= 0; }) || null;
@@ -66,7 +83,15 @@
     var semana = d.ses.filter(function (s) { return s.fecha >= DB.hoyISO(lunes); }).length;
     var meta = Math.max(1, d.asig.reduce(function (t, a) { return t + (a.dias || []).length; }, 0) || d.asig.length);
     var principal = hoy || (d.asig.find(function (a) { return !(a.dias || []).length; }) || null);
-    var html = A().bandaDemo() + cabPag("Hola, " + cli().nombre.split(" ")[0], fechaLarga()) + "</section><div class=\"contenido\">";
+    var racha = rachaSemanas(d.ses);
+    var html = A().bandaDemo() + cabPag("Hola, " + cli().nombre.split(" ")[0], fechaLarga(),
+      racha ? '<a class="racha-chip" href="#/progreso" title="Semanas seguidas entrenando">🔥 <b>' + racha + "</b><small>" + (racha === 1 ? "semana" : "semanas") + "</small></a>" : null) + "</section><div class=\"contenido\">";
+    var pend = null;
+    d.asig.some(function (a) { var e = enCurso(a); if (e) { pend = { a: a, e: e }; return true; } return false; });
+    if (pend) {
+      html += '<a class="tarjeta reanudar" href="#/entrenar/' + pend.a.id + '"><span class="re-anillo" style="--p:' + Math.round(pend.e.hechas / pend.e.total * 100) + '">' + ico("play") + '</span><span class="txt"><b>Tienes un entreno sin terminar</b><small>' +
+        esc(pend.a.rutina.nombre) + " · " + pend.e.hechas + " de " + pend.e.total + ' series</small></span><span class="re-btn">Seguir</span></a>';
+    }
 
     // Entrenamiento de hoy
     if (principal) {
@@ -77,7 +102,7 @@
           if (!its.length) return "";
           return '<div class="ej-mini-tira">' + its.slice(0, 5).map(function (it) { return '<span title="' + esc(it.nombre) + '">' + UI.miniEj(it) + "</span>"; }).join("") + (its.length > 5 ? "<span class=\"mas\">+" + (its.length - 5) + "</span>" : "") + "</div>";
         })() +
-        '<a class="btn' + (hechaHoy ? " vidrio" : "") + '" href="#/entrenar/' + principal.id + '">' + ico("play") + (hechaHoy ? "Repetir" : "Empezar") + "</a></div>";
+        '<a class="btn' + (hechaHoy ? " vidrio" : "") + '" href="#/entrenar/' + principal.id + '">' + ico("play") + (pend && pend.a.id === principal.id ? "Continuar" : hechaHoy ? "Repetir" : "Empezar") + "</a></div>";
     } else if (d.asig.length) {
       html += '<div class="tarjeta entreno-hoy"><div class="lbl">Hoy</div><h2>Día de descanso 😌</h2><p>Recupera para volver con todo. Si quieres, puedes hacer otra rutina.</p><a class="btn vidrio" href="#/entrenos">Ver mis rutinas</a></div>';
     } else {
@@ -130,13 +155,15 @@
     UI.tabbar(TABS, "entrenos");
     app().innerHTML = UI.cargando();
     var d = await cargar(), hoyDow = new Date().getDay();
+    var lunE = new Date(); lunE.setDate(lunE.getDate() - ((lunE.getDay() + 6) % 7));
+    function hechoEl(dd) { var f = new Date(lunE); f.setDate(f.getDate() + (dd + 6) % 7); var iso = DB.hoyISO(f); return d.ses.some(function (s) { return s.fecha === iso; }); }
     var html = A().bandaDemo() + cabPag("Entrenar", d.ses.length + (d.ses.length === 1 ? " entrenamiento hecho" : " entrenamientos hechos")) + "</section><div class=\"contenido\">";
     html += '<div class="titulo-sec"><h2>Mi semana</h2></div><div class="tarjeta sin-relleno"><div class="lista">' + [1, 2, 3, 4, 5, 6, 0].map(function (dd) {
-      var rs = d.asig.filter(function (a) { return (a.dias || []).indexOf(dd) >= 0; });
-      return '<div class="item"><span class="ico" style="' + (dd === hoyDow ? "background:var(--brand);color:#fff" : "") + '">' + UI.DIAS[dd] + '</span><span class="txt"><div class="t1">' +
-        (rs.length ? esc(rs.map(function (a) { return a.rutina.nombre; }).join(" + ")) : '<span style="color:var(--suave)">Descanso</span>') +
-        '</div><div class="t2">' + UI.DIAS_L[dd] + (dd === hoyDow ? " · hoy" : "") + "</div></span>" +
-        (rs.length ? '<a class="btn chico' + (dd === hoyDow ? "" : " vidrio") + '" href="#/entrenar/' + rs[0].id + '">' + (dd === hoyDow ? "Empezar" : "Abrir") + "</a>" : "") + "</div>";
+      var rs = d.asig.filter(function (a) { return (a.dias || []).indexOf(dd) >= 0; }), ok = hechoEl(dd);
+      return '<div class="item dia-sem' + (ok ? " hecho" : "") + '"><span class="ico" style="' + (ok ? "" : dd === hoyDow ? "background:var(--sec);color:#fff" : "") + '">' + (ok ? ico("check", ' stroke-width="3"') : UI.DIAS[dd]) + '</span><span class="txt"><div class="t1">' +
+        (rs.length ? esc(rs.map(function (a) { return a.rutina.nombre; }).join(" + ")) : '<span style="color:var(--suave)">' + (ok ? "Entreno extra" : "Descanso") + "</span>") +
+        '</div><div class="t2">' + UI.DIAS_L[dd] + (dd === hoyDow ? " · hoy" : "") + (ok ? " · hecho ✓" : "") + "</div></span>" +
+        (rs.length ? '<a class="btn chico' + (dd === hoyDow && !ok ? "" : " vidrio") + '" href="#/entrenar/' + rs[0].id + '">' + (dd === hoyDow ? (ok ? "Repetir" : "Empezar") : "Abrir") + "</a>" : "") + "</div>";
     }).join("") + "</div></div>";
     html += '<div class="titulo-sec"><h2>Mis rutinas</h2></div><div class="tarjeta sin-relleno"><div class="lista">' + (d.asig.length ? d.asig.map(function (a) {
       return '<a class="item" href="#/entrenar/' + a.id + '"><span class="ico cuadro">' + ico("rutinas") + '</span><span class="txt"><div class="t1">' + esc(a.rutina.nombre) +
@@ -261,6 +288,14 @@
     t0 = setInterval(crono, 1000); crono();
     var tDesc = null;
     A().alSalirVista = function () { clearInterval(t0); clearInterval(tDesc); var d = UI.$(".descanso"); if (d) d.remove(); };
+    // La siguiente serie que falta (para mostrarla durante el descanso)
+    function siguiente() {
+      for (var k = 0; k < todos.length; k++) {
+        var it = todos[k], n = Number(it.series) || 1, v = est.v[it.id] || [];
+        for (var i = 0; i < n; i++) if (!(v[i] && v[i].ok)) return { it: it, i: i, n: n };
+      }
+      return null;
+    }
     function descanso(seg) {
       clearInterval(tDesc);
       var vieja = UI.$(".descanso"); if (vieja) vieja.remove();
@@ -268,7 +303,7 @@
       var fin = Date.now() + seg * 1000, totalD = seg * 1000, CIR = 2 * Math.PI * 21;
       var el = document.createElement("div"); el.className = "descanso";
       el.innerHTML = '<div class="d-anillo"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="21" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle id="dc" cx="25" cy="25" r="21" fill="none" stroke="var(--sec)" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + CIR.toFixed(1) + '"/></svg>' + ico("reloj", ' width="16" height="16"') + '</div>' +
-        '<div class="txt"><small>Descanso</small><div class="reloj" id="dr"></div></div><button class="btn chico vidrio" id="d15">+15 s</button><button class="btn chico" id="dx">Saltar</button>';
+        '<div class="txt"><small>Descanso</small><div class="reloj" id="dr"></div>' + (function () { var s = siguiente(); return s ? '<div class="d-sig">Sigue: ' + esc(s.it.nombre) + " · " + (s.i + 1) + "/" + s.n + "</div>" : ""; })() + '</div><button class="btn chico vidrio" id="d15">+15 s</button><button class="btn chico" id="dx">Saltar</button>';
       document.body.appendChild(el);
       function tick() {
         var resta = Math.max(0, fin - Date.now()), q = Math.round(resta / 1000);
@@ -296,6 +331,10 @@
             if (vals[i].ok) {
               var sigEnSuper = it.grupo && (function () { var bl = r.bloques.find(function (b) { return b.items.indexOf(it) >= 0; }); var j = bl.items.indexOf(it); return bl.items[j + 1] && bl.items[j + 1].grupo === it.grupo; })();
               descanso(sigEnSuper ? 0 : Number(it.descanso) || 0);
+              if (card.classList.contains("completo")) {
+                var cards = UI.$$("[data-it]"), sig = cards.slice(cards.indexOf(card) + 1).find(function (x) { return !x.classList.contains("completo"); });
+                if (sig) setTimeout(function () { sig.scrollIntoView({ behavior: "smooth", block: "start" }); }, 450);
+              }
             }
           };
         });
@@ -309,6 +348,7 @@
         };
       });
       UI.$("#terminar").onclick = terminar;
+      UI.$(".entreno-cab .atras").addEventListener("click", function () { if (hechas()) UI.aviso("Tu avance queda guardado. Puedes seguir después"); });
     }
     function terminar() {
       var series = [];
@@ -318,8 +358,22 @@
           series.push({ ref: it.ref, nombre: it.nombre, serie: i + 1, peso: s.peso === "" || s.peso == null ? null : Number(s.peso), reps: s.reps === "" || s.reps == null ? null : Number(s.reps), rir: s.rir == null ? "" : s.rir });
         });
       });
-      var calif = 0;
-      UI.hoja("¡Buen trabajo! 💪", '<p style="color:var(--suave);margin:-6px 0 6px">' + series.length + " series registradas · " + Math.round((Date.now() - est.inicio) / 60000) + " min</p>" +
+      var calif = 0, minT = Math.max(1, Math.round((Date.now() - est.inicio) / 60000));
+      var volT = series.reduce(function (t, x) { return t + (x.peso || 0) * (x.reps || 0); }, 0);
+      // Récords: más peso que cualquier vez anterior en ese ejercicio
+      var recs = [];
+      todos.forEach(function (it) {
+        var hoyMax = Math.max.apply(null, [0].concat(series.filter(function (x) { return x.ref === it.ref; }).map(function (x) { return x.peso || 0; })));
+        if (!hoyMax) return;
+        var antes = 0; ses.forEach(function (s) { (s.series || []).forEach(function (x) { if (x.ref === it.ref) antes = Math.max(antes, Number(x.peso) || 0); }); });
+        if (antes && hoyMax > antes && !recs.some(function (r0) { return r0.n === it.nombre; })) recs.push({ n: it.nombre, kg: hoyMax, mas: hoyMax - antes });
+      });
+      var faltan = total - hechas();
+      UI.hoja(series.length ? "¡Buen trabajo! 💪" : "¿Terminar sin registrar?", (series.length ? "" : '<p class="ayuda" style="margin:-8px 0 12px;color:var(--ambar)">Aún no marcas ninguna serie. Toca ✓ en cada serie que hagas para que tu entrenador vea tu avance.</p>') +
+        '<div class="fin-nums"><div><b>' + minT + "</b><small>minutos</small></div><div><b>" + series.length + "</b><small>series</small></div><div><b>" + (volT >= 10000 ? UI.num(volT / 1000) + "t" : Math.round(volT).toLocaleString("es-MX")) + "</b><small>kg levantados</small></div></div>" +
+        (recs.length ? '<div class="fin-recs"><div class="lbl">🏆 ' + (recs.length === 1 ? "Nuevo récord" : recs.length + " nuevos récords") + "</div>" + recs.map(function (r0) {
+          return "<div><span>" + esc(r0.n) + "</span><b>" + UI.num(r0.kg) + " kg <small>+" + UI.num(r0.mas) + "</small></b></div>"; }).join("") + "</div>" : "") +
+        (series.length && faltan > 0 ? '<p class="ayuda" style="text-align:center;margin-top:10px">Te faltaron ' + faltan + (faltan === 1 ? " serie" : " series") + ". No pasa nada, lo importante es venir.</p>" : "") +
         '<div class="lbl" style="text-align:center;margin-top:10px">¿Cómo te sentiste?</div><div class="estrellas">' + [1, 2, 3, 4, 5].map(function (n) { return '<button data-n="' + n + '" aria-label="' + n + ' estrellas">' + ico("estrella") + "</button>"; }).join("") +
         '</div><div class="form"><textarea class="entrada" id="coment" placeholder="Comentario para tu entrenador (opcional)"></textarea><button class="btn" id="enviar">Guardar entrenamiento</button>' +
         '<button class="btn vidrio" data-cerrar>Seguir entrenando</button></div>', function (h, cerrar) {
