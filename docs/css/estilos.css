@@ -595,3 +595,51 @@ body[data-sec="ajustes"],body[data-sec="perfil"]{--sec:#7C8DB5}
 .tab.on svg{transform:scale(1.08)}
 .item:active,.tarjeta[href]:active,a.tarjeta:active{transform:scale(.985);transition:transform .1s}
 @media (prefers-reduced-motion:reduce){.contenido>*{animation:none}}
+/* ══ Acabados finos ══ */
+/* Avatares con color propio */
+.av-color{background:linear-gradient(145deg,hsl(var(--h) 68% 58%),hsl(calc(var(--h) + 38) 60% 40%))!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+/* Esqueleto de carga */
+.cargando{display:flex;flex-direction:column;gap:14px;padding:calc(22px + var(--arriba)) 16px 16px;min-height:60dvh}
+.esq{border-radius:22px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.04) 70%) 0 0/250% 100%;animation:brillo 1.2s linear infinite}
+.esq-cab{height:56px;width:62%;border-radius:16px;margin-bottom:6px}
+.esq-t{height:118px}
+.esq-t.corta{height:70px}
+.cargando.chico{min-height:0;padding:2px 0;gap:10px}
+.cargando.chico .esq-cab,.cargando.chico .esq-t:nth-child(n+3){display:none}
+.cargando.chico .esq-t{height:64px}
+@keyframes brillo{from{background-position:100% 0}to{background-position:-150% 0}}
+/* Tarjetas con borde de luz arriba y sombra suave */
+.tarjeta,.dato,.kpi4 div,.checkin{box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 28px -20px rgba(0,0,0,.7)}
+.tarjeta{border-color:rgba(255,255,255,.07)}
+/* Barra de abajo tipo cristal */
+.tabbar{background:rgba(16,20,34,.74);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);box-shadow:0 18px 40px -12px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.06)}
+.tab{transition:color .2s,background .25s}
+.tab.on{box-shadow:0 6px 18px -6px color-mix(in srgb,var(--sec) 75%,transparent)}
+/* Campos de texto */
+.entrada{transition:border-color .15s,box-shadow .15s,background .15s}
+.entrada:focus{border-color:var(--sec);box-shadow:0 0 0 3px color-mix(in srgb,var(--sec) 22%,transparent);background:rgba(255,255,255,.09)}
+.entrada::placeholder{color:var(--tenue)}
+/* Hojas que suben desde abajo */
+.hoja{background:linear-gradient(180deg,#171D2E,#111624 120px);border-color:rgba(255,255,255,.08);box-shadow:0 -20px 60px -20px rgba(0,0,0,.7)}
+.hoja .asa{background:rgba(255,255,255,.22)}
+.fondo{background:rgba(3,5,12,.6)}
+/* Avisos tipo cápsula oscura */
+.aviso{display:flex;align-items:center;gap:10px;background:rgba(22,28,46,.94);color:#fff;border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:10px 18px 10px 10px;font-size:14.5px;text-align:left}
+.aviso-ico{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#06281A;font-weight:900;font-size:13px}
+.aviso.error{background:rgba(60,18,26,.95);color:#FFD9DE;border-color:rgba(244,63,94,.35)}
+.aviso.error .aviso-ico{background:var(--malo);color:#fff}
+/* Chips, segmentos y títulos */
+.chip{border:1px solid rgba(255,255,255,.06);transition:background .2s,color .2s}
+.chip.on{border-color:transparent;color:#fff;box-shadow:0 4px 14px -6px color-mix(in srgb,var(--sec) 80%,transparent)}
+.segmento{border:1px solid rgba(255,255,255,.05)}
+.segmento button{transition:background .2s,color .2s}
+.titulo-sec h2{font-size:20px;letter-spacing:-.4px}
+.cab-txt h1,.perfil-cab h1,.subnav a.on{letter-spacing:-.9px}
+/* Estados vacíos */
+.vacio svg{display:block;width:30px;height:30px;padding:14px;box-sizing:content-box;border-radius:50%;background:color-mix(in srgb,var(--sec) 14%,transparent);color:var(--sec-2);opacity:1;margin:0 auto 12px}
+/* Botones */
+.btn{transition:transform .12s,box-shadow .2s,filter .2s}
+.btn:active{filter:brightness(.92)}
+.btn-redondo{transition:transform .12s,background .2s}
+.btn-redondo:active{transform:scale(.92)}
+::selection{background:color-mix(in srgb,var(--sec) 45%,transparent)}

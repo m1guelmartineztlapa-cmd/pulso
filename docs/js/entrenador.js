@@ -750,7 +750,7 @@
       ir.onclick = async function () {
         var pedido = h.querySelector("#iaPedido").value.trim();
         if (!pedido) return UI.aviso("Escribe qué necesitas", true);
-        ir.disabled = true; ir.innerHTML = '<span class="girar" style="width:18px;height:18px;border-width:2px;border-top-color:#0A0F25;border-color:rgba(10,15,37,.2);border-top-color:#0A0F25"></span>Pensando…';
+        ir.disabled = true; ir.innerHTML = '<span class="girar" style="width:18px;height:18px;border-width:2px;border-color:rgba(255,255,255,.3);border-top-color:#fff"></span>Pensando…';
         try { await alEnviar(pedido); cerrar(); }
         catch (e) { UI.error(e); ir.disabled = false; ir.innerHTML = ico("chispa") + "Generar"; }
       };
@@ -875,7 +875,7 @@
         }
         if (selFoto.quitado() && !selFoto.archivo()) d.imagen_url = null;
         btn.disabled = true;
-        var giro = '<span class="girar" style="width:18px;height:18px;border-width:2px;border-color:rgba(10,15,37,.2);border-top-color:#0A0F25"></span>';
+        var giro = '<span class="girar" style="width:18px;height:18px;border-width:2px;border-color:rgba(255,255,255,.3);border-top-color:#fff"></span>';
         try {
           if (modoV === "archivo" && fv) {
             btn.innerHTML = giro + "Preparando video…";

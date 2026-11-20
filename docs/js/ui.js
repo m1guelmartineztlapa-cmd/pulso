@@ -62,7 +62,7 @@
   /* Aviso flotante */
   var tAviso;
   UI.aviso = function (msg, error) {
-    var a = UI.$("#aviso"); a.textContent = msg; a.className = "aviso ver" + (error ? " error" : "");
+    var a = UI.$("#aviso"); a.innerHTML = '<span class="aviso-ico">' + (error ? "!" : "✓") + "</span><span>" + UI.esc(String(msg).replace(/\s*✓\s*$/, "")) + "</span>"; a.className = "aviso ver" + (error ? " error" : "");
     clearTimeout(tAviso); tAviso = setTimeout(function () { a.className = "aviso" + (error ? " error" : ""); }, 2600);
   };
   UI.error = function (e) {
@@ -122,8 +122,10 @@
     return String(n || "?").trim().split(/\s+/).slice(0, 2).map(function (p) { return p[0]; }).join("").toUpperCase();
   };
   /* Foto de perfil del alumno: el HTML lleva data-foto y luego UI.cargarFotos pone las imágenes */
+  // Color propio para cada persona (sale de su nombre), como en las apps profesionales
+  UI.tono = function (txt) { var h = 0, s = String(txt || "?"); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; };
   UI.avatarCli = function (c, clase) {
-    return '<span class="' + (clase || "ico") + '"' + (c && c.foto_path ? ' data-foto="' + UI.esc(c.foto_path) + '"' : "") + ">" + UI.esc(UI.iniciales(c && c.nombre)) + "</span>";
+    return '<span class="' + (clase || "ico") + ' av-color" style="--h:' + UI.tono(c && c.nombre) + '"' + (c && c.foto_path ? ' data-foto="' + UI.esc(c.foto_path) + '"' : "") + ">" + UI.esc(UI.iniciales(c && c.nombre)) + "</span>";
   };
   var cacheFotos = {};
   UI.cargarFotos = async function (raiz) {
@@ -439,7 +441,8 @@
     }).join("");
   };
 
-  UI.cargando = function () { return '<div class="cargando"><div class="girar"></div></div>'; };
+  // Carga con "esqueleto" (bloques que brillan) en vez de un círculo girando
+  UI.cargando = function () { return '<div class="cargando"><div class="esq esq-cab"></div><div class="esq esq-t"></div><div class="esq esq-t"></div><div class="esq esq-t corta"></div></div>'; };
 
   UI.copiar = function (txt) {
     if (navigator.clipboard) return navigator.clipboard.writeText(txt).then(function () { UI.aviso("Copiado ✓"); });
