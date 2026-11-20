@@ -734,3 +734,6 @@ input.switch:checked::after{transform:translateX(20px)}
 .rank-min{font-size:15px;font-weight:800;color:#fff;white-space:nowrap}
 .rank-fila .barrita i{background:var(--grad-sec)}
 .segmento.con-pill.pegado{position:sticky}
+.objetivo-hoja{display:flex;gap:14px;align-items:flex-start}
+.objetivo-hoja .entrada{flex:1;height:auto;padding:12px 14px;line-height:1.4}
+.obj-txt{margin:4px 0 0;font-size:18px;font-weight:600;line-height:1.4;color:#fff}

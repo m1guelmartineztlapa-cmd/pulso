@@ -384,7 +384,7 @@
       '<div class="lbl grupo">Mi entrenador</div><div class="tarjeta sin-relleno"><div class="lista">' +
       '<div class="item"><span class="ico cuadro" style="overflow:hidden">' + (e.logo_url ? '<img src="' + esc(e.logo_url) + '" alt="">' : esc(UI.iniciales(e.marca || "P"))) + '</span><span class="txt"><div class="t1">' + esc(e.marca || "Tu entrenador") +
       '</div><div class="t2">' + esc(e.nombre || "") + "</div></span></div>" +
-      (c.objetivo ? fila("", ico("estrella"), "Mi objetivo", esc(c.objetivo), { sinFlecha: true }) : "") + "</div></div>" +
+      fila("objetivo", ico("estrella"), "Mi objetivo", c.objetivo ? esc(c.objetivo) : "Aún sin definir") + "</div></div>" +
       '<div class="lbl grupo">Mi actividad</div><div class="tarjeta sin-relleno"><div class="lista">' +
       fila("", ico("pesa"), "Entrenamientos e historial", "", { href: "#/entrenos" }) +
       fila("", '<span style="font-size:18px">🥗</span>', "Alimentación", "", { href: "#/comida" }) +
@@ -393,6 +393,21 @@
       fila("instalar", ico("compartir"), "Instalar en mi celular", "Para abrirla como app, sin navegador") + "</div></div>" +
       '<div class="tarjeta sin-relleno"><div class="lista">' + fila("salir", ico("salir"), '<span style="color:var(--malo)">Cerrar sesión</span>', "", { sinFlecha: true }) + "</div></div></div>";
     UI.$("#salir").onclick = function () { A().salir(); };
+    UI.$("#objetivo").onclick = function () {
+      var puede = A().esAdmin; // el admin (mantenimiento) lo puede corregir; el alumno lo ve completo
+      UI.hoja("Mi objetivo", '<div class="objetivo-hoja"><span class="rut-ico">' + ico("estrella") + "</span>" +
+        (puede ? '<textarea class="entrada" id="objTxt" rows="4" placeholder="Ej. Bajar 5 kg y correr 5 km">' + esc(c.objetivo || "") + "</textarea>" :
+          '<p class="obj-txt">' + (c.objetivo ? esc(c.objetivo) : "Tu entrenador todavía no define tu objetivo.") + "</p>") + "</div>" +
+        (puede ? '<button class="btn" id="objGuardar" style="margin-top:14px">' + ico("check") + "Guardar objetivo</button>" :
+          '<p class="ayuda" style="margin-top:14px">Tu entrenador define tu objetivo para armar tus rutinas y tu plan. Si quieres cambiarlo, platícalo con ' + esc((e.nombre || "tu entrenador").split(" ")[0]) + ".</p>"), function (h, cerrar) {
+        var g = h.querySelector("#objGuardar");
+        if (g) g.onclick = async function () {
+          this.disabled = true;
+          try { var v = h.querySelector("#objTxt").value.trim(); await DB.upd("clientes", c.id, { objetivo: v || null }); A().cli.objetivo = v; cerrar(); UI.aviso("Objetivo guardado"); V.perfil(); }
+          catch (er) { UI.error(er); this.disabled = false; }
+        };
+      });
+    };
     UI.$("#instalar").onclick = function () {
       UI.hoja("Instalar la app", '<div class="lista" style="margin:0 -18px"><div class="item"><span class="ico">' + ico("compartir") + '</span><span class="txt"><div class="t1">iPhone</div><div class="t2" style="white-space:normal">En Safari, toca Compartir y luego «Agregar a pantalla de inicio».</div></span></div>' +
         '<div class="item"><span class="ico">' + ico("puntos") + '</span><span class="txt"><div class="t1">Android</div><div class="t2" style="white-space:normal">En Chrome, abre el menú ⋮ y toca «Instalar app».</div></span></div></div>');
