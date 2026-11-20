@@ -1185,7 +1185,7 @@
     if (!d) return sinAcceso();
     var ents = d.entrenadores || [], alus = d.alumnos || [];
     var todos = ents.map(function (e) { return { id: "e" + e.id, rol: "entrenador", nombre: e.nombre || "(sin nombre)", email: e.email, marca: e.marca, alta: e.alta, ultimo: e.ultimo_acceso, en_linea: e.en_linea, cuenta: true, ent: e.id,
-      extra: (e.alumnos || 0) + " alumnos · " + (e.rutinas || 0) + " rutinas", min7: e.min_7d, av: avatarAdm(e) }; })
+      extra: (e.alumnos || 0) + " alumnos · " + (e.rutinas || 0) + " rutinas", min7: e.min_7d, av: e.logo_url ? avatarAdm(e) : UI.avatarCli({ nombre: e.nombre }) }; })
       .concat(alus.map(function (c) { return { id: "c" + c.id, rol: "alumno", nombre: c.nombre, email: c.email, marca: c.marca || c.entrenador, alta: c.alta, ultimo: c.ultimo_acceso, en_linea: c.en_linea, cuenta: c.tiene_cuenta, ent: c.ent,
         extra: (c.sesiones || 0) + " entrenos · entrena con " + (c.entrenador || c.marca || "—"), min7: c.min_7d, activo: c.activo, av: UI.avatarCli(c) }; }));
     var h7 = Date.now() - 7 * 864e5;
@@ -1197,6 +1197,9 @@
       todos.length + ' cuentas · Administración</small><h1>Usuarios</h1></div><button class="btn-redondo" id="exportar" aria-label="Descargar lista" title="Descargar lista (CSV)">' + ico("compartir") + "</button></div></section>" +
       '<div class="contenido"><div class="kpi4"><div><b>' + ents.length + "</b><small>Entrenadores</small></div><div><b>" + alus.filter(function (c) { return c.tiene_cuenta; }).length + "</b><small>Alumnos con cuenta</small></div><div><b>" +
       alus.filter(function (c) { return !c.tiene_cuenta; }).length + "</b><small>Sin cuenta</small></div><div><b>" + nuevos + "</b><small>Nuevos (7 días)</small></div></div>" +
+      '<div class="titulo-sec"><h2>🏆 Los que más usan Pulso</h2></div><div class="segmento" id="pU"><button data-d="7" class="on">7 días</button><button data-d="30">30 días</button><button data-d="90">3 meses</button></div>' +
+      '<div class="tarjeta sin-relleno"><div class="lista" id="rankU"></div></div>' +
+      '<div class="titulo-sec"><h2>Todas las cuentas</h2></div>' +
       '<label class="buscador buscador-c">' + ico("buscar", ' width="19" height="19"') + '<input id="qU" placeholder="Buscar por nombre, correo o marca" autocomplete="off"></label>' +
       '<div class="chips scroll" id="fU">' + F.map(function (f) { var n = todos.filter(function (u) { return pasa(u, f.id); }).length; return '<button class="chip' + (f.id === "todos" ? " on" : "") + '" data-f="' + f.id + '">' + f.t + ' <span class="cuenta">' + n + "</span></button>"; }).join("") + "</div>" +
       '<div class="orden-fila"><span>Ordenar por</span><select class="entrada" id="oU"><option value="alta">Más recientes</option><option value="ultimo">Último acceso</option><option value="nombre">Nombre (A–Z)</option><option value="email">Correo (A–Z)</option><option value="uso">Más uso (7 días)</option></select></div>' +
@@ -1231,6 +1234,30 @@
       UI.aviso("Lista descargada ✓");
     };
     lista();
+    // Ranking: tiempo dentro de la app por persona (entrenadores y alumnos), del que más al que menos
+    var acc = (d.actividad || []).filter(function (a) { return a.tipo === "acceso"; });
+    function ranking(dias) {
+      var desde = Date.now() - dias * 864e5, m = {};
+      acc.forEach(function (a) {
+        if (new Date(a.cuando).getTime() < desde) return;
+        var k = (a.rol || "") + "|" + (a.quien || "");
+        if (!m[k]) m[k] = { rol: a.rol, quien: a.quien, de: a.de, min: 0, vis: 0, ult: a.cuando };
+        m[k].min += Number(a.min) || 0; m[k].vis++; if (a.cuando > m[k].ult) m[k].ult = a.cuando;
+      });
+      var l = Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return b.min - a.min; });
+      var max = l.length ? l[0].min : 1, MED = ["🥇", "🥈", "🥉"];
+      UI.$("#rankU").innerHTML = l.length ? l.slice(0, 10).map(function (x, i) {
+        var u = todos.find(function (t) { return t.rol === x.rol && t.nombre === x.quien; });
+        return '<button class="item fila-btn rank-fila"' + (u ? ' data-ru="' + u.id + '"' : "") + '><span class="rank-pos">' + (MED[i] || i + 1) + '</span><span style="position:relative;flex:none">' + (u ? u.av : UI.avatarCli({ nombre: x.quien })) +
+          '</span><span class="txt"><div class="t1">' + esc(x.quien || "—") + '</div><div class="cli-tags"><span class="tag ' + (x.rol === "entrenador" ? "t-entreno" : "t-bien") + '">' + (x.rol === "entrenador" ? "Entrenador" : "Alumno") + "</span>" +
+          '<span class="tag">' + x.vis + (x.vis === 1 ? " visita" : " visitas") + '</span></div><div class="barrita ancha" style="margin-top:8px;height:6px"><i style="width:' + Math.max(4, Math.round(x.min / max * 100)) + '%"></i></div></span>' +
+          '<span class="der"><b class="rank-min">' + mins(x.min) + "</b></span></button>";
+      }).join("") : '<div class="vacio">Nadie ha usado la app en este periodo.</div>';
+      UI.cargarFotos(UI.$("#rankU"));
+      UI.$$("[data-ru]", UI.$("#rankU")).forEach(function (b) { b.onclick = function () { hojaUsuario(todos.find(function (u) { return u.id === b.dataset.ru; })); }; });
+    }
+    UI.$$("#pU button").forEach(function (b) { b.onclick = function () { UI.$$("#pU button").forEach(function (x) { x.classList.toggle("on", x === b); }); ranking(Number(b.dataset.d)); }; });
+    ranking(7);
   }
   function hojaUsuario(u) {
     function fila(t, v) { return '<div class="item"><span class="txt"><div class="t2">' + t + '</div><div class="t1" style="white-space:normal;word-break:break-word">' + v + "</div></span></div>"; }

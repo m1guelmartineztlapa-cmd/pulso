@@ -729,3 +729,7 @@ input.switch:checked::after{transform:translateX(20px)}
 /* Fotos de perfil siempre redondas */
 .av-color{border-radius:50%;display:grid;place-items:center;font-weight:700;overflow:hidden;flex:none}
 .promo>.av-color:not(.avatar){width:44px;height:44px;font-size:15px}
+/* Ranking de uso */
+.rank-pos{flex:none;width:26px;text-align:center;font-size:18px;font-weight:800;color:var(--suave)}
+.rank-min{font-size:15px;font-weight:800;color:#fff;white-space:nowrap}
+.rank-fila .barrita i{background:var(--grad-sec)}
