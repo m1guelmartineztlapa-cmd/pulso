@@ -224,17 +224,25 @@
     }
     var t0;
     function dibujar() {
-      app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:10px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/">' + ico("izq", ' width="22" height="22"') + "Salir</a>" +
-        '<div style="display:flex;align-items:center;gap:8px;font-weight:700;font-variant-numeric:tabular-nums">' + ico("reloj", ' width="18" height="18"') + '<span id="crono">0:00</span></div></div>' +
-        '<h1 class="titulo-pag" style="margin-top:14px">' + esc(r.nombre) + '</h1><div style="margin-top:12px;height:8px;border-radius:8px;background:rgba(255,255,255,.12);overflow:hidden"><div id="barra" style="height:100%;width:0;background:#fff;border-radius:8px;transition:width .3s"></div></div>' +
-        '<div style="color:rgba(255,255,255,.8);font-size:14px;margin-top:6px" id="cuenta"></div></section><div class="contenido">' +
+      app().innerHTML = A().bandaDemo() + '<section class="hero compacto entreno-cab"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/">' + ico("izq", ' width="22" height="22"') + "Salir</a>" +
+        '<div class="crono-pill">' + ico("reloj", ' width="16" height="16"') + '<span id="crono">0:00</span></div></div>' +
+        '<h1 class="titulo-pag" style="margin-top:14px">' + esc(r.nombre) + '</h1><div class="ent-barra"><div id="barra"></div></div>' +
+        '<div class="ent-cuenta" id="cuenta"></div></section><div class="contenido">' +
         r.bloques.map(function (b, bi) {
           return b.items.length ? '<div class="titulo-sec"><h2>' + esc(b.nombre) + "</h2></div>" + b.items.map(function (it) { return tarjeta(it, bi); }).join("") : "";
         }).join("") + '<button class="btn" id="terminar">' + ico("check") + "Terminar entrenamiento</button></div>";
       progreso();
       enlazar();
     }
+    function marcarCompletas() {
+      UI.$$("[data-it]").forEach(function (card) {
+        var it = todos.find(function (x) { return x.id === card.dataset.it; }), n = Number(it.series) || 1, v = est.v[it.id] || [];
+        var listas = 0; for (var i = 0; i < n; i++) if (v[i] && v[i].ok) listas++;
+        card.classList.toggle("completo", listas >= n);
+      });
+    }
     function progreso() {
+      marcarCompletas();
       var h = hechas();
       UI.$("#barra").style.width = Math.round(h / total * 100) + "%";
       UI.$("#cuenta").textContent = h + " de " + total + " series";
@@ -250,16 +258,18 @@
       clearInterval(tDesc);
       var vieja = UI.$(".descanso"); if (vieja) vieja.remove();
       if (!seg) return;
-      var fin = Date.now() + seg * 1000;
+      var fin = Date.now() + seg * 1000, totalD = seg * 1000, CIR = 2 * Math.PI * 21;
       var el = document.createElement("div"); el.className = "descanso";
-      el.innerHTML = '<div class="reloj" id="dr"></div><div class="txt">Descanso</div><button class="btn chico vidrio" id="d15">+15 s</button><button class="btn chico" id="dx">Saltar</button>';
+      el.innerHTML = '<div class="d-anillo"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="21" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle id="dc" cx="25" cy="25" r="21" fill="none" stroke="var(--sec)" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + CIR.toFixed(1) + '"/></svg>' + ico("reloj", ' width="16" height="16"') + '</div>' +
+        '<div class="txt"><small>Descanso</small><div class="reloj" id="dr"></div></div><button class="btn chico vidrio" id="d15">+15 s</button><button class="btn chico" id="dx">Saltar</button>';
       document.body.appendChild(el);
       function tick() {
-        var q = Math.max(0, Math.round((fin - Date.now()) / 1000));
+        var resta = Math.max(0, fin - Date.now()), q = Math.round(resta / 1000);
         el.querySelector("#dr").textContent = Math.floor(q / 60) + ":" + String(q % 60).padStart(2, "0");
+        el.querySelector("#dc").style.strokeDashoffset = (CIR * (1 - resta / totalD)).toFixed(1);
         if (q <= 0) { clearInterval(tDesc); el.remove(); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); UI.aviso("¡A la siguiente serie!"); }
       }
-      el.querySelector("#d15").onclick = function () { fin += 15000; tick(); };
+      el.querySelector("#d15").onclick = function () { fin += 15000; totalD += 15000; tick(); };
       el.querySelector("#dx").onclick = function () { clearInterval(tDesc); el.remove(); };
       tick(); tDesc = setInterval(tick, 250);
     }
@@ -317,7 +327,7 @@
               duracion_min: Math.max(1, Math.min(300, Math.round((Date.now() - est.inicio) / 60000))) };
             try { await DB.ins("sesiones", fila); }
             catch (e1) { if (!/duracion_min/.test(e1.message || "")) throw e1; delete fila.duracion_min; await DB.ins("sesiones", fila); }
-            localStorage.removeItem(LL); cerrar(); UI.aviso("Entrenamiento guardado ✓"); A().ir("");
+            localStorage.removeItem(LL); cerrar(); if (UI.confeti) UI.confeti(); UI.aviso("Entrenamiento guardado ✓"); A().ir("");
           } catch (e) { UI.error(e); this.disabled = false; }
         };
       });

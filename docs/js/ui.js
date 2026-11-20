@@ -470,6 +470,19 @@
   };
 
   // Carga con "esqueleto" (bloques que brillan) en vez de un círculo girando
+  // Celebración: confeti que cae (al terminar un entrenamiento)
+  UI.confeti = function () {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var c = document.createElement("div"); c.className = "confeti";
+    var col = ["#3B7BFF", "#22D3EE", "#3DDC97", "#FBBF24", "#FF7A59", "#A78BFA", "#F472B6"], h = "";
+    for (var i = 0; i < 90; i++) {
+      h += '<i style="left:' + (Math.random() * 100).toFixed(1) + "%;background:" + col[i % col.length] + ";animation-delay:" + (Math.random() * 0.5).toFixed(2) + "s;animation-duration:" + (1.8 + Math.random() * 1.4).toFixed(2) +
+        "s;--x:" + Math.round(Math.random() * 160 - 80) + "px;--r:" + Math.round(Math.random() * 720) + "deg;width:" + (6 + Math.random() * 5).toFixed(0) + "px;height:" + (8 + Math.random() * 8).toFixed(0) + "px" + (i % 3 ? "" : ";border-radius:50%") + '"></i>';
+    }
+    c.innerHTML = h; document.body.appendChild(c);
+    if (navigator.vibrate) navigator.vibrate(60);
+    setTimeout(function () { c.remove(); }, 3600);
+  };
   UI.cargando = function () { return '<div class="cargando"><div class="esq esq-cab"></div><div class="esq esq-t"></div><div class="esq esq-t"></div><div class="esq esq-t corta"></div></div>'; };
 
   UI.copiar = function (txt) {

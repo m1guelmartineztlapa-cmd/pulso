@@ -737,3 +737,32 @@ input.switch:checked::after{transform:translateX(20px)}
 .objetivo-hoja{display:flex;gap:14px;align-items:flex-start}
 .objetivo-hoja .entrada{flex:1;height:auto;padding:12px 14px;line-height:1.4}
 .obj-txt{margin:4px 0 0;font-size:18px;font-weight:600;line-height:1.4;color:#fff}
+#navMini{top:var(--navTop,0px);padding-top:var(--navPad,var(--arriba));height:calc(46px + var(--navPad,var(--arriba)))}
+.segmento.pegado{top:calc(52px + var(--navTop,0px) + var(--navPad,var(--arriba)))}
+/* ── Pantalla de entrenamiento ── */
+.crono-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:var(--glass);border:1px solid rgba(255,255,255,.1);font-weight:800;font-variant-numeric:tabular-nums;font-size:15px}
+.ent-barra{margin-top:14px;height:8px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden}
+.ent-barra #barra{height:100%;width:0;border-radius:8px;background:var(--grad-sec);transition:width .45s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 12px color-mix(in srgb,var(--sec) 60%,transparent)}
+.ent-cuenta{color:var(--suave);font-size:13.5px;font-weight:600;margin-top:7px}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.2)}100%{transform:scale(1)}}
+.serie.ok .hecho{animation:pop .32s cubic-bezier(.3,.9,.3,1.3)}
+.serie .entrada{transition:background .2s,border-color .2s}
+.tarjeta[data-it]{transition:border-color .3s,opacity .3s}
+.tarjeta.completo{border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+.tarjeta.completo .ej-cab .ico{box-shadow:0 0 0 2.5px var(--ok)}
+.tarjeta.completo .ej-cab .nom::after{content:"✓ Completado";display:inline-block;margin-top:4px;font-size:11.5px;font-weight:800;color:var(--ok);background:color-mix(in srgb,var(--ok) 16%,transparent);padding:2px 8px;border-radius:999px}
+.descanso{display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-radius:24px;background:rgba(18,23,38,.9);border:1px solid rgba(255,255,255,.1);
+  backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);box-shadow:0 18px 40px -12px rgba(0,0,0,.7);animation:subeIOS .4s cubic-bezier(.16,1,.3,1)}
+.d-anillo{flex:none;width:50px;height:50px;position:relative;display:grid;place-items:center;color:var(--sec-2)}
+.d-anillo svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.d-anillo #dc{transition:stroke-dashoffset .25s linear}
+.descanso .txt small{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--suave)}
+.descanso .reloj{font-size:24px;line-height:1.1}
+.descanso .btn.chico{padding:0 14px;height:38px;font-size:14px}
+.estrellas button{transition:transform .15s,color .2s}
+.estrellas button.on{animation:pop .3s}
+/* Confeti */
+.confeti{position:fixed;inset:0;z-index:90;pointer-events:none;overflow:hidden}
+.confeti i{position:absolute;top:-20px;border-radius:2px;animation:caer 2.4s cubic-bezier(.25,.6,.35,1) forwards}
+@keyframes caer{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--x),105vh) rotate(var(--r));opacity:.9}}
+.d-anillo svg+svg{position:static;transform:none;width:18px;height:18px}

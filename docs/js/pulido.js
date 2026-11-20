@@ -19,6 +19,10 @@
     if (tituloEl) t = tituloEl.tagName === "INPUT" ? (tituloEl.value || tituloEl.placeholder) : tituloEl.textContent;
     navTxt.textContent = (t || "").trim();
     navAtras.hidden = !app.querySelector(".hero .atras");
+    // Si hay barra fija arriba (modo demo o "dentro de la cuenta de…"), el título chico va debajo de ella
+    var banda = app.querySelector(".banda-demo"), bs = document.body.style;
+    if (banda) { bs.setProperty("--navTop", banda.offsetHeight + "px"); bs.setProperty("--navPad", "0px"); }
+    else { bs.removeProperty("--navTop"); bs.removeProperty("--navPad"); }
     revisarScroll();
   }
   function revisarScroll() {
