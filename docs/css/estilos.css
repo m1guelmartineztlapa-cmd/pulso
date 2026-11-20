@@ -966,3 +966,11 @@ input.switch:checked::after{transform:translateX(20px)}
 .lg-barra{display:block;height:5px;border-radius:5px;background:rgba(255,255,255,.08);margin-top:8px;overflow:hidden}
 .lg-barra i{display:block;height:100%;border-radius:5px;background:var(--sec)}
 .logro .lg-n{font-size:11.5px;margin-top:3px;font-variant-numeric:tabular-nums}
+/* ── Comida del alumno: avance y siguiente comida ── */
+.com-barra{height:6px;border-radius:6px;background:rgba(255,255,255,.07);margin:-4px 4px 12px;overflow:hidden}
+.com-barra i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--sec),var(--sec-2));transition:width .45s cubic-bezier(.2,.8,.2,1)}
+.comida.siguiente{border-color:color-mix(in srgb,var(--sec) 55%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--sec) 30%,transparent),0 10px 30px -14px var(--sec)}
+.sigue-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--sec);color:#06281A;font-size:10.5px;font-weight:800;letter-spacing:.04em;vertical-align:1px}
+.comida.registrada .comida-cab{opacity:.75}
+.comida-btns button{transition:background .18s,border-color .18s,color .18s,transform .12s}
+.comida-btns button:active{transform:scale(.95)}

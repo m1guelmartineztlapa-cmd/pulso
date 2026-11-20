@@ -127,7 +127,8 @@
     html += '<div class="titulo-sec"><h2>Tu día</h2></div><div class="tarjeta sin-relleno"><div class="anillos">' + svg + "<ul>" +
       aros.map(function (a) { return '<li style="--x:' + a.x + '"><i></i><span>' + a.t + "</span><b>" + a.txt + "</b></li>"; }).join("") + '</ul></div><div class="lista">';
     html += tarea(okEnt, ico("pesa"), "Entrenamiento", hechaHoy ? "Hecho" : hoy ? esc(hoy.rutina.nombre) : "Hoy toca descanso", principal ? "#/entrenar/" + principal.id : "#/entrenos", "t-entreno");
-    if (al && al.total) html += tarea(al.hechas >= al.total, '<span style="font-size:19px">🥗</span>', "Comidas", al.hechas + " de " + al.total + " registradas", "#/comida", "t-comida");
+    if (al && al.total) html += tarea(al.hechas >= al.total, '<span style="font-size:19px">🥗</span>', "Comidas", al.hechas + " de " + al.total + " registradas" +
+      (al.siguiente ? " · sigue " + esc(al.siguiente.tiempo.toLowerCase()) + ": " + esc(al.siguiente.nombre) : ""), "#/comida", "t-comida");
     html += tarea(al && al.sentir, '<span style="font-size:19px">🙂</span>', "¿Cómo te sientes?", al && al.sentir ? "Ya lo registraste" : "Toma 1 minuto", "#/comida", "t-bien");
     html += "</div></div>";
 
@@ -148,6 +149,8 @@
     html += "</div>";
     app().innerHTML = html;
     UI.cargarFotos(app());
+    var tb = UI.$(".tarea.t-bien");
+    if (tb && !(al && al.sentir)) tb.addEventListener("click", function () { try { sessionStorage.setItem("pulso_abrir_sentir", "1"); } catch (e) {} });
   };
 
   /* ───────── Entrenar: plan de la semana, rutinas e historial ───────── */

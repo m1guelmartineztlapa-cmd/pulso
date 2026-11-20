@@ -113,7 +113,14 @@
   }
   function claveComida(c, i) { return (c.tiempo || "comida") + "-" + i; }
   async function registroDe(cliId, fecha) { return await DB.uno("registro_alim", { cliente_id: cliId, fecha: fecha }); }
-  async function guardarRegistro(cli, fecha, cambios) {
+  // Los guardados van en fila: si tocas dos comidas rápido no se crean dos registros del mismo día
+  var colaReg = Promise.resolve();
+  function guardarRegistro(cli, fecha, cambios) {
+    var p = colaReg.then(function () { return guardarRegistro1(cli, fecha, cambios); });
+    colaReg = p.catch(function () {});
+    return p;
+  }
+  async function guardarRegistro1(cli, fecha, cambios) {
     var r = await registroDe(cli.id, fecha);
     var fila = Object.assign({ actualizado: new Date().toISOString() }, cambios);
     if (r) return await DB.upd("registro_alim", r.id, fila);
@@ -201,11 +208,13 @@
     }
     var comidas = (dia && dia.comidas) || [], estados = (reg && reg.comidas) || {};
     var hechas = comidas.filter(function (c, i) { var e = estados[claveComida(c, i)]; return e && (e.estado === "si" || e.estado === "cambio"); }).length;
-    html += '<div class="titulo-sec"><h2>Comidas del día</h2><span class="adm-de">' + hechas + " de " + comidas.length + "</span></div>";
+    html += '<div class="titulo-sec"><h2>Comidas del día</h2><span class="adm-de" id="cHechas">' + hechas + " de " + comidas.length + "</span></div>" +
+      '<div class="com-barra"><i id="cBarra" style="width:' + (comidas.length ? Math.round(hechas / comidas.length * 100) : 0) + '%"></i></div>';
+    var sigI = fecha === hoy ? comidas.findIndex(function (c, i) { return !(estados[claveComida(c, i)] || {}).estado; }) : -1;
     html += comidas.map(function (c, i) {
       var k = claveComida(c, i), e = (estados[k] || {}).estado;
-      return '<div class="tarjeta comida" data-k="' + esc(k) + '" data-i="' + i + '"><div class="comida-cab" data-ver><span class="comida-img">' + imgComida(c) + '</span><span class="txt"><div class="lbl">' +
-        esc((T[c.tiempo] || {}).txt || "Comida") + '</div><div class="t1">' + esc(c.nombre) + '</div><div class="t2">' + esc([c.porcion, (c.ingredientes || []).length + " ingredientes"].filter(Boolean).join(" · ")) +
+      return '<div class="tarjeta comida' + (i === sigI ? " siguiente" : "") + (e ? " registrada" : "") + '" data-k="' + esc(k) + '" data-i="' + i + '"><div class="comida-cab" data-ver><span class="comida-img">' + imgComida(c) + '</span><span class="txt"><div class="lbl">' +
+        esc((T[c.tiempo] || {}).txt || "Comida") + (i === sigI ? ' <span class="sigue-tag">Sigue</span>' : "") + '</div><div class="t1">' + esc(c.nombre) + '</div><div class="t2">' + esc([c.porcion, (c.ingredientes || []).length + " ingredientes"].filter(Boolean).join(" · ")) +
         '</div></span><span class="chev">' + ico("der") + '</span></div><div class="comida-btns">' +
         '<button data-e="si" class="' + (e === "si" ? "on ok" : "") + '">✓ La comí</button><button data-e="cambio" class="' + (e === "cambio" ? "on amb" : "") + '">🔄 La cambié</button><button data-e="no" class="' + (e === "no" ? "on mal" : "") + '">✗ No</button></div></div>';
     }).join("");
@@ -223,10 +232,37 @@
         b.onclick = async function () {
           var actual = ((estados[k] || {}).estado === b.dataset.e) ? null : b.dataset.e; // tocar de nuevo lo quita
           var nuevo = Object.assign({}, estados); if (actual) nuevo[k] = Object.assign({}, nuevo[k] || {}, { estado: actual }); else delete nuevo[k];
-          try { reg = await guardarRegistro(cli, fecha, { comidas: nuevo }); estados = reg.comidas || {}; VC.comida(fecha === hoy ? undefined : fecha); } catch (e) { UI.error(e); }
+          var antes = estados; estados = nuevo; pintarEstados(); // se ve al instante
+          try { reg = await guardarRegistro(cli, fecha, { comidas: nuevo }); estados = reg.comidas || nuevo; }
+          catch (e) { estados = antes; pintarEstados(); UI.error(e); }
         };
       });
     });
+    function pintarEstados() {
+      var n = 0, sig = -1;
+      UI.$$(".comida").forEach(function (el) {
+        var i = Number(el.dataset.i), e = (estados[el.dataset.k] || {}).estado;
+        if (e === "si" || e === "cambio") n++;
+        if (!e && sig < 0 && fecha === hoy) sig = i;
+        el.classList.toggle("registrada", !!e);
+        UI.$$(".comida-btns button", el).forEach(function (b) {
+          var on = b.dataset.e === e; b.classList.toggle("on", on);
+          b.classList.toggle("ok", on && e === "si"); b.classList.toggle("amb", on && e === "cambio"); b.classList.toggle("mal", on && e === "no");
+        });
+      });
+      UI.$$(".comida").forEach(function (el) {
+        var es = Number(el.dataset.i) === sig, lbl = el.querySelector(".lbl"), tag = lbl.querySelector(".sigue-tag");
+        el.classList.toggle("siguiente", es);
+        if (es && !tag) lbl.insertAdjacentHTML("beforeend", ' <span class="sigue-tag">Sigue</span>'); else if (!es && tag) tag.remove();
+      });
+      var hc = UI.$("#cHechas"); if (hc) hc.textContent = n + " de " + comidas.length;
+      var br = UI.$("#cBarra"); if (br) br.style.width = (comidas.length ? Math.round(n / comidas.length * 100) : 0) + "%";
+      var todas = comidas.length && UI.$$(".comida.registrada").length === comidas.length;
+      if (todas && !pintarEstados.festejo) { pintarEstados.festejo = true; if (UI.confeti) UI.confeti(); UI.aviso("¡Registraste todas tus comidas! 🎉"); }
+      if (!todas) pintarEstados.festejo = false;
+      if (fecha === hoy && UI.badge) UI.badge("comida", Math.max(0, comidas.length - UI.$$(".comida.registrada").length) + (reg && reg.sentir && Object.keys(reg.sentir).length ? 0 : 1));
+    }
+    pintarEstados.festejo = comidas.length > 0 && comidas.every(function (c, i) { return (estados[claveComida(c, i)] || {}).estado; });
     UI.$$(".checklist input").forEach(function (inp) {
       inp.onchange = async function () {
         var m = Object.assign({}, marcados); if (inp.checked) m[inp.dataset.c] = true; else delete m[inp.dataset.c];
@@ -237,6 +273,8 @@
 
     function enlazarComun() {
       UI.$("#abrirSentir").onclick = function () { hojaSentir(cli, plan, fecha, reg, function () { VC.comida(fecha === hoy ? undefined : fecha); }); };
+      var abrir = null; try { abrir = sessionStorage.getItem("pulso_abrir_sentir"); sessionStorage.removeItem("pulso_abrir_sentir"); } catch (e) {}
+      if (abrir && fecha === hoy) setTimeout(function () { UI.$("#abrirSentir") && UI.$("#abrirSentir").click(); }, 250);
       var ant = UI.$("#diaAnt"); if (ant) ant.onclick = function () { A().ir("comida/" + sumarDias(fecha, -1)); };
       var sig = UI.$("#diaSig"); if (sig) sig.onclick = function () { var s = sumarDias(fecha, 1); A().ir(s === hoy ? "comida" : "comida/" + s); };
     }
@@ -298,6 +336,8 @@
         var dia = pd.plan.dias[indiceDia(pd.asig, pd.plan, DB.hoyISO())] || {}, comidas = dia.comidas || [], est = (reg && reg.comidas) || {};
         res.total = comidas.length;
         res.hechas = comidas.filter(function (c, i) { var e = est[claveComida(c, i)]; return e && e.estado; }).length;
+        var sg = comidas.find(function (c, i) { var e = est[claveComida(c, i)]; return !(e && e.estado); });
+        if (sg) res.siguiente = { nombre: sg.nombre, tiempo: (T[sg.tiempo] || {}).txt || "Comida" };
       }
       return res;
     } catch (e) { return null; }
