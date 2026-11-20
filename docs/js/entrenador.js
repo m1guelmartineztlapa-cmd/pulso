@@ -1007,11 +1007,13 @@
     var maxMin = Math.max.apply(null, [1].concat(ents.map(function (e) { return minEnt[e.id]; })));
     var verTodo = false, q = "";
 
-    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:14px">' + cabAdmin("ajustes", "Ajustes") +
-      '<div class="saldo" style="margin-top:18px"><div class="etq">En línea ahora</div><div class="cifra">' + (t.en_linea || enLinea.length || 0) + '</div>' +
-      (enLinea.length ? '<div class="adm-enlinea">' + enLinea.slice(0, 8).map(function (p) { return '<span title="' + esc(p.n) + '">' + p.h + "</span>"; }).join("") + "</div>" :
-        '<div class="sub">' + ico("persona") + "Nadie conectado en este momento</div>") +
-      '</div></section><div class="contenido">' +
+    var DL = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"], MS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], hoyD = new Date();
+    var nEnLinea = t.en_linea || enLinea.length || 0;
+    app().innerHTML = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag"><span class="marca-mini" style="color:var(--brand-2)">' + ico("pulso", ' width="22" height="22"') + '</span><div class="cab-txt"><small>' +
+      DL[hoyD.getDay()] + " " + hoyD.getDate() + " " + MS[hoyD.getMonth()] + ' · Administración</small><h1>Panel de Pulso</h1></div><button class="btn-redondo" id="recargar" aria-label="Actualizar datos" title="Actualizar datos">' + ico("recargar") + "</button></div></section>" +
+      '<div class="contenido"><div class="tarjeta en-linea-card"><div class="promo"><span class="pulso-vivo' + (nEnLinea ? " on" : "") + '"></span><div style="flex:1"><h3>' + nEnLinea + (nEnLinea === 1 ? " persona en línea" : " personas en línea") + "</h3><p>" +
+      (enLinea.length ? esc(enLinea.slice(0, 3).map(function (p) { return p.n; }).join(", ")) + (enLinea.length > 3 ? " y " + (enLinea.length - 3) + " más" : "") : "Nadie conectado en este momento") + "</p></div></div>" +
+      (enLinea.length ? '<div class="adm-enlinea" style="justify-content:flex-start;margin-top:12px">' + enLinea.slice(0, 8).map(function (p) { return '<span title="' + esc(p.n) + '">' + p.h + "</span>"; }).join("") + "</div>" : "") + "</div>" +
       chipsPeriodo() +
       '<div class="adm-kpis"><div class="dato"><div class="v">' + mins(minP) + '</div><div class="l">Tiempo de uso · ' + nomP + "<br>hoy: " + mins(minHoy) + "</div></div>" +
       '<div class="dato"><div class="v">' + accP.length + '</div><div class="l">Visitas · ' + nomP + "<br>hoy: " + accHoy.length + "</div></div>" +
@@ -1047,7 +1049,7 @@
   }
   function adminAjustes() {
     tabsAdmin("ajustes");
-    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><h1 class="titulo-pag" style="margin-top:30px">Ajustes</h1></section><div class="contenido">' +
+    app().innerHTML = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag"><span class="marca-mini" style="color:var(--brand-2)">' + ico("ajustes", ' width="22" height="22"') + '</span><div class="cab-txt"><small>Administración</small><h1>Ajustes</h1></div></div></section><div class="contenido">' +
       '<div class="tarjeta"><div class="promo"><span class="avatar grande">' + ico("ajustes", ' width="34" height="34"') + '</span><div><h3>Cuenta de administrador</h3><p>' +
       esc((A().usuario && A().usuario.email) || "") + '</p></div></div><p style="margin-top:14px">Ves el uso de todos los entrenadores y alumnos. Tu propio uso no se registra ni cuenta en las estadísticas.</p></div>' +
       '<div class="tarjeta"><h3>Ver la app como entrenador</h3><p>Navega la app igual que un entrenador para revisar cómo está acomodada. Lo que hagas ahí no cuenta en las estadísticas.</p>' +

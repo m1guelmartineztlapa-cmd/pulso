@@ -446,3 +446,7 @@ a.dato{display:block;color:inherit}
 .anillos li b{color:var(--x)}
 .consejo-dia{display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:18px;background:color-mix(in srgb,var(--c-comida) 12%,var(--card));border:1px solid color-mix(in srgb,var(--c-comida) 30%,transparent);color:#fff;font-size:14.5px;line-height:1.4}
 .lbl.grupo{color:var(--suave)}
+.en-linea-card h3{font-size:18px}
+.pulso-vivo{flex:none;width:14px;height:14px;border-radius:50%;background:var(--tenue);margin:0 6px}
+.pulso-vivo.on{background:var(--ok);box-shadow:0 0 0 6px color-mix(in srgb,var(--ok) 22%,transparent);animation:latir 1.6s ease-in-out infinite}
+@keyframes latir{50%{box-shadow:0 0 0 10px color-mix(in srgb,var(--ok) 8%,transparent)}}
