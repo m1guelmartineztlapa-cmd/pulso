@@ -645,3 +645,77 @@ body[data-sec="ajustes"],body[data-sec="perfil"]{--sec:#7C8DB5}
 ::selection{background:color-mix(in srgb,var(--sec) 45%,transparent)}
 .hoja{overscroll-behavior:contain}
 .hoja .asa{width:44px;height:5px;margin-bottom:12px;cursor:grab}
+/* ══ Acabados estilo iPhone ══ */
+#app{background:var(--bg)}
+/* Título chico arriba al bajar */
+#navMini{position:fixed;top:0;left:0;right:0;z-index:25;height:calc(46px + var(--arriba));padding-top:var(--arriba);display:flex;align-items:center;justify-content:center;
+  background:rgba(9,12,20,.72);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border-bottom:.5px solid rgba(255,255,255,.1);
+  opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .2s,transform .2s}
+#navMini.ver{opacity:1;transform:none;pointer-events:auto}
+#navMini .nm-txt{font-size:17px;font-weight:700;letter-spacing:-.3px;max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#navMini .nm-atras{position:absolute;left:8px;bottom:5px;width:36px;height:36px;border:0;background:none;color:var(--sec-2);display:grid;place-items:center;cursor:pointer}
+#navMini .nm-atras svg{width:24px;height:24px}
+body.con-hoja #navMini{opacity:0;pointer-events:none}
+.segmento.pegado{top:calc(52px + var(--arriba))}
+/* Botón de regresar con el color de la sección */
+.atras{color:var(--sec-2)}
+.atras svg{stroke-width:2.4}
+/* Selector con píldora que se desliza */
+.segmento.con-pill{position:relative}
+.segmento.con-pill button,.segmento.con-pill a{position:relative;z-index:1;background:transparent!important;box-shadow:none!important}
+.segmento.con-pill button.on,.segmento.con-pill a.on{color:#fff}
+.seg-pill{position:absolute;top:4px;bottom:4px;left:0;border-radius:999px;background:var(--grad-sec);box-shadow:0 4px 14px -6px color-mix(in srgb,var(--sec) 80%,transparent);pointer-events:none}
+.seg-pill.anima{transition:transform .32s cubic-bezier(.3,.9,.3,1.05),width .32s cubic-bezier(.3,.9,.3,1.05),opacity .2s}
+/* Transiciones entre pantallas */
+@keyframes p-push{from{transform:translateX(34%);opacity:0}to{transform:none;opacity:1}}
+@keyframes p-pop{from{transform:translateX(-22%);opacity:0}to{transform:none;opacity:1}}
+@keyframes p-tab{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes p-gesto{from{opacity:.4}to{opacity:1}}
+#app.anim-push{animation:p-push .34s cubic-bezier(.2,.85,.25,1)}
+#app.anim-pop{animation:p-pop .3s cubic-bezier(.2,.85,.25,1)}
+#app.anim-tab{animation:p-tab .22s ease-out}
+#app.anim-pop-gesto{animation:p-gesto .2s ease-out}
+/* Ventanas: la pantalla de atrás se encoge */
+#app{transition:transform .34s cubic-bezier(.2,.85,.25,1),filter .34s,border-radius .34s}
+body.con-hoja #app{transform:scale(.93);border-radius:24px;filter:brightness(.62);overflow:hidden}
+body.con-hoja .tabbar{transform:translateX(-50%) translateY(140%);transition:transform .3s}
+.tabbar{transition:transform .3s}
+.fondo{background:rgba(0,0,0,.35);backdrop-filter:none;-webkit-backdrop-filter:none}
+/* Jalar para actualizar */
+#ptr{position:fixed;top:calc(4px + var(--arriba));left:50%;z-index:24;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(22,28,46,.92);border:1px solid rgba(255,255,255,.1);color:var(--suave);box-shadow:0 8px 20px -8px rgba(0,0,0,.6);
+  transform:translate(-50%,-70px);opacity:0;transition:opacity .15s}
+#ptr svg{width:20px;height:20px}
+#ptr.ver{opacity:1}
+#ptr.listo{color:var(--sec-2)}
+#ptr.girando{transition:transform .25s}
+#ptr.girando svg{animation:gira .7s linear infinite;color:var(--sec-2)}
+/* Interruptor del iPhone */
+input.switch{appearance:none;-webkit-appearance:none;flex:none;width:51px;height:31px;border-radius:999px;background:rgba(120,120,128,.32);position:relative;cursor:pointer;transition:background .25s;margin:0}
+input.switch::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.25),0 1px 1px rgba(0,0,0,.12);transition:transform .25s cubic-bezier(.3,.9,.3,1.1)}
+input.switch:checked{background:var(--ok)}
+input.switch:checked::after{transform:translateX(20px)}
+/* Palomitas redondas (como Recordatorios) */
+.chk input{appearance:none;-webkit-appearance:none;width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.28);display:grid;place-items:center;transition:background .2s,border-color .2s,transform .15s;margin:0;cursor:pointer}
+.chk input:checked{background:var(--ok);border-color:var(--ok)}
+.chk input:checked::after{content:"";width:11px;height:6px;border-left:2.6px solid #06281A;border-bottom:2.6px solid #06281A;transform:translateY(-1px) rotate(-45deg)}
+.chk input:active{transform:scale(.88)}
+.chk input:checked+span{color:var(--suave);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.3)}
+/* Filas de lista: se iluminan al tocar (no se encogen) */
+.lista .item{transition:background .15s}
+.lista .item:active{transform:none;background:rgba(255,255,255,.06)}
+.tarjeta.sin-relleno{overflow:hidden}
+/* Barras que crecen */
+@keyframes crecerY{from{height:0}}
+@keyframes crecerX{from{width:0}}
+.sc-barras i{animation:crecerY .8s cubic-bezier(.2,.8,.2,1) both}
+.barrita i,.adm-barra i{animation:crecerX .9s cubic-bezier(.2,.8,.2,1) both}
+.sc-barras div:nth-child(2) i{animation-delay:.04s}.sc-barras div:nth-child(3) i{animation-delay:.08s}.sc-barras div:nth-child(4) i{animation-delay:.12s}
+.sc-barras div:nth-child(5) i{animation-delay:.16s}.sc-barras div:nth-child(6) i{animation-delay:.2s}.sc-barras div:nth-child(7) i{animation-delay:.24s}
+/* Títulos grandes como iOS */
+.cab-txt h1{font-size:32px;letter-spacing:-1px}
+.subnav a.on{font-size:32px}
+/* Ventanas con resorte y esquinas continuas */
+@keyframes subeIOS{from{transform:translateY(100%)}to{transform:none}}
+.hoja{animation:subeIOS .42s cubic-bezier(.16,1,.3,1);border-radius:30px 30px 0 0}
+@media (prefers-reduced-motion:reduce){#app,#app[class*="anim-"],.hoja,.sc-barras i,.barrita i{animation:none!important;transition:none!important}}
