@@ -733,3 +733,4 @@ input.switch:checked::after{transform:translateX(20px)}
 .rank-pos{flex:none;width:26px;text-align:center;font-size:18px;font-weight:800;color:var(--suave)}
 .rank-min{font-size:15px;font-weight:800;color:#fff;white-space:nowrap}
 .rank-fila .barrita i{background:var(--grad-sec)}
+.segmento.con-pill.pegado{position:sticky}
