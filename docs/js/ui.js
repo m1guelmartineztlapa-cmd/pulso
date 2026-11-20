@@ -204,6 +204,137 @@
     };
     return { archivo: function () { return inp.files[0] || null; }, quitado: function () { return quitado; } };
   };
+  /* ───────── Resumen de progreso del alumno (semana / mes / 3 meses / año) ─────────
+     datos = { ses: sesiones terminadas, med: medidas, asig: asignaciones (con dias) } */
+  var MES_C = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  var DIA_L = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  function f0(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+  function lunes(d) { var x = f0(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+  function iso(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+  function fechaDe(s) { return new Date(s.fecha + "T12:00:00"); }
+  function volumen(s) { return (s.series || []).reduce(function (t, x) { return t + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0); }
+  function kg(n) { n = Math.round(n); return n >= 10000 ? (n / 1000).toFixed(1).replace(".0", "") + " t" : n.toLocaleString("es-MX") + " kg"; }
+  function delta(a, b) {
+    if (!b) return a ? '<span class="res-delta sube">nuevo</span>' : "";
+    var p = Math.round((a - b) / b * 100);
+    if (!p) return '<span class="res-delta">= igual</span>';
+    return '<span class="res-delta ' + (p > 0 ? "sube" : "baja") + '">' + (p > 0 ? "▲ " : "▼ ") + Math.abs(p) + "%</span>";
+  }
+  function ventana(periodo) {
+    var hoy = f0(new Date()), ini, fin, cubetas = [];
+    if (periodo === "semana") {
+      ini = lunes(hoy); fin = new Date(ini); fin.setDate(ini.getDate() + 7);
+      for (var i = 0; i < 7; i++) { var d = new Date(ini); d.setDate(ini.getDate() + i); var e = new Date(d); e.setDate(d.getDate() + 1); cubetas.push({ ini: d, fin: e, l: DIA_L[d.getDay()], hoy: iso(d) === iso(hoy) }); }
+    } else if (periodo === "anio") {
+      ini = new Date(hoy.getFullYear(), hoy.getMonth() - 11, 1); fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+      for (var m = 0; m < 12; m++) { var a = new Date(ini.getFullYear(), ini.getMonth() + m, 1), b = new Date(ini.getFullYear(), ini.getMonth() + m + 1, 1); cubetas.push({ ini: a, fin: b, l: MES_C[a.getMonth()], hoy: m === 11 }); }
+    } else {
+      var semanas = periodo === "mes" ? 5 : 13;
+      fin = new Date(lunes(hoy)); fin.setDate(fin.getDate() + 7);
+      ini = new Date(fin); ini.setDate(fin.getDate() - 7 * semanas);
+      for (var w = 0; w < semanas; w++) { var c = new Date(ini); c.setDate(ini.getDate() + 7 * w); var z = new Date(c); z.setDate(c.getDate() + 7); cubetas.push({ ini: c, fin: z, l: c.getDate() + " " + MES_C[c.getMonth()], hoy: w === semanas - 1 }); }
+    }
+    var largo = fin - ini, pIni = new Date(ini.getTime() - largo);
+    return { ini: ini, fin: fin, pIni: pIni, cubetas: cubetas };
+  }
+  function planeados(asig, ini, fin) {
+    var lista = (asig || []).filter(function (a) { return a.activa !== false && (a.dias || []).length; });
+    if (!lista.length) return null;
+    var n = 0, hoy = f0(new Date()), tope = fin < hoy ? fin : new Date(hoy.getTime() + 864e5);
+    lista.forEach(function (a) {
+      var desde = a.creado ? f0(a.creado) : ini; if (desde < ini) desde = ini; // solo desde que se asignó la rutina
+      for (var d = new Date(desde); d < tope; d.setDate(d.getDate() + 1)) if (a.dias.indexOf(d.getDay()) >= 0) n++;
+    });
+    return n;
+  }
+  function racha(ses) {
+    var semanas = {}; ses.forEach(function (s) { semanas[iso(lunes(fechaDe(s)))] = 1; });
+    var n = 0, w = lunes(new Date());
+    if (!semanas[iso(w)]) w.setDate(w.getDate() - 7); // la semana actual aún puede completarse
+    while (semanas[iso(w)]) { n++; w.setDate(w.getDate() - 7); }
+    return n;
+  }
+  UI.resumenProgreso = function (datos, periodo) {
+    var ses = datos.ses || [], med = (datos.med || []).slice().sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; });
+    var v = ventana(periodo);
+    var en = ses.filter(function (s) { var f = fechaDe(s); return f >= v.ini && f < v.fin; });
+    var antes = ses.filter(function (s) { var f = fechaDe(s); return f >= v.pIni && f < v.ini; });
+    var plan = planeados(datos.asig, v.ini, v.fin);
+    var vol = en.reduce(function (t, s) { return t + volumen(s); }, 0), volAntes = antes.reduce(function (t, s) { return t + volumen(s); }, 0);
+    var series = en.reduce(function (t, s) { return t + (s.series || []).length; }, 0);
+    var mins = en.reduce(function (t, s) { return t + (Number(s.duracion_min) || 0); }, 0);
+    var cal = en.filter(function (s) { return s.calificacion; }), estrellas = cal.length ? cal.reduce(function (t, s) { return t + s.calificacion; }, 0) / cal.length : 0;
+    // Récords: el mejor peso del periodo supera todo lo anterior
+    var mejorAntes = {}, mejorEn = {}, nombres = {};
+    ses.forEach(function (s) {
+      var f = fechaDe(s), dentro = f >= v.ini && f < v.fin, previo = f < v.ini;
+      (s.series || []).forEach(function (x) {
+        var p = Number(x.peso) || 0; if (!p) return; nombres[x.ref] = x.nombre;
+        if (previo) mejorAntes[x.ref] = Math.max(mejorAntes[x.ref] || 0, p);
+        if (dentro) mejorEn[x.ref] = Math.max(mejorEn[x.ref] || 0, p);
+      });
+    });
+    var records = Object.keys(mejorEn).filter(function (r) { return mejorAntes[r] && mejorEn[r] > mejorAntes[r]; })
+      .map(function (r) { return { n: nombres[r], de: mejorAntes[r], a: mejorEn[r], pct: Math.round((mejorEn[r] - mejorAntes[r]) / mejorAntes[r] * 100) }; })
+      .sort(function (a, b) { return b.pct - a.pct; });
+    // Peso corporal: última medida del periodo contra la última anterior a él
+    var pesos = med.filter(function (m) { return Number(m.peso) > 0; });
+    var pFin = pesos.filter(function (m) { return new Date(m.fecha + "T12:00:00") < v.fin; }).pop();
+    var pIni = pesos.filter(function (m) { return new Date(m.fecha + "T12:00:00") < v.ini; }).pop() || pesos.filter(function (m) { return new Date(m.fecha + "T12:00:00") >= v.ini; })[0];
+    var difPeso = pFin && pIni && pFin !== pIni ? Number(pFin.peso) - Number(pIni.peso) : null;
+    // Gráfica: volumen por día / semana / mes, marcando cuántos entrenos hubo
+    var barras = v.cubetas.map(function (c) {
+      var ss = en.filter(function (s) { var f = fechaDe(s); return f >= c.ini && f < c.fin; });
+      return { l: c.l, hoy: c.hoy, vol: ss.reduce(function (t, s) { return t + volumen(s); }, 0), n: ss.length };
+    });
+    var max = Math.max.apply(null, [1].concat(barras.map(function (b) { return b.vol; })));
+    var W = 340, H = 150, base = 112, alto = 86, paso = (W - 16) / barras.length, ancho = Math.min(26, paso * .62), svg = "";
+    barras.forEach(function (b, i) {
+      var cx = 8 + paso * i + paso / 2, h = b.vol / max * alto;
+      if (b.n && !b.vol) h = 6; // entrenó sin registrar pesos
+      svg += '<rect x="' + (cx - ancho / 2).toFixed(1) + '" y="' + (base - Math.max(h, 2)).toFixed(1) + '" width="' + ancho.toFixed(1) + '" height="' + Math.max(h, 2).toFixed(1) + '" rx="5" fill="' +
+        (b.n ? "var(--brand-2)" : "var(--linea)") + '"' + (b.hoy ? ' stroke="#fff" stroke-width="1.5"' : "") + "/>";
+      if (b.n && barras.length <= 7) svg += '<text x="' + cx.toFixed(1) + '" y="' + (base - Math.max(h, 2) - 6).toFixed(1) + '" text-anchor="middle" font-size="10" fill="var(--suave)">' + (b.vol ? kg(b.vol).replace(" kg", "") : "✓") + "</text>";
+      if (barras.length <= 7 || i % Math.ceil(barras.length / 6) === 0 || b.hoy)
+        svg += '<text x="' + cx.toFixed(1) + '" y="' + (base + 17) + '" text-anchor="middle" font-size="10.5" fill="var(--suave)"' + (b.hoy ? ' font-weight="700"' : "") + ">" + UI.esc(b.l) + "</text>";
+    });
+    svg += '<line x1="4" x2="' + (W - 4) + '" y1="' + base + '" y2="' + base + '" stroke="var(--linea)"/>';
+    var nombreP = { semana: "esta semana", mes: "las últimas 5 semanas", "3m": "los últimos 3 meses", anio: "el último año" }[periodo];
+    var vsP = { semana: "vs. semana pasada", mes: "vs. las 5 anteriores", "3m": "vs. 3 meses antes", anio: "vs. año anterior" }[periodo];
+    var cumpl = plan ? Math.min(100, Math.round(en.length / plan * 100)) : null;
+    var r = racha(ses);
+    var html = '<div class="res-kpis">' +
+      '<div class="dato"><div class="v">' + en.length + (plan ? '<small> / ' + plan + "</small>" : "") + '</div><div class="l">Entrenamientos' + (cumpl !== null ? " · " + cumpl + "% cumplido" : "") + "</div>" +
+      (cumpl !== null ? '<div class="adm-barra"><i style="width:' + cumpl + '%;background:' + (cumpl >= 80 ? "var(--ok)" : cumpl >= 50 ? "var(--ambar)" : "var(--malo)") + '"></i></div>' : "") + "</div>" +
+      '<div class="dato"><div class="v">' + kg(vol) + '</div><div class="l">Peso total levantado ' + delta(vol, volAntes) + "</div></div>" +
+      '<div class="dato"><div class="v">' + records.length + '</div><div class="l">Récords personales</div></div>' +
+      '<div class="dato"><div class="v">' + (r ? "🔥 " + r : "0") + '</div><div class="l">' + (r === 1 ? "Semana seguida" : "Semanas seguidas") + " entrenando</div></div>" +
+      '<div class="dato"><div class="v">' + (mins ? (mins >= 60 ? Math.floor(mins / 60) + " h " + (mins % 60) + " min" : mins + " min") : series) + '</div><div class="l">' + (mins ? "Tiempo entrenando · " + series + " series" : "Series hechas") + "</div></div>" +
+      '<div class="dato"><div class="v">' + (difPeso !== null ? (difPeso > 0 ? "+" : "") + UI.num(difPeso) + " kg" : (estrellas ? "★ " + UI.num(estrellas) : "–")) + '</div><div class="l">' +
+      (difPeso !== null ? "Peso corporal (ahora " + UI.num(pFin.peso) + " kg)" : estrellas ? "Cómo se sintió (promedio)" : "Sin medidas en el periodo") + "</div></div></div>" +
+      '<div class="lbl" style="margin:16px 0 2px">Peso levantado por ' + (periodo === "semana" ? "día" : periodo === "anio" ? "mes" : "semana") + " · " + vsP + " " + delta(vol, volAntes) + "</div>" +
+      '<svg class="grafica" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Peso levantado en ' + nombreP + '">' + svg + "</svg>";
+    if (records.length) {
+      html += '<div class="lbl" style="margin:12px 0 6px">🏆 Récords de ' + nombreP + "</div>" + records.slice(0, 4).map(function (x) {
+        return '<div class="res-rec"><span>' + UI.esc(x.n) + "</span><b>" + UI.num(x.de) + " → " + UI.num(x.a) + ' kg</b><span class="res-delta sube">+' + x.pct + "%</span></div>";
+      }).join("");
+    }
+    if (!en.length) html += '<p class="nota-demo" style="text-align:left;margin-top:8px">Sin entrenamientos registrados en ' + nombreP + ".</p>";
+    return html;
+  };
+  UI.montarResumen = function (cont, datos) {
+    var periodo = "semana";
+    try { periodo = localStorage.getItem("pulso_periodo") || "semana"; } catch (e) {}
+    cont.innerHTML = '<div class="segmento res-periodo"><button data-p="semana">Semana</button><button data-p="mes">Mes</button><button data-p="3m">3 meses</button><button data-p="anio">Año</button></div><div class="res-cuerpo"></div>';
+    function pintar() {
+      UI.$$(".res-periodo button", cont).forEach(function (b) { b.classList.toggle("on", b.dataset.p === periodo); });
+      UI.$(".res-cuerpo", cont).innerHTML = UI.resumenProgreso(datos, periodo);
+    }
+    UI.$$(".res-periodo button", cont).forEach(function (b) {
+      b.onclick = function () { periodo = b.dataset.p; try { localStorage.setItem("pulso_periodo", periodo); } catch (e) {} pintar(); };
+    });
+    pintar();
+  };
   UI.num = function (n) { var x = Number(n); return isFinite(x) ? (Math.round(x * 10) / 10).toString() : "–"; };
   UI.hace = function (iso) {
     if (!iso) return "Sin entrenar";

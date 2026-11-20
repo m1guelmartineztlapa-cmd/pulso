@@ -288,3 +288,16 @@ select.entrada{appearance:none;-webkit-appearance:none}
 .banda-admin button{color:#032B1E}
 .campo .sel-btns label.btn{color:#0A0F25;font-size:15px;padding:0 16px;font-weight:600}
 .campo .sel-btns label.btn svg{width:18px;height:18px}
+
+/* Resumen de progreso */
+.res-periodo{margin-bottom:14px}
+.res-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.res-kpis .dato{background:rgba(255,255,255,.04)}
+.res-kpis .v{font-size:22px}
+.res-kpis .v small{font-size:14px;color:var(--suave);font-weight:600}
+.res-delta{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--card-2);color:var(--suave);margin-left:2px;white-space:nowrap}
+.res-delta.sube{background:rgba(52,211,153,.15);color:var(--ok)}
+.res-delta.baja{background:rgba(255,107,107,.14);color:var(--malo)}
+.res-rec{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--linea);font-size:14px}
+.res-rec span:first-child{flex:1;min-width:0;color:var(--suave)}
+.res-rec b{white-space:nowrap}

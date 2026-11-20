@@ -75,6 +75,13 @@
       semana + "/" + meta + '</div><div><h3>' + (semana >= meta ? "¡Semana completa! 🔥" : "Tu meta de la semana") + "</h3><p>" +
       (semana >= meta ? "Cumpliste todas tus sesiones. Tu entrenador lo verá." : "Llevas " + semana + " de " + meta + " sesiones. ¡Sigue así!") + "</p></div></div>" +
       (principal && !hechaHoy ? '<a class="btn" style="margin-top:16px" href="#/entrenar/' + principal.id + '">Empezar entrenamiento</a>' : "") + "</div>";
+    var dowHoy = new Date().getDay();
+    if ((dowHoy === 0 || dowHoy === 6) && semana > 0) {
+      var volS = d.ses.filter(function (s) { return s.fecha >= DB.hoyISO(lunes); }).reduce(function (t, s) { return t + (s.series || []).reduce(function (u, x) { return u + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0); }, 0);
+      html += '<a class="tarjeta" href="#/progreso" style="display:block"><div class="promo"><span class="avatar" style="background:var(--brand)">' + ico("grafica") +
+        '</span><div><h3>Tu semana en números 📊</h3><p>' + semana + (semana === 1 ? " entrenamiento" : " entrenamientos") + (volS ? " · " + Math.round(volS).toLocaleString("es-MX") + " kg levantados" : "") +
+        ". Toca para ver tu resumen completo.</p></div></div></a>";
+    }
     html += '<div class="titulo-sec"><h2>Mis rutinas</h2></div><div class="tarjeta sin-relleno"><div class="lista">' + (d.asig.length ? d.asig.map(function (a) {
       return '<a class="item" href="#/entrenar/' + a.id + '"><span class="ico cuadro">' + ico("rutinas") + '</span><span class="txt"><div class="t1">' + esc(a.rutina.nombre) +
         '</div><div class="t2">' + esc(UI.diasTxt(a.dias)) + " · " + contar(a.rutina) + ' ejercicios</div></span><span class="chev">' + ico("der") + "</span></a>";
@@ -245,8 +252,11 @@
         h.querySelector("#enviar").onclick = async function () {
           this.disabled = true;
           try {
-            await DB.ins("sesiones", { entrenador_id: cli().entrenador_id, cliente_id: cli().id, rutina_id: r.id, rutina_nombre: r.nombre, fecha: DB.hoyISO(), terminada: true,
-              comentario: h.querySelector("#coment").value.trim() || null, calificacion: calif || null, series: series });
+            var fila = { entrenador_id: cli().entrenador_id, cliente_id: cli().id, rutina_id: r.id, rutina_nombre: r.nombre, fecha: DB.hoyISO(), terminada: true,
+              comentario: h.querySelector("#coment").value.trim() || null, calificacion: calif || null, series: series,
+              duracion_min: Math.max(1, Math.min(300, Math.round((Date.now() - est.inicio) / 60000))) };
+            try { await DB.ins("sesiones", fila); }
+            catch (e1) { if (!/duracion_min/.test(e1.message || "")) throw e1; delete fila.duracion_min; await DB.ins("sesiones", fila); }
             localStorage.removeItem(LL); cerrar(); UI.aviso("Entrenamiento guardado ✓"); A().ir("");
           } catch (e) { UI.error(e); this.disabled = false; }
         };
@@ -260,15 +270,17 @@
     UI.tabbar(TABS, "progreso");
     app().innerHTML = UI.cargando();
     var c = cli();
-    var r = await Promise.all([DB.sel("sesiones", { cliente_id: c.id, terminada: true }, { orden: "fecha", desc: true }), DB.sel("medidas", { cliente_id: c.id }, { orden: "fecha" })]);
-    var ses = r[0], med = r[1];
+    var r = await Promise.all([DB.sel("sesiones", { cliente_id: c.id, terminada: true }, { orden: "fecha", desc: true }), DB.sel("medidas", { cliente_id: c.id }, { orden: "fecha" }),
+      DB.sel("asignaciones", { cliente_id: c.id })]);
+    var ses = r[0], med = r[1], asigC = r[2];
     var mes = DB.hoyISO().slice(0, 7);
     var delMes = ses.filter(function (s) { return s.fecha.slice(0, 7) === mes; }).length;
     var vol = ses.reduce(function (t, s) { return t + (s.series || []).reduce(function (u, x) { return u + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0); }, 0);
     var ejs = UI.ejerciciosRegistrados(ses);
     app().innerHTML = A().bandaDemo() + '<section class="hero">' + cabecera() + '<div class="saldo"><div class="etq">Peso total levantado</div><div class="cifra">' +
       Math.round(vol).toLocaleString("es-MX") + '<small> kg</small></div><div class="sub">' + ico("fuego") + ses.length + " entrenamientos · " + delMes + " este mes</div></div></section>" +
-      '<div class="contenido"><div class="titulo-sec"><h2>Fuerza</h2></div><div class="tarjeta">' +
+      '<div class="contenido"><div class="titulo-sec"><h2>Mi resumen</h2></div><div class="tarjeta" id="resumenYo"></div>' +
+      '<div class="titulo-sec"><h2>Fuerza</h2></div><div class="tarjeta">' +
       (ejs.length ? '<div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
         '</div><div id="graf" style="margin-top:12px"></div>' : '<div class="vacio" style="padding:10px">Registra tus pesos al entrenar y aquí verás cómo subes.</div>') + "</div>" +
       '<div class="titulo-sec"><h2>Medidas y fotos</h2><button id="medir">+ Agregar</button></div><div class="tarjeta">' + VIS.entrenador.resumenMedidas(med) + "</div>" +
@@ -276,6 +288,7 @@
       (ses.length ? ses.slice(0, 50).map(filaSesion).join("") : '<div class="vacio">Aún no hay entrenamientos.</div>') + "</div></div></div>";
     VIS.entrenador.pintarFotos(med);
     UI.cargarFotos(app());
+    UI.montarResumen(UI.$("#resumenYo"), { ses: ses, med: med, asig: asigC });
     function graf(ref) { UI.$("#graf").innerHTML = UI.grafica(UI.serieFuerza(ses, ref), "kg"); }
     if (ejs.length) {
       graf(ejs[0].ref);

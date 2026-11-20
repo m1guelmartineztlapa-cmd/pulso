@@ -249,6 +249,7 @@
     if (iaActiva() && (ses.length || med.length)) html += '<div class="tarjeta" id="iaResumen"><div class="promo"><span class="avatar" style="background:var(--brand)">' + ico("chispa", ' width="22" height="22"') +
       '</span><div><h3>¿Cómo va ' + esc(c.nombre.split(" ")[0]) + '?</h3><p>La IA lee sus sesiones, comentarios y medidas y te da un resumen con sugerencias.</p></div></div>' +
       '<button class="btn vidrio" style="margin-top:14px" id="pedirResumen">' + ico("chispa") + "Resumen con IA</button></div>";
+    html += '<div class="titulo-sec"><h2>Resumen de progreso</h2></div><div class="tarjeta" id="resumenCli"></div>';
     html += '<div class="titulo-sec"><h2>Progreso de fuerza</h2></div><div class="tarjeta">';
     if (ejs.length) {
       html += '<div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
@@ -273,6 +274,7 @@
       UI.$$("#chipsEj .chip").forEach(function (b) { b.onclick = function () { UI.$$("#chipsEj .chip").forEach(function (x) { x.classList.toggle("on", x === b); }); graf(b.dataset.ref); }; });
     }
     UI.cargarFotos(app());
+    UI.montarResumen(UI.$("#resumenCli"), { ses: ses, med: med, asig: asig });
     UI.$("#fotoCli").onchange = async function () {
       var f = this.files[0]; if (!f) return;
       try {
@@ -866,37 +868,54 @@
   }
   function puntoEnLinea(on) { return on ? '<span class="adm-punto" title="En línea"></span>' : ""; }
 
-  /* Minutos de uso por día en los últimos 7 días: [{l, ent, alu}] */
+  /* Periodo del panel: 7, 30 o 90 días (se recuerda en este celular) */
+  var PERIODOS = { "7": "7 días", "30": "30 días", "90": "3 meses" };
+  function periodoAdm() { var p = "7"; try { p = localStorage.getItem("pulso_adm_periodo") || "7"; } catch (e) {} return PERIODOS[p] ? p : "7"; }
+  function desdePeriodo() { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (Number(periodoAdm()) - 1)); return d; }
+  function enPeriodo(a) { return new Date(a.cuando) >= desdePeriodo(); }
+  function chipsPeriodo() {
+    return '<div class="segmento" id="periodoAdm">' + Object.keys(PERIODOS).map(function (k) { return '<button data-p="' + k + '" class="' + (k === periodoAdm() ? "on" : "") + '">' + PERIODOS[k] + "</button>"; }).join("") + "</div>";
+  }
+  function enlazarPeriodo(volver) {
+    UI.$$("#periodoAdm button").forEach(function (b) { b.onclick = function () { try { localStorage.setItem("pulso_adm_periodo", b.dataset.p); } catch (e) {} volver(); }; });
+  }
+  /* Minutos de uso por día (7 o 30 días) o por semana (3 meses): [{l, ent, alu}] */
   function usoSemana(accesos) {
-    var dias = [], hoy = new Date();
-    for (var i = 6; i >= 0; i--) { var d = new Date(hoy); d.setDate(hoy.getDate() - i); dias.push({ k: claveDia(d), l: i === 0 ? "Hoy" : DIA_C[d.getDay()], ent: 0, alu: 0 }); }
+    var p = Number(periodoAdm()), cub = [], hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    if (p <= 30) {
+      for (var i = p - 1; i >= 0; i--) { var d = new Date(hoy); d.setDate(hoy.getDate() - i); var f = new Date(d); f.setDate(d.getDate() + 1);
+        cub.push({ ini: d, fin: f, l: i === 0 ? "Hoy" : (p === 7 ? DIA_C[d.getDay()] : d.getDate() + " " + MESES_C[d.getMonth()]), ent: 0, alu: 0 }); }
+    } else {
+      for (var w = 12; w >= 0; w--) { var fw = new Date(hoy); fw.setDate(hoy.getDate() + 1 - 7 * w); var iw = new Date(fw); iw.setDate(fw.getDate() - 7);
+        cub.push({ ini: iw, fin: fw, l: w === 0 ? "Esta sem." : iw.getDate() + " " + MESES_C[iw.getMonth()], ent: 0, alu: 0 }); }
+    }
     accesos.forEach(function (a) {
-      var dia = dias.find(function (x) { return x.k === claveDia(a.cuando); });
-      if (dia) dia[a.rol === "entrenador" ? "ent" : "alu"] += Number(a.min) || 0;
+      var t = new Date(a.cuando), c = cub.find(function (x) { return t >= x.ini && t < x.fin; });
+      if (c) c[a.rol === "entrenador" ? "ent" : "alu"] += Number(a.min) || 0;
     });
-    return dias;
+    return cub;
   }
   function graficaUso(dias, soloUno) {
     var W = 340, H = 150, base = 120, top = 18, max = 1;
     dias.forEach(function (d) { max = Math.max(max, soloUno ? d.ent + d.alu : Math.max(d.ent, d.alu)); });
-    var anchoDia = (W - 20) / dias.length, x0 = 10, svg = "";
+    var anchoDia = (W - 20) / dias.length, x0 = 10, svg = "", bw = Math.min(22, anchoDia * .62), salto = Math.ceil(dias.length / 7);
     dias.forEach(function (d, i) {
       var cx = x0 + i * anchoDia + anchoDia / 2;
       if (soloUno) {
         var hT = (d.ent + d.alu) / max * (base - top);
-        svg += '<rect x="' + (cx - 11).toFixed(1) + '" y="' + (base - hT).toFixed(1) + '" width="22" height="' + Math.max(hT, 1.5).toFixed(1) + '" rx="5" fill="var(--brand-2)"/>';
-        if (d.ent + d.alu) svg += '<text x="' + cx.toFixed(1) + '" y="' + (base - hT - 5).toFixed(1) + '" text-anchor="middle" font-size="10" fill="var(--suave)">' + Math.round(d.ent + d.alu) + "</text>";
+        svg += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + (base - hT).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(hT, 1.5).toFixed(1) + '" rx="' + Math.min(5, bw / 3).toFixed(1) + '" fill="var(--brand-2)"/>';
+        if (d.ent + d.alu && dias.length <= 13) svg += '<text x="' + cx.toFixed(1) + '" y="' + (base - hT - 5).toFixed(1) + '" text-anchor="middle" font-size="10" fill="var(--suave)">' + Math.round(d.ent + d.alu) + "</text>";
       } else {
         var hE = d.ent / max * (base - top), hA = d.alu / max * (base - top);
-        svg += '<rect x="' + (cx - 12).toFixed(1) + '" y="' + (base - hE).toFixed(1) + '" width="11" height="' + Math.max(hE, 1.5).toFixed(1) + '" rx="3" fill="var(--brand-2)"/>';
-        svg += '<rect x="' + (cx + 1).toFixed(1) + '" y="' + (base - hA).toFixed(1) + '" width="11" height="' + Math.max(hA, 1.5).toFixed(1) + '" rx="3" fill="var(--ok)"/>';
+        svg += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + (base - hE).toFixed(1) + '" width="' + (bw / 2).toFixed(1) + '" height="' + Math.max(hE, 1.5).toFixed(1) + '" rx="2" fill="var(--brand-2)"/>';
+        svg += '<rect x="' + cx.toFixed(1) + '" y="' + (base - hA).toFixed(1) + '" width="' + (bw / 2).toFixed(1) + '" height="' + Math.max(hA, 1.5).toFixed(1) + '" rx="2" fill="var(--ok)"/>';
       }
-      svg += '<text x="' + cx.toFixed(1) + '" y="' + (base + 18) + '" text-anchor="middle" font-size="11" fill="var(--suave)"' + (d.l === "Hoy" ? ' font-weight="700"' : "") + ">" + d.l + "</text>";
+      if (i % salto === 0 || i === dias.length - 1) svg += '<text x="' + cx.toFixed(1) + '" y="' + (base + 18) + '" text-anchor="middle" font-size="10.5" fill="var(--suave)"' + (i === dias.length - 1 ? ' font-weight="700"' : "") + ">" + d.l + "</text>";
     });
     svg += '<line x1="6" x2="' + (W - 6) + '" y1="' + base + '" y2="' + base + '" stroke="var(--linea)"/>';
     return '<svg class="grafica" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Minutos de uso por día">' + svg + "</svg>" +
-      (soloUno ? '<p class="nota-demo" style="text-align:left;margin-top:4px">Minutos de uso por día (todos los usuarios)</p>' :
-        '<div class="adm-leyenda"><span><i style="background:var(--brand-2)"></i>Entrenador</span><span><i style="background:var(--ok)"></i>Sus alumnos</span><span style="margin-left:auto">minutos por día</span></div>');
+      (soloUno ? '<p class="nota-demo" style="text-align:left;margin-top:4px">Minutos de uso por ' + (periodoAdm() === "90" ? "semana" : "día") + " (todos los usuarios)</p>" :
+        '<div class="adm-leyenda"><span><i style="background:var(--brand-2)"></i>Entrenador</span><span><i style="background:var(--ok)"></i>Sus alumnos</span><span style="margin-left:auto">minutos por ' + (periodoAdm() === "90" ? "semana" : "día") + "</span></div>");
   }
   function filaMov(a) {
     return '<div class="item"><span class="ico">' + ico(ICO_TIPO[a.tipo] || "info") + '</span><span class="txt"><div class="t1">' + esc(a.quien || "") +
@@ -936,7 +955,16 @@
     var d; try { d = await datosAdmin(); } catch (e) { d = null; }
     if (!d) return sinAcceso();
     if (entId) return adminEntrenador(d, entId);
+    adminPrincipal(d);
+  };
+  function adminPrincipal(d) {
     var t = d.totales || {}, act = d.actividad || [], ents = d.entrenadores || [], alus = d.alumnos || [];
+    var nomP = PERIODOS[periodoAdm()];
+    var accP = act.filter(function (a) { return a.tipo === "acceso" && enPeriodo(a); });
+    var minP = accP.reduce(function (s, a) { return s + (Number(a.min) || 0); }, 0);
+    var personasP = {}; accP.forEach(function (a) { personasP[a.rol + "|" + a.quien] = 1; });
+    var entrenosP = act.filter(function (a) { return a.tipo === "entreno" && enPeriodo(a); }).length;
+    function usoEnt(e) { return accP.filter(function (a) { return a.ent === e.id && a.rol === "entrenador"; }); }
     var accesos = act.filter(function (a) { return a.tipo === "acceso"; });
     var hoyK = claveDia(new Date());
     var accHoy = accesos.filter(function (a) { return claveDia(a.cuando) === hoyK; });
@@ -944,7 +972,8 @@
     var entrenosHoy = act.filter(function (a) { return a.tipo === "entreno" && claveDia(a.cuando) === hoyK; }).length;
     var enLinea = ents.filter(function (e) { return e.en_linea; }).map(function (e) { return { n: e.nombre, h: avatarAdm(e, "avatar chico") }; })
       .concat(alus.filter(function (c) { return c.en_linea; }).map(function (c) { return { n: c.nombre, h: UI.avatarCli(c, "avatar chico") }; }));
-    var maxMin = Math.max.apply(null, [1].concat(ents.map(function (e) { return Number(e.min_7d) || 0; })));
+    var minEnt = {}; ents.forEach(function (e) { minEnt[e.id] = usoEnt(e).reduce(function (s, a) { return s + (Number(a.min) || 0); }, 0); });
+    var maxMin = Math.max.apply(null, [1].concat(ents.map(function (e) { return minEnt[e.id]; })));
     var verTodo = false, q = "";
 
     app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:14px">' + cabAdmin("ajustes", "Ajustes") +
@@ -952,21 +981,21 @@
       (enLinea.length ? '<div class="adm-enlinea">' + enLinea.slice(0, 8).map(function (p) { return '<span title="' + esc(p.n) + '">' + p.h + "</span>"; }).join("") + "</div>" :
         '<div class="sub">' + ico("persona") + "Nadie conectado en este momento</div>") +
       '</div></section><div class="contenido">' +
-      '<div class="adm-kpis"><div class="dato"><div class="v">' + mins(minHoy) + '</div><div class="l">Tiempo de uso hoy</div></div>' +
-      '<div class="dato"><div class="v">' + accHoy.length + '</div><div class="l">Visitas hoy</div></div>' +
-      '<div class="dato"><div class="v">' + (t.activos_7d || 0) + '</div><div class="l">Personas que la usaron (7 días)</div></div>' +
-      '<div class="dato"><div class="v">' + (t.sesiones_7d || 0) + '</div><div class="l">Entrenamientos (7 días) · ' + entrenosHoy + " hoy</div></div></div>" +
-      (esModoAdmin() ? '<button class="btn vidrio" id="verComo2">' + ico("persona") + "Ver la app como entrenador</button>" : "") +
-      '<div class="titulo-sec"><h2>Uso de la semana</h2></div><div class="tarjeta">' + graficaUso(usoSemana(accesos), true) + "</div>" +
+      chipsPeriodo() +
+      '<div class="adm-kpis"><div class="dato"><div class="v">' + mins(minP) + '</div><div class="l">Tiempo de uso · ' + nomP + "<br>hoy: " + mins(minHoy) + "</div></div>" +
+      '<div class="dato"><div class="v">' + accP.length + '</div><div class="l">Visitas · ' + nomP + "<br>hoy: " + accHoy.length + "</div></div>" +
+      '<div class="dato"><div class="v">' + Object.keys(personasP).length + '</div><div class="l">Personas que la usaron · ' + nomP + "</div></div>" +
+      '<div class="dato"><div class="v">' + entrenosP + '</div><div class="l">Entrenamientos · ' + nomP + "<br>hoy: " + entrenosHoy + "</div></div></div>" +
+      '<div class="titulo-sec"><h2>Uso · ' + nomP + '</h2></div><div class="tarjeta">' + graficaUso(usoSemana(accesos), true) + "</div>" +
       '<div class="titulo-sec"><h2>Entrenadores</h2><span class="adm-de">' + (t.entrenadores || ents.length) + "</span></div>" +
       '<div class="tarjeta sin-relleno"><div class="lista">' + (ents.length ? ents.map(function (e) {
-        var pct = Math.round((Number(e.min_7d) || 0) / maxMin * 100);
+        var pct = Math.round(minEnt[e.id] / maxMin * 100);
         return '<a class="item" href="#/admin/' + e.id + '"><span style="position:relative;flex:none">' + avatarAdm(e) + puntoEnLinea(e.en_linea) + '</span><span class="txt"><div class="t1">' +
           esc(e.nombre || "(sin nombre)") + ' <span class="adm-de">· ' + esc(e.marca || "") + '</span></div><div class="t2">' + e.alumnos + " alumnos · " + e.rutinas + " rutinas · " +
-          e.sesiones_7d + ' entrenos</div><div class="adm-barra"><i style="width:' + pct + '%"></i></div></span><span class="der">' + mins(e.min_7d) +
+          act.filter(function (a) { return a.tipo === "entreno" && a.ent === e.id && enPeriodo(a); }).length + ' entrenos</div><div class="adm-barra"><i style="width:' + pct + '%"></i></div></span><span class="der">' + mins(minEnt[e.id]) +
           "<small>" + (e.en_linea ? '<b style="color:var(--ok)">En línea</b>' : esc(cuando(e.ultimo_acceso))) + "</small></span>" + '<span class="chev">' + ico("der") + "</span></a>";
       }).join("") : '<div class="vacio">Aún no hay entrenadores.</div>') + "</div></div>" +
-      '<p class="nota-demo" style="text-align:left;margin:-6px 4px 0">La barra y el tiempo son su uso de la app en los últimos 7 días.</p>' +
+      '<p class="nota-demo" style="text-align:left;margin:-6px 4px 0">La barra y el tiempo son su uso de la app en ' + (periodoAdm() === "90" ? "los últimos 3 meses" : "los últimos " + nomP) + ". Cambia el periodo arriba.</p>" +
       '<div class="titulo-sec"><h2>Movimientos</h2><button id="verTodo">Ver todos</button></div>' +
       '<label class="buscador" id="busq" hidden style="background:var(--card);height:44px">' + ico("buscar", ' width="18" height="18"') + '<input id="qAdmin" placeholder="Buscar por nombre o marca"></label>' +
       '<div class="tarjeta sin-relleno"><div class="lista" id="listaMov"></div></div>' +
@@ -977,14 +1006,14 @@
       var l = act.filter(function (a) { return !n || UI.normal((a.quien || "") + " " + (a.de || "") + " " + (a.detalle || "")).indexOf(n) >= 0; });
       UI.$("#listaMov").innerHTML = (l.length ? porDia(l.slice(0, verTodo ? 300 : 12)) : '<div class="vacio">Sin movimientos.</div>');
     }
-    var vc = UI.$("#verComo2"); if (vc) vc.onclick = function () { A().verComoEntrenador(true); };
+    enlazarPeriodo(function () { adminPrincipal(d); });
     UI.$("#verTodo").onclick = function () { verTodo = !verTodo; this.textContent = verTodo ? "Ver menos" : "Ver todos"; UI.$("#busq").hidden = !verTodo; dibujarMov(); };
     UI.$("#qAdmin").oninput = function () { q = this.value; dibujarMov(); };
     UI.$("#recargar").onclick = function () { window.__admRefrescar = true; A().recargar(); };
     dibujarMov();
     UI.cargarFotos(app());
     if (window.__admRefrescar) { window.__admRefrescar = false; UI.aviso("Datos actualizados ✓"); }
-  };
+  }
   function adminAjustes() {
     tabsAdmin("ajustes");
     app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><h1 class="titulo-pag" style="margin-top:30px">Ajustes</h1></section><div class="contenido">' +
@@ -1015,18 +1044,21 @@
     var movs = (d.actividad || []).filter(function (a) { return a.ent === entId; });
     var alumnos = (d.alumnos || []).filter(function (c) { return c.ent === entId; });
     var accesos = movs.filter(function (a) { return a.tipo === "acceso"; });
-    var filtro = "ent";
+    var filtro = "ent", nomP = PERIODOS[periodoAdm()];
+    var accEntP = accesos.filter(function (a) { return a.rol === "entrenador" && enPeriodo(a); });
+    var minEntP = accEntP.reduce(function (s, a) { return s + (Number(a.min) || 0); }, 0);
+    var entrenosP = movs.filter(function (a) { return a.tipo === "entreno" && enPeriodo(a); }).length;
     app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:12px">' + cabAdmin("admin", "Administración") +
       '<div class="saldo" style="margin-top:14px"><span style="position:relative;display:inline-block">' + avatarAdm(e, "avatar grande") + "</span>" +
       '<div class="cifra" style="font-size:28px;letter-spacing:-.5px;margin-top:10px">' + esc(e.nombre || "(sin nombre)") + '</div><div class="sub" style="flex-wrap:wrap;justify-content:center">' +
       esc(e.marca || "") + " · " + esc(e.email || "") + "</div>" +
       '<div class="centro" style="margin-top:10px">' + (e.en_linea ? '<span class="etiqueta">● En línea ahora</span>' : '<span class="etiqueta gris">Último acceso: ' + esc(fechaHora(e.ultimo_acceso)) + "</span>") + "</div>" +
-      "</div></section><div class=\"contenido\">" +
-      '<div class="adm-kpis"><div class="dato"><div class="v">' + mins(e.min_hoy) + '</div><div class="l">Uso hoy</div></div>' +
-      '<div class="dato"><div class="v">' + mins(e.min_7d) + '</div><div class="l">Uso en 7 días · ' + (e.accesos_7d || 0) + ' visitas</div></div>' +
+      "</div></section><div class=\"contenido\">" + chipsPeriodo() +
+      '<div class="adm-kpis"><div class="dato"><div class="v">' + mins(minEntP) + '</div><div class="l">Uso · ' + nomP + " · " + accEntP.length + " visitas<br>hoy: " + mins(e.min_hoy) + "</div></div>" +
+      '<div class="dato"><div class="v">' + (accEntP.length ? mins(Math.round(minEntP / accEntP.length)) : "–") + '</div><div class="l">Duración promedio de visita</div></div>' +
       '<div class="dato"><div class="v">' + e.alumnos + '</div><div class="l">Alumnos · ' + e.alumnos_con_cuenta + ' con cuenta</div></div>' +
-      '<div class="dato"><div class="v">' + e.sesiones_7d + '</div><div class="l">Entrenos de sus alumnos (7 días)</div></div></div>' +
-      '<div class="titulo-sec"><h2>Uso por día</h2></div><div class="tarjeta">' + graficaUso(usoSemana(accesos)) + "</div>" +
+      '<div class="dato"><div class="v">' + entrenosP + '</div><div class="l">Entrenos de sus alumnos · ' + nomP + "</div></div></div>" +
+      '<div class="titulo-sec"><h2>Uso · ' + nomP + '</h2></div><div class="tarjeta">' + graficaUso(usoSemana(accesos)) + "</div>" +
       '<div class="titulo-sec"><h2>Actividad</h2></div>' +
       '<div class="segmento" id="filtros"><button data-f="ent">El entrenador</button><button data-f="alum">Sus alumnos</button><button data-f="todo">Todo</button></div>' +
       '<div class="tarjeta sin-relleno"><div class="lista" id="listaMov"></div></div>' +
@@ -1066,6 +1098,7 @@
       UI.$("#listaMov").innerHTML = html;
     }
     UI.$$("#filtros button").forEach(function (b) { b.onclick = function () { filtro = b.dataset.f; dibujar(); }; });
+    enlazarPeriodo(function () { adminEntrenador(d, entId); });
     UI.$("#recargar").onclick = function () { window.__admRefrescar = true; A().recargar(); };
     dibujar();
     UI.cargarFotos(app());
