@@ -417,24 +417,35 @@
   };
 
   /* Gráfica de línea simple */
+  var nGraf = 0;
   UI.grafica = function (puntos, unidad) {
     if (!puntos.length) return '<div class="vacio">Aún no hay registros.</div>';
-    var W = 320, H = 170, pad = 22;
+    var W = 320, H = 170, padX = 14, padT = 18, padB = 22, id = "gA" + (++nGraf);
     var vs = puntos.map(function (p) { return p.v; });
     var min = Math.min.apply(null, vs), max = Math.max.apply(null, vs);
     if (min === max) { min -= 1; max += 1; }
-    var x = function (i) { return puntos.length === 1 ? W / 2 : pad + i * (W - pad * 2) / (puntos.length - 1); };
-    var y = function (v) { return H - pad - (v - min) / (max - min) * (H - pad * 2); };
-    var d = puntos.map(function (p, i) { return (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p.v).toFixed(1); }).join(" ");
-    var area = d + " L" + x(puntos.length - 1).toFixed(1) + " " + (H - pad) + " L" + x(0).toFixed(1) + " " + (H - pad) + " Z";
-    var ult = puntos[puntos.length - 1];
-    return '<svg class="grafica" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Progreso">' +
-      '<defs><linearGradient id="gA" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--brand-2)" stop-opacity=".45"/><stop offset="1" stop-color="var(--brand-2)" stop-opacity="0"/></linearGradient></defs>' +
-      '<path d="' + area + '" fill="url(#gA)"/><path d="' + d + '" fill="none" stroke="var(--brand-2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
-      puntos.map(function (p, i) { return '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="' + (i === puntos.length - 1 ? 5 : 3) + '" fill="#fff"/>'; }).join("") +
-      '<text x="' + Math.min(W - 6, x(puntos.length - 1)).toFixed(1) + '" y="' + Math.max(14, y(ult.v) - 12).toFixed(1) + '" fill="#fff" font-size="13" font-weight="700" text-anchor="end">' + UI.num(ult.v) + " " + (unidad || "") + "</text>" +
-      '<text x="' + pad + '" y="' + (H - 4) + '" fill="rgba(235,238,255,.5)" font-size="11">' + UI.esc(UI.fecha(puntos[0].f)) + "</text>" +
-      '<text x="' + (W - pad) + '" y="' + (H - 4) + '" fill="rgba(235,238,255,.5)" font-size="11" text-anchor="end">' + UI.esc(UI.fecha(ult.f)) + "</text></svg>";
+    var rango = max - min; min -= rango * 0.12; max += rango * 0.12;
+    var x = function (i) { return puntos.length === 1 ? W / 2 : padX + i * (W - padX * 2) / (puntos.length - 1); };
+    var y = function (v) { return padT + (1 - (v - min) / (max - min)) * (H - padT - padB); };
+    var P = puntos.map(function (p, i) { return [x(i), y(p.v)]; });
+    // Curva suave (Catmull-Rom)
+    var d = "M" + P[0][0].toFixed(1) + " " + P[0][1].toFixed(1);
+    for (var i = 0; i < P.length - 1; i++) {
+      var p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || p2;
+      d += " C" + (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1) + " " + (p1[1] + (p2[1] - p0[1]) / 6).toFixed(1) + " " + (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1) + " " + (p2[1] - (p3[1] - p1[1]) / 6).toFixed(1) + " " + p2[0].toFixed(1) + " " + p2[1].toFixed(1);
+    }
+    var area = d + " L" + P[P.length - 1][0].toFixed(1) + " " + (H - padB) + " L" + P[0][0].toFixed(1) + " " + (H - padB) + " Z";
+    var ult = puntos[puntos.length - 1], prim = puntos[0], dif = ult.v - prim.v;
+    var lineas = [0, 1, 2].map(function (k) { var yy = padT + k * (H - padT - padB) / 2; return '<line x1="0" x2="' + W + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '" stroke="rgba(255,255,255,.06)" stroke-dasharray="3 5"/>'; }).join("");
+    return '<div class="graf-cab"><div><small>Último</small><b>' + UI.num(ult.v) + " <span>" + UI.esc(unidad || "") + "</span></b></div>" +
+      (puntos.length > 1 ? '<span class="graf-dif ' + (dif > 0 ? "sube" : dif < 0 ? "baja" : "") + '">' + (dif > 0 ? "▲ +" : dif < 0 ? "▼ " : "") + UI.num(dif) + " " + UI.esc(unidad || "") + " desde " + UI.esc(UI.fecha(prim.f)) + "</span>" : "") + "</div>" +
+      '<svg class="grafica" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Progreso">' +
+      '<defs><linearGradient id="' + id + '" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--sec)" stop-opacity=".42"/><stop offset="1" stop-color="var(--sec)" stop-opacity="0"/></linearGradient></defs>' +
+      lineas + '<path class="graf-area" d="' + area + '" fill="url(#' + id + ')"/><path class="graf-linea" pathLength="1" d="' + d + '" fill="none" stroke="var(--sec-2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+      P.map(function (p, i) { var u = i === P.length - 1; return u ? '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="10" fill="var(--sec)" opacity=".22"/><circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5.5" fill="#fff" stroke="var(--sec)" stroke-width="2.5"/>' :
+        '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="3" fill="var(--bg)" stroke="var(--sec-2)" stroke-width="2"/>'; }).join("") +
+      '<text x="' + padX + '" y="' + (H - 5) + '" fill="rgba(235,238,255,.45)" font-size="11">' + UI.esc(UI.fecha(prim.f)) + "</text>" +
+      '<text x="' + (W - padX) + '" y="' + (H - 5) + '" fill="rgba(235,238,255,.45)" font-size="11" text-anchor="end">' + UI.esc(UI.fecha(ult.f)) + "</text></svg>";
   };
 
   /* Progreso de fuerza: mejor peso por sesión de un ejercicio */

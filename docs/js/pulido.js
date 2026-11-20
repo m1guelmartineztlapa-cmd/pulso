@@ -256,6 +256,43 @@
     if (row && (row.dataset.recienDeslizada || row.parentNode.classList.contains("abierta"))) { e.preventDefault(); e.stopPropagation(); if (!row.dataset.recienDeslizada) cerrarSwipe(row.parentNode); }
   }, true);
 
+  /* ── 11. Dejar presionado un alumno: menú rápido (como en el iPhone) ── */
+  var lp = null, suprimirClick = false;
+  function menuContexto(row) {
+    var f = row.closest(".swipe-fila"), id = (row.getAttribute("href") || "").split("/").pop();
+    var wa = f && f.querySelector("a.sw-wa"), nombre = (row.querySelector(".t1") || {}).textContent || "";
+    if (navigator.vibrate) navigator.vibrate(12);
+    var o = document.createElement("div"); o.className = "ctx";
+    var prev = row.cloneNode(true); prev.removeAttribute("href"); prev.style.transform = "";
+    var ICO = { ficha: '<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/>', sem: '<rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 10h18M8 2v4M16 2v4"/>', ent: '<path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12"/>', com: '<circle cx="13" cy="12" r="7"/><path d="M3 4v5a1.5 1.5 0 0 0 3 0V4M4.5 11v9"/>', wa: '<path d="M21 12a9 9 0 0 1-13.4 7.9L3 21l1.2-4.4A9 9 0 1 1 21 12z"/>' };
+    function acc(k, txt, extra) { return '<button data-ctx="' + k + '"' + (extra || "") + '><span>' + txt + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICO[k] + "</svg></button>"; }
+    o.innerHTML = '<div class="ctx-caja"><div class="ctx-prev tarjeta sin-relleno"><div class="lista"></div></div><div class="ctx-menu">' +
+      acc("ficha", "Ver ficha") + acc("sem", "Ver su semana") + acc("ent", "Ver su entrenamiento") + acc("com", "Ver su comida") + (wa ? acc("wa", "Mandar WhatsApp") : "") + "</div></div>";
+    o.querySelector(".ctx-prev .lista").appendChild(prev);
+    document.body.appendChild(o); document.body.classList.add("con-ctx");
+    function cerrar() { o.classList.add("sale"); document.body.classList.remove("con-ctx"); setTimeout(function () { o.remove(); }, 180); }
+    o.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-ctx]");
+      if (!b) { if (!e.target.closest(".ctx-prev")) cerrar(); return; }
+      var k = b.dataset.ctx; cerrar();
+      if (k === "wa") { window.open(wa.href, "_blank"); return; }
+      try { sessionStorage.setItem("pulso_ficha_panel", { ficha: "resumen", sem: "semana", ent: "entreno", com: "comida" }[k]); } catch (er) {}
+      location.hash = "#/cliente/" + id;
+    });
+  }
+  document.addEventListener("touchstart", function (e) {
+    var row = e.target.closest && e.target.closest(".cli-fila");
+    if (!row || e.touches.length !== 1) return;
+    var t = e.touches[0];
+    lp = { row: row, x: t.clientX, y: t.clientY, tm: setTimeout(function () { if (!lp) return; suprimirClick = true; row.classList.remove("presionando"); menuContexto(row); lp = null; }, 480) };
+    row.classList.add("presionando");
+  }, { passive: true });
+  function cancelarLp() { if (lp) { clearTimeout(lp.tm); lp.row.classList.remove("presionando"); lp = null; } }
+  document.addEventListener("touchmove", function (e) { if (lp && (Math.abs(e.touches[0].clientX - lp.x) > 8 || Math.abs(e.touches[0].clientY - lp.y) > 8)) cancelarLp(); }, { passive: true });
+  document.addEventListener("touchend", cancelarLp); document.addEventListener("touchcancel", cancelarLp);
+  document.addEventListener("click", function (e) { if (suprimirClick && e.target.closest && e.target.closest(".cli-fila")) { e.preventDefault(); e.stopPropagation(); } suprimirClick = false; }, true);
+  document.addEventListener("contextmenu", function (e) { if (e.target.closest && e.target.closest(".cli-fila")) e.preventDefault(); });
+
   alCambiar();
   interruptores();
   new MutationObserver(function () { interruptores(capa); }).observe(capa || document.body, { childList: true, subtree: true });

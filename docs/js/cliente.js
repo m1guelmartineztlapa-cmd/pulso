@@ -397,7 +397,7 @@
     app().innerHTML = A().bandaDemo() + '<section class="hero compacto"><div class="perfil-cab"><label class="foto-perfil" title="Cambiar foto">' + UI.avatarCli(c, "avatar grande") +
       '<span class="foto-cam">' + ico("camara") + '</span><input type="file" accept="image/*" id="fotoCli" class="oculto-vista"></label>' +
       "<div><h1>" + esc(c.nombre) + "</h1><small>" + esc(c.email || A().correo() || "Sin correo registrado") + "</small></div></div></section>" +
-      '<div class="contenido">' +
+      '<div class="contenido"><div class="kpi4 kpi3" id="perfNums"><div><b>–</b><small>Entrenos</small></div><div><b>–</b><small>Semanas seguidas</small></div><div><b>–</b><small>Este mes</small></div></div>' +
       '<div class="lbl grupo">Mi entrenador</div><div class="tarjeta sin-relleno"><div class="lista">' +
       '<div class="item"><span class="ico cuadro" style="overflow:hidden">' + (e.logo_url ? '<img src="' + esc(e.logo_url) + '" alt="">' : esc(UI.iniciales(e.marca || "P"))) + '</span><span class="txt"><div class="t1">' + esc(e.marca || "Tu entrenador") +
       '</div><div class="t2">' + esc(e.nombre || "") + "</div></span></div>" +
@@ -410,6 +410,15 @@
       fila("instalar", ico("compartir"), "Instalar en mi celular", "Para abrirla como app, sin navegador") + "</div></div>" +
       '<div class="tarjeta sin-relleno"><div class="lista">' + fila("salir", ico("salir"), '<span style="color:var(--malo)">Cerrar sesión</span>', "", { sinFlecha: true }) + "</div></div></div>";
     UI.$("#salir").onclick = function () { A().salir(); };
+    DB.sel("sesiones", { cliente_id: c.id, terminada: true }, { orden: "fecha", desc: true }).then(function (ses) {
+      var sem = {}; ses.forEach(function (s) { var d = new Date(s.fecha + "T12:00:00"); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); sem[DB.hoyISO(d)] = 1; });
+      var lun = new Date(); lun.setDate(lun.getDate() - ((lun.getDay() + 6) % 7)); var cur = new Date(lun), racha = 0;
+      if (!sem[DB.hoyISO(cur)]) cur.setDate(cur.getDate() - 7);
+      while (sem[DB.hoyISO(cur)]) { racha++; cur.setDate(cur.getDate() - 7); }
+      var mes = DB.hoyISO().slice(0, 7), delMes = ses.filter(function (s) { return s.fecha.slice(0, 7) === mes; }).length;
+      var el = UI.$("#perfNums"); if (!el) return;
+      el.innerHTML = "<div><b>" + ses.length + "</b><small>Entrenos</small></div><div><b>" + (racha ? "🔥 " + racha : "0") + "</b><small>" + (racha === 1 ? "Semana seguida" : "Semanas seguidas") + "</small></div><div><b>" + delMes + "</b><small>Este mes</small></div>";
+    }).catch(function () {});
     UI.$("#objetivo").onclick = function () {
       var puede = A().esAdmin; // el admin (mantenimiento) lo puede corregir; el alumno lo ve completo
       UI.hoja("Mi objetivo", '<div class="objetivo-hoja"><span class="rut-ico">' + ico("estrella") + "</span>" +
