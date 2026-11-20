@@ -391,3 +391,32 @@ details.mas summary::-webkit-details-marker{display:none}
 .semana-tira .hoy span{outline:2px solid var(--acento);outline-offset:2px}
 .atencion .item .der{color:var(--acento);font-size:13px}
 .punto{background:var(--acento)!important}
+/* Pantallas compactas estilo apps fitness */
+.hero.compacto{padding-bottom:14px}
+.hero.compacto::before{background:radial-gradient(120% 70% at 15% -20%,color-mix(in srgb,var(--brand) 55%,transparent) 0%,color-mix(in srgb,var(--brand) 14%,transparent) 55%,transparent 100%)}
+.cab-pag{display:flex;align-items:center;gap:12px;margin-top:6px}
+.cab-txt{flex:1;min-width:0}
+.cab-txt small{display:block;color:var(--suave);font-size:14px;font-weight:600}
+.cab-txt h1{margin:2px 0 0;font-size:30px;font-weight:800;letter-spacing:-.8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.marca-mini{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--glass);border:1px solid rgba(255,255,255,.12);overflow:hidden}
+.marca-mini img{width:100%;height:100%;object-fit:cover}
+a.dato{display:block;color:inherit}
+.hero .datos .dato{background:rgba(255,255,255,.06)}
+.hero.compacto .acciones{margin-top:18px}
+.entreno-hoy{background:linear-gradient(140deg,color-mix(in srgb,var(--brand) 92%,#000) 0%,color-mix(in srgb,var(--brand) 45%,var(--card)) 100%);border:0;padding:20px}
+.entreno-hoy .lbl{color:rgba(255,255,255,.8);padding:0;text-transform:uppercase;letter-spacing:.06em;font-size:12px;font-weight:700}
+.entreno-hoy h2{margin:6px 0 4px;font-size:28px;font-weight:800;letter-spacing:-.6px}
+.entreno-hoy p{color:rgba(255,255,255,.85)}
+.entreno-hoy .btn{margin-top:16px}
+.entreno-hoy .btn:not(.vidrio){background:#fff;color:#0B1020}
+.tarea .ico{background:var(--card-2)}
+.tarea.ok .ico{background:var(--ok);color:#06281A}
+.tarea.ok .t1{color:var(--suave);text-decoration:line-through}
+.lbl.grupo{margin:8px 6px -6px;text-transform:uppercase;letter-spacing:.06em;font-size:12px;font-weight:700}
+.perfil-cab{display:flex;align-items:center;gap:16px;margin-top:14px}
+.perfil-cab h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.5px}
+.perfil-cab small{color:var(--suave);font-size:14px}
+.item .ico.cuadro img{width:100%;height:100%;object-fit:cover}
+.barrita{height:5px;border-radius:99px;background:var(--card-2);margin-top:7px;overflow:hidden;max-width:180px}
+.barrita i{display:block;height:100%;border-radius:99px;background:var(--ok)}
+.tabbar .tab{font-size:10.5px}

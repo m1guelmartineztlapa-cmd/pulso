@@ -49,10 +49,14 @@
     var semana = d.ses.filter(function (s) { return s.fecha >= inicioSemana(); }).length;
     var pendientes = activos.filter(function (c) { return !c.user_id; });
     var nombreCli = {}, porIdCli = {}; d.clientes.forEach(function (c) { nombreCli[c.id] = c.nombre; porIdCli[c.id] = c; });
-    var html = A().bandaDemo() + '<section class="hero">' + cabecera("Buscar cliente") +
-      '<div class="saldo"><div class="etq">Clientes activos</div><div class="cifra">' + activos.length + '</div>' +
-      '<div class="sub">' + ico("rayo") + semana + (semana === 1 ? " sesión esta semana " : " sesiones esta semana ") + ico("info") + "</div></div>" +
-      '<div class="centro"><a class="pastilla" href="#/clientes">Mis clientes</a></div>' +
+    var metaSem = d.asig.filter(function (a) { var c = porIdCli[a.cliente_id]; return a.activa && c && c.activo; }).reduce(function (t, a) { return t + (a.dias || []).length; }, 0);
+    var cumple = metaSem ? Math.min(100, Math.round(semana / metaSem * 100)) : null;
+    var DL = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"], MS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], hoyD = new Date();
+    var html = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag">' + avatarEnt() + '<div class="cab-txt"><small>' + DL[hoyD.getDay()] + " " + hoyD.getDate() + " " + MS[hoyD.getMonth()] +
+      "</small><h1>Hola, " + esc(((A().ent.nombre || A().ent.marca || "Profe") + "").split(" ")[0]) + '</h1></div><a class="btn-redondo" href="#/clientes" aria-label="Buscar cliente">' + ico("buscar") + "</a></div>" +
+      '<div class="datos" style="margin-top:18px"><a class="dato" href="#/clientes"><div class="v">' + activos.length + '</div><div class="l">Clientes activos</div></a>' +
+      '<div class="dato"><div class="v">' + semana + '</div><div class="l">Entrenos esta semana</div></div><div class="dato"><div class="v">' + (cumple == null ? "–" : cumple + "%") +
+      '</div><div class="l">Cumplimiento</div></div></div>' +
       '<div class="acciones">' +
       '<button class="accion" id="aCliente"><span class="circ">' + ico("mas") + "</span>Cliente</button>" +
       '<a class="accion" href="#/rutina/nueva"><span class="circ">' + ico("rutinas") + "</span>Rutina</a>" +
@@ -92,7 +96,6 @@
     UI.cargarFotos(app());
     UI.$("#aCliente").onclick = function () { hojaCliente(); };
     UI.$("#aAsignar").onclick = function () { hojaAsignar({ clientes: d.clientes, rutinas: d.rutinas }); };
-    UI.$("#buscar").addEventListener("keydown", function (e) { if (e.key === "Enter") A().ir("clientes/" + encodeURIComponent(this.value)); });
   };
   function anillo(txt, pct) {
     var c = 2 * Math.PI * 25;
@@ -121,9 +124,12 @@
         return !n || UI.normal(c.nombre + " " + (c.email || "")).indexOf(n) >= 0;
       });
       UI.$("#lista").innerHTML = fs.length ? fs.map(function (c) {
-        var asig = d.asig.filter(function (a) { return a.cliente_id === c.id && a.activa; }).length;
+        var asA = d.asig.filter(function (a) { return a.cliente_id === c.id && a.activa; });
+        var meta = asA.reduce(function (t, a) { return t + (a.dias || []).length; }, 0), lun = inicioSemana();
+        var hechas = d.ses.filter(function (s) { return s.cliente_id === c.id && s.fecha >= lun; }).length;
         return '<a class="item" href="#/cliente/' + c.id + '">' + UI.avatarCli(c) + '<span class="txt"><div class="t1">' + esc(c.nombre) +
-          '</div><div class="t2">' + esc(UI.hace(ultimaSesion(d.ses, c.id))) + " · " + asig + (asig === 1 ? " rutina" : " rutinas") + '</div></span><span class="der">' +
+          '</div><div class="t2">' + esc(UI.hace(ultimaSesion(d.ses, c.id))) + " · " + (meta ? hechas + "/" + meta + " esta semana" : asA.length ? asA.length + (asA.length === 1 ? " rutina" : " rutinas") : "sin rutina") + "</div>" +
+          (meta ? '<div class="barrita"><i style="width:' + Math.min(100, Math.round(hechas / meta * 100)) + '%"></i></div>' : "") + '</span><span class="der">' +
           (!c.activo ? '<span class="etiqueta gris">Pausado</span>' : c.user_id ? '<span class="etiqueta">Activo</span>' : '<span class="etiqueta ambar">Sin entrar</span>') + "</span></a>";
       }).join("") : '<div class="vacio">' + ico("clientes") + (d.clientes.length ? "Nadie coincide con la búsqueda." : "Aún no tienes clientes. Pulsa + para dar de alta al primero.") + "</div>";
       UI.cargarFotos(UI.$("#lista"));

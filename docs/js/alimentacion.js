@@ -286,6 +286,20 @@
     } catch (e) { cont.innerHTML = ""; }
   };
 
+  // Para la lista "Tu día" del alumno
+  VC.estadoAlimHoy = async function () {
+    try {
+      var cli = A().cli, pd = await planDeCliente(cli.id), reg = await registroDe(cli.id, DB.hoyISO());
+      var res = { total: 0, hechas: 0, sentir: !!(reg && reg.sentir && Object.keys(reg.sentir).length) };
+      if (pd) {
+        var dia = pd.plan.dias[indiceDia(pd.asig, pd.plan, DB.hoyISO())] || {}, comidas = dia.comidas || [], est = (reg && reg.comidas) || {};
+        res.total = comidas.length;
+        res.hechas = comidas.filter(function (c, i) { var e = est[claveComida(c, i)]; return e && e.estado; }).length;
+      }
+      return res;
+    } catch (e) { return null; }
+  };
+
   /* ───────── Resumen de alimentación (alumno y entrenador) ───────── */
   UI.resumenAlim = function (regs, pd, dias) {
     var hoy = DB.hoyISO(), desde = sumarDias(hoy, -(dias - 1));

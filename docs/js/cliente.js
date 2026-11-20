@@ -6,6 +6,7 @@
   var V = VIS.cliente;
   var TABS = [
     { id: "hoy", ruta: "", ico: "inicio", txt: "Hoy" },
+    { id: "entrenos", ruta: "entrenos", ico: "pesa", txt: "Entrenar" },
     { id: "comida", ruta: "comida", ico: "plato", txt: "Comida" },
     { id: "progreso", ruta: "progreso", ico: "grafica", txt: "Progreso" },
     { id: "perfil", ruta: "perfil", ico: "persona", txt: "Perfil" }
@@ -44,39 +45,57 @@
       '<a class="btn-redondo" href="#/progreso" aria-label="Progreso">' + ico("grafica") + '</a><a class="btn-redondo" href="#/perfil" aria-label="Perfil">' + ico("puntos") + "</a></div>";
   }
 
+  /* Cabecera compacta: saludo, fecha y logo del entrenador */
+  var DIAS_L = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"], MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  function fechaLarga() { var d = new Date(); return DIAS_L[d.getDay()] + " " + d.getDate() + " " + MESES[d.getMonth()]; }
+  function cabPag(titulo, sub, derecha) {
+    var e = ent();
+    return '<section class="hero compacto"><div class="cab-pag"><a href="#/perfil" aria-label="Perfil" style="display:contents">' + UI.avatarCli(cli(), "avatar") + "</a>" +
+      '<div class="cab-txt"><small>' + esc(sub) + "</small><h1>" + esc(titulo) + "</h1></div>" + (derecha || ('<span class="marca-mini">' + (e.logo_url ? '<img src="' + esc(e.logo_url) + '" alt="">' : ico("pulso", ' width="18" height="18"')) + "</span>")) + "</div>";
+  }
+
   /* ───────── Hoy ───────── */
   V[""] = async function () {
     UI.tabbar(TABS, "hoy");
     app().innerHTML = UI.cargando();
-    var d = await cargar();
-    var hoy = deHoy(d.asig);
-    var hoyISO = DB.hoyISO();
-    var hechaHoy = hoy && d.ses.some(function (s) { return s.fecha === hoyISO && s.rutina_id === hoy.rutina_id; });
+    var r = await Promise.all([cargar(), V.estadoAlimHoy ? V.estadoAlimHoy() : null]);
+    var d = r[0], al = r[1];
+    var hoy = deHoy(d.asig), hoyISO = DB.hoyISO();
+    var hechaHoy = d.ses.some(function (s) { return s.fecha === hoyISO; });
     var lunes = new Date(); lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));
     var semana = d.ses.filter(function (s) { return s.fecha >= DB.hoyISO(lunes); }).length;
     var meta = Math.max(1, d.asig.reduce(function (t, a) { return t + (a.dias || []).length; }, 0) || d.asig.length);
     var principal = hoy || (d.asig.find(function (a) { return !(a.dias || []).length; }) || null);
-    var html = A().bandaDemo() + '<section class="hero">' + cabecera() + '<div class="saldo">';
+    var html = A().bandaDemo() + cabPag("Hola, " + cli().nombre.split(" ")[0], fechaLarga()) + "</section><div class=\"contenido\">";
+
+    // Entrenamiento de hoy
     if (principal) {
-      html += '<div class="etq">' + (hoy ? "Hoy te toca" : "Tu rutina") + '</div><div class="cifra" style="font-size:44px;letter-spacing:-1.2px">' + esc(principal.rutina.nombre) +
-        '</div><div class="sub">' + (hechaHoy ? ico("check") + "Completada hoy · ¡bien hecho!" : ico("rayo") + contar(principal.rutina) + " ejercicios · ~" + minutos(principal.rutina) + " min") + "</div>";
+      html += '<div class="tarjeta entreno-hoy"><div class="lbl">' + (hoy ? "Entrenamiento de hoy" : "Tu rutina") + "</div><h2>" + esc(principal.rutina.nombre) + "</h2><p>" +
+        (hechaHoy ? "✓ Ya entrenaste hoy. ¡Bien hecho!" : contar(principal.rutina) + " ejercicios · ~" + minutos(principal.rutina) + " min") + "</p>" +
+        '<a class="btn' + (hechaHoy ? " vidrio" : "") + '" href="#/entrenar/' + principal.id + '">' + ico("play") + (hechaHoy ? "Repetir" : "Empezar") + "</a></div>";
     } else if (d.asig.length) {
-      html += '<div class="etq">Hoy</div><div class="cifra" style="font-size:48px">Descanso</div><div class="sub">' + ico("info") + "Recupera. Si quieres, elige una rutina abajo.</div>";
+      html += '<div class="tarjeta entreno-hoy"><div class="lbl">Hoy</div><h2>Día de descanso 😌</h2><p>Recupera para volver con todo. Si quieres, puedes hacer otra rutina.</p><a class="btn vidrio" href="#/entrenos">Ver mis rutinas</a></div>';
     } else {
-      html += '<div class="etq">Bienvenido</div><div class="cifra" style="font-size:40px">' + esc(cli().nombre.split(" ")[0]) + '</div><div class="sub">' + ico("info") + "Tu entrenador aún no te asigna rutinas.</div>";
+      html += '<div class="tarjeta entreno-hoy"><div class="lbl">Bienvenido</div><h2>Todo listo</h2><p>Tu entrenador aún no te asigna rutinas. En cuanto lo haga, aparecerán aquí.</p></div>';
     }
-    html += '</div><div class="centro"><button class="pastilla" id="semana">Mi semana</button></div><div class="acciones">' +
-      (principal ? '<a class="accion" href="#/entrenar/' + principal.id + '"><span class="circ">' + ico("play") + "</span>" + (hechaHoy ? "Repetir" : "Empezar") + "</a>" :
-        '<button class="accion" disabled style="opacity:.4"><span class="circ">' + ico("play") + "</span>Empezar</button>") +
-      '<button class="accion" id="semana2"><span class="circ">' + ico("calendario") + "</span>Semana</button>" +
-      '<a class="accion" href="#/comida"><span class="circ">' + ico("plato") + "</span>Comida</a>" +
-      '<a class="accion" href="#/progreso"><span class="circ">' + ico("grafica") + "</span>Progreso</a></div></section><div class=\"contenido\">";
+
+    // Tu día: lista de pendientes
+    function tarea(ok, icono, t1, t2, href) {
+      return '<a class="item tarea' + (ok ? " ok" : "") + '" href="' + href + '"><span class="ico">' + (ok ? ico("check") : icono) + '</span><span class="txt"><div class="t1">' + t1 + '</div><div class="t2">' + t2 + '</div></span><span class="chev">' + ico("der") + "</span></a>";
+    }
+    html += '<div class="titulo-sec"><h2>Tu día</h2></div><div class="tarjeta sin-relleno"><div class="lista">';
+    html += tarea(hechaHoy || (!hoy && d.asig.length > 0), ico("pesa"), "Entrenamiento", hechaHoy ? "Hecho" : hoy ? esc(hoy.rutina.nombre) : "Hoy toca descanso", principal ? "#/entrenar/" + principal.id : "#/entrenos");
+    if (al && al.total) html += tarea(al.hechas >= al.total, '<span style="font-size:19px">🥗</span>', "Comidas", al.hechas + " de " + al.total + " registradas", "#/comida");
+    html += tarea(al && al.sentir, '<span style="font-size:19px">🙂</span>', "¿Cómo te sientes?", al && al.sentir ? "Ya lo registraste" : "Toma 1 minuto", "#/comida");
+    html += "</div></div>";
+
+    // Tu semana
     var c = 2 * Math.PI * 25, pct = Math.min(1, semana / meta);
-    html += '<div class="tarjeta"><div class="promo"><div class="anillo"><svg viewBox="0 0 58 58"><circle cx="29" cy="29" r="25" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4"/>' +
+    html += '<div class="titulo-sec"><h2>Tu semana</h2><a href="#/entrenos">Ver plan</a></div><div class="tarjeta"><div class="promo"><div class="anillo"><svg viewBox="0 0 58 58"><circle cx="29" cy="29" r="25" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4"/>' +
       '<circle cx="29" cy="29" r="25" fill="none" stroke="var(--brand-2)" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + (c * (1 - pct)).toFixed(1) + '"/></svg>' +
-      semana + "/" + meta + '</div><div><h3>' + (semana >= meta ? "¡Semana completa! 🔥" : "Tu meta de la semana") + "</h3><p>" +
-      (semana >= meta ? "Cumpliste todas tus sesiones. Tu entrenador lo verá." : "Llevas " + semana + " de " + meta + " sesiones. ¡Sigue así!") + "</p></div></div>" +
-      tiraSemana(d, lunes) + (principal && !hechaHoy ? '<a class="btn" style="margin-top:16px" href="#/entrenar/' + principal.id + '">Empezar entrenamiento</a>' : "") + "</div>";
+      semana + "/" + meta + '</div><div><h3>' + (semana >= meta ? "¡Semana completa! 🔥" : "Meta: " + meta + (meta === 1 ? " entrenamiento" : " entrenamientos")) + "</h3><p>" +
+      (semana >= meta ? "Cumpliste todas tus sesiones. Tu entrenador lo verá." : "Llevas " + semana + ". ¡Sigue así!") + "</p></div></div>" + tiraSemana(d, lunes) + "</div>";
+
     var dowHoy = new Date().getDay();
     if ((dowHoy === 0 || dowHoy === 6) && semana > 0) {
       var volS = d.ses.filter(function (s) { return s.fecha >= DB.hoyISO(lunes); }).reduce(function (t, s) { return t + (s.series || []).reduce(function (u, x) { return u + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0); }, 0);
@@ -84,19 +103,35 @@
         '</span><div><h3>Tu semana en números 📊</h3><p>' + semana + (semana === 1 ? " entrenamiento" : " entrenamientos") + (volS ? " · " + Math.round(volS).toLocaleString("es-MX") + " kg levantados" : "") +
         ". Toca para ver tu resumen completo.</p></div></div></a>";
     }
-    html += '<div id="alimHoy"></div>';
-    html += '<div class="titulo-sec"><h2>Mis rutinas</h2></div><div class="tarjeta sin-relleno"><div class="lista">' + (d.asig.length ? d.asig.map(function (a) {
-      return '<a class="item" href="#/entrenar/' + a.id + '"><span class="ico cuadro">' + ico("rutinas") + '</span><span class="txt"><div class="t1">' + esc(a.rutina.nombre) +
-        '</div><div class="t2">' + esc(UI.diasTxt(a.dias)) + " · " + contar(a.rutina) + ' ejercicios</div></span><span class="chev">' + ico("der") + "</span></a>";
-    }).join("") : '<div class="vacio">' + ico("rutinas") + "Cuando tu entrenador te asigne rutinas, aparecerán aquí.</div>") + "</div></div>";
-    html += '<div class="titulo-sec"><h2>Últimas sesiones</h2><a href="#/progreso">Ver todo</a></div><div class="tarjeta sin-relleno"><div class="lista">' +
-      (d.ses.length ? d.ses.slice(0, 3).map(filaSesion).join("") : '<div class="vacio">Aquí verás tus entrenamientos terminados.</div>') + "</div></div></div>";
+    html += "</div>";
     app().innerHTML = html;
     UI.cargarFotos(app());
-    if (V.tarjetaAlimHoy) V.tarjetaAlimHoy(UI.$("#alimHoy"));
-    enlazarSesiones(d.ses);
-    ["#semana", "#semana2"].forEach(function (s) { UI.$(s).onclick = function () { hojaSemana(d.asig); }; });
   };
+
+  /* ───────── Entrenar: plan de la semana, rutinas e historial ───────── */
+  V.entrenos = async function () {
+    UI.tabbar(TABS, "entrenos");
+    app().innerHTML = UI.cargando();
+    var d = await cargar(), hoyDow = new Date().getDay();
+    var html = A().bandaDemo() + cabPag("Entrenar", d.ses.length + (d.ses.length === 1 ? " entrenamiento hecho" : " entrenamientos hechos")) + "</section><div class=\"contenido\">";
+    html += '<div class="titulo-sec"><h2>Mi semana</h2></div><div class="tarjeta sin-relleno"><div class="lista">' + [1, 2, 3, 4, 5, 6, 0].map(function (dd) {
+      var rs = d.asig.filter(function (a) { return (a.dias || []).indexOf(dd) >= 0; });
+      return '<div class="item"><span class="ico" style="' + (dd === hoyDow ? "background:var(--brand);color:#fff" : "") + '">' + UI.DIAS[dd] + '</span><span class="txt"><div class="t1">' +
+        (rs.length ? esc(rs.map(function (a) { return a.rutina.nombre; }).join(" + ")) : '<span style="color:var(--suave)">Descanso</span>') +
+        '</div><div class="t2">' + UI.DIAS_L[dd] + (dd === hoyDow ? " · hoy" : "") + "</div></span>" +
+        (rs.length ? '<a class="btn chico' + (dd === hoyDow ? "" : " vidrio") + '" href="#/entrenar/' + rs[0].id + '">' + (dd === hoyDow ? "Empezar" : "Abrir") + "</a>" : "") + "</div>";
+    }).join("") + "</div></div>";
+    html += '<div class="titulo-sec"><h2>Mis rutinas</h2></div><div class="tarjeta sin-relleno"><div class="lista">' + (d.asig.length ? d.asig.map(function (a) {
+      return '<a class="item" href="#/entrenar/' + a.id + '"><span class="ico cuadro">' + ico("rutinas") + '</span><span class="txt"><div class="t1">' + esc(a.rutina.nombre) +
+        '</div><div class="t2">' + esc(UI.diasTxt(a.dias)) + " · " + contar(a.rutina) + " ejercicios · ~" + minutos(a.rutina) + ' min</div></span><span class="chev">' + ico("der") + "</span></a>";
+    }).join("") : '<div class="vacio">' + ico("rutinas") + "Cuando tu entrenador te asigne rutinas, aparecerán aquí.</div>") + "</div></div>";
+    html += '<div class="titulo-sec"><h2>Historial</h2></div><div class="tarjeta sin-relleno"><div class="lista">' +
+      (d.ses.length ? d.ses.slice(0, 30).map(filaSesion).join("") : '<div class="vacio">Aquí verás tus entrenamientos terminados.</div>') + "</div></div></div>";
+    app().innerHTML = html;
+    UI.cargarFotos(app());
+    enlazarSesiones(d.ses);
+  };
+
   // Lunes a domingo: qué días toca entrenar y cuáles ya entrenó
   function tiraSemana(d, lunes) {
     var L = ["L", "M", "M", "J", "V", "S", "D"], hoyISO = DB.hoyISO(), html = '<div class="semana-tira">';
@@ -280,8 +315,8 @@
     dibujar();
   };
 
-  /* ───────── Progreso ───────── */
-  V.progreso = async function () {
+  /* ───────── Progreso (Resumen · Fuerza · Cuerpo · Comida) ───────── */
+  V.progreso = async function (panel) {
     UI.tabbar(TABS, "progreso");
     app().innerHTML = UI.cargando();
     var c = cli();
@@ -291,17 +326,20 @@
     var mes = DB.hoyISO().slice(0, 7);
     var delMes = ses.filter(function (s) { return s.fecha.slice(0, 7) === mes; }).length;
     var vol = ses.reduce(function (t, s) { return t + (s.series || []).reduce(function (u, x) { return u + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0); }, 0);
+    var ult = med.length ? med[med.length - 1] : null;
     var ejs = UI.ejerciciosRegistrados(ses);
-    app().innerHTML = A().bandaDemo() + '<section class="hero">' + cabecera() + '<div class="saldo"><div class="etq">Peso total levantado</div><div class="cifra">' +
-      Math.round(vol).toLocaleString("es-MX") + '<small> kg</small></div><div class="sub">' + ico("fuego") + ses.length + " entrenamientos · " + delMes + " este mes</div></div></section>" +
-      '<div class="contenido"><div class="titulo-sec"><h2>Mi resumen</h2></div><div class="tarjeta" id="resumenYo"></div>' +
-      '<div class="titulo-sec"><h2>Mi alimentación</h2><a href="#/comida">Ver hoy</a></div><div class="tarjeta" id="alimYo"></div>' +
-      '<div class="titulo-sec"><h2>Fuerza</h2></div><div class="tarjeta">' +
-      (ejs.length ? '<div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
-        '</div><div id="graf" style="margin-top:12px"></div>' : '<div class="vacio" style="padding:10px">Registra tus pesos al entrenar y aquí verás cómo subes.</div>') + "</div>" +
-      '<div class="titulo-sec"><h2>Medidas y fotos</h2><button id="medir">+ Agregar</button></div><div class="tarjeta">' + VIS.entrenador.resumenMedidas(med) + "</div>" +
-      '<div class="titulo-sec"><h2>Historial</h2></div><div class="tarjeta sin-relleno"><div class="lista">' +
-      (ses.length ? ses.slice(0, 50).map(filaSesion).join("") : '<div class="vacio">Aún no hay entrenamientos.</div>') + "</div></div></div>";
+    var P = [{ id: "resumen", t: "Resumen" }, { id: "fuerza", t: "Fuerza" }, { id: "cuerpo", t: "Cuerpo" }, { id: "comida", t: "Comida" }];
+    app().innerHTML = A().bandaDemo() + cabPag("Progreso", ses.length + (ses.length === 1 ? " entrenamiento" : " entrenamientos") + " · " + delMes + " este mes") + "</section>" +
+      '<div class="contenido"><div class="datos"><div class="dato"><div class="v">' + ses.length + '</div><div class="l">Entrenos</div></div><div class="dato"><div class="v">' +
+      (vol >= 10000 ? UI.num(vol / 1000) + "t" : Math.round(vol).toLocaleString("es-MX")) + '</div><div class="l">kg levantados</div></div><div class="dato"><div class="v">' + (ult && ult.peso ? UI.num(ult.peso) : "–") +
+      '</div><div class="l">Peso (kg)</div></div></div>' +
+      '<div class="segmento pegado" id="segP">' + P.map(function (p) { return '<button data-p="' + p.id + '">' + p.t + "</button>"; }).join("") + "</div>" +
+      '<div data-pan="resumen"><div class="tarjeta" id="resumenYo"></div></div>' +
+      '<div data-pan="fuerza"><div class="tarjeta">' +
+      (ejs.length ? '<div class="lbl" style="margin-bottom:8px">Elige un ejercicio</div><div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
+        '</div><div id="graf" style="margin-top:12px"></div>' : '<div class="vacio" style="padding:10px">Registra tus pesos al entrenar y aquí verás cómo subes.</div>') + "</div></div>" +
+      '<div data-pan="cuerpo"><div class="titulo-sec"><h2>Medidas y fotos</h2><button id="medir">+ Agregar</button></div><div class="tarjeta">' + VIS.entrenador.resumenMedidas(med) + "</div></div>" +
+      '<div data-pan="comida"><div class="titulo-sec"><h2>Mi alimentación</h2><a href="#/comida">Ver hoy</a></div><div class="tarjeta" id="alimYo"></div></div></div>';
     VIS.entrenador.pintarFotos(med);
     UI.cargarFotos(app());
     UI.montarResumen(UI.$("#resumenYo"), { ses: ses, med: med, asig: asigC });
@@ -312,22 +350,43 @@
       UI.$$("#chipsEj .chip").forEach(function (b) { b.onclick = function () { UI.$$("#chipsEj .chip").forEach(function (x) { x.classList.toggle("on", x === b); }); graf(b.dataset.ref); }; });
     }
     UI.$("#medir").onclick = function () { VIS.entrenador.hojaMedida(c); };
-    enlazarSesiones(ses);
+    function ver(pn) {
+      UI.$$("#segP button").forEach(function (b) { b.classList.toggle("on", b.dataset.p === pn); });
+      UI.$$("[data-pan]").forEach(function (el) { el.hidden = el.dataset.pan !== pn; });
+      try { history.replaceState(null, "", "#/progreso" + (pn === "resumen" ? "" : "/" + pn)); } catch (e) {}
+    }
+    ver(P.some(function (p) { return p.id === panel; }) ? panel : "resumen");
+    UI.$$("#segP button").forEach(function (b) { b.onclick = function () { ver(b.dataset.p); }; });
   };
 
-  /* ───────── Perfil ───────── */
+  /* ───────── Perfil (agrupado como Ajustes de iPhone) ───────── */
   V.perfil = async function () {
     UI.tabbar(TABS, "perfil");
     var c = cli(), e = ent();
-    app().innerHTML = A().bandaDemo() + '<section class="hero"><div class="saldo" style="margin-top:30px"><label class="foto-perfil" title="Cambiar foto">' + UI.avatarCli(c, "avatar grande") +
+    function fila(id, icono, t1, t2, extra) {
+      return '<' + (extra && extra.href ? 'a href="' + extra.href + '"' + (extra.fuera ? ' target="_blank" rel="noopener"' : "") : 'div') + ' class="item"' + (id ? ' id="' + id + '"' : "") + '><span class="ico">' + icono + '</span><span class="txt"><div class="t1">' + t1 + "</div>" +
+        (t2 ? '<div class="t2">' + t2 + "</div>" : "") + "</span>" + (extra && extra.sinFlecha ? "" : '<span class="chev">' + ico("der") + "</span>") + "</" + (extra && extra.href ? "a" : "div") + ">";
+    }
+    app().innerHTML = A().bandaDemo() + '<section class="hero compacto"><div class="perfil-cab"><label class="foto-perfil" title="Cambiar foto">' + UI.avatarCli(c, "avatar grande") +
       '<span class="foto-cam">' + ico("camara") + '</span><input type="file" accept="image/*" id="fotoCli" class="oculto-vista"></label>' +
-      '<div class="cifra" style="font-size:30px;letter-spacing:-.5px;margin-top:12px">' + esc(c.nombre) + '</div><div class="sub">' + esc((A().usuario && A().usuario.email) || "") + "</div></div></section>" +
-      '<div class="contenido"><div class="tarjeta"><div class="promo"><div class="avatar grande" style="border-radius:22px">' + (e.logo_url ? '<img src="' + esc(e.logo_url) + '" alt="">' : esc(UI.iniciales(e.marca))) +
-      '</div><div><h3>' + esc(e.marca || "Tu entrenador") + "</h3><p>Entrenador: " + esc(e.nombre || "") + (c.objetivo ? "<br>Tu objetivo: " + esc(c.objetivo) : "") + "</p></div></div></div>" +
-      '<div class="titulo-sec"><h2>Instalar la app</h2></div><div class="tarjeta"><p><b style="color:#fff">iPhone:</b> en Safari, botón Compartir → «Agregar a pantalla de inicio».<br>' +
-      '<b style="color:#fff">Android:</b> en Chrome, menú ⋮ → «Instalar app».</p></div>' +
-      '<div class="tarjeta sin-relleno"><div class="lista"><div class="item" id="salir"><span class="ico">' + ico("salir") + '</span><span class="txt"><div class="t1">Cerrar sesión</div></span></div></div></div></div>';
+      "<div><h1>" + esc(c.nombre) + "</h1><small>" + esc((A().usuario && A().usuario.email) || "") + "</small></div></div></section>" +
+      '<div class="contenido">' +
+      '<div class="lbl grupo">Mi entrenador</div><div class="tarjeta sin-relleno"><div class="lista">' +
+      '<div class="item"><span class="ico cuadro" style="overflow:hidden">' + (e.logo_url ? '<img src="' + esc(e.logo_url) + '" alt="">' : esc(UI.iniciales(e.marca || "P"))) + '</span><span class="txt"><div class="t1">' + esc(e.marca || "Tu entrenador") +
+      '</div><div class="t2">' + esc(e.nombre || "") + "</div></span></div>" +
+      (c.objetivo ? fila("", ico("estrella"), "Mi objetivo", esc(c.objetivo), { sinFlecha: true }) : "") + "</div></div>" +
+      '<div class="lbl grupo">Mi actividad</div><div class="tarjeta sin-relleno"><div class="lista">' +
+      fila("", ico("pesa"), "Entrenamientos e historial", "", { href: "#/entrenos" }) +
+      fila("", '<span style="font-size:18px">🥗</span>', "Alimentación", "", { href: "#/comida" }) +
+      fila("", ico("regla"), "Medidas y fotos", "", { href: "#/progreso/cuerpo" }) + "</div></div>" +
+      '<div class="lbl grupo">App</div><div class="tarjeta sin-relleno"><div class="lista">' +
+      fila("instalar", ico("compartir"), "Instalar en mi celular", "Para abrirla como app, sin navegador") + "</div></div>" +
+      '<div class="tarjeta sin-relleno"><div class="lista">' + fila("salir", ico("salir"), '<span style="color:var(--malo)">Cerrar sesión</span>', "", { sinFlecha: true }) + "</div></div></div>";
     UI.$("#salir").onclick = function () { A().salir(); };
+    UI.$("#instalar").onclick = function () {
+      UI.hoja("Instalar la app", '<div class="lista" style="margin:0 -18px"><div class="item"><span class="ico">' + ico("compartir") + '</span><span class="txt"><div class="t1">iPhone</div><div class="t2" style="white-space:normal">En Safari, toca Compartir y luego «Agregar a pantalla de inicio».</div></span></div>' +
+        '<div class="item"><span class="ico">' + ico("puntos") + '</span><span class="txt"><div class="t1">Android</div><div class="t2" style="white-space:normal">En Chrome, abre el menú ⋮ y toca «Instalar app».</div></span></div></div>');
+    };
     UI.cargarFotos(app());
     UI.$("#fotoCli").onchange = async function () {
       var f = this.files[0]; if (!f) return;
@@ -340,3 +399,4 @@
     };
   };
 })();
+
