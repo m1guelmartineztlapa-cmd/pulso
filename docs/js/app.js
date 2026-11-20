@@ -16,6 +16,8 @@
   }
   APP.ir = function (r) { if (location.hash === "#/" + r) pintar(); else location.hash = "#/" + r; };
   APP.recargar = function () { pintar(); };
+  // Correo de la cuenta que se está viendo (si el admin entró a otra cuenta, el de esa persona, nunca el suyo)
+  APP.correo = function () { return APP.suplanta ? (APP.suplanta.email || "") : ((APP.usuario && APP.usuario.email) || ""); };
   APP.app = function () { return UI.$("#app"); };
 
   function bandaDemo() {
@@ -28,8 +30,8 @@
   }
   APP.bandaDemo = bandaDemo;
   // El admin entra a la cuenta de un entrenador o alumno para darle mantenimiento
-  APP.entrarComo = async function (tipo, id, nombre) {
-    try { sessionStorage.removeItem("pulso_ver_como"); sessionStorage.setItem("pulso_suplanta", JSON.stringify({ tipo: tipo, id: id, nombre: nombre })); } catch (e) {}
+  APP.entrarComo = async function (tipo, id, nombre, email) {
+    try { sessionStorage.removeItem("pulso_ver_como"); sessionStorage.setItem("pulso_suplanta", JSON.stringify({ tipo: tipo, id: id, nombre: nombre, email: email || "" })); } catch (e) {}
     await detectarRol(); location.hash = "#/"; pintar();
     if (APP.suplanta) UI.aviso("Estás dentro de la cuenta de " + nombre + ". Lo que cambies se guarda en su cuenta.");
     else UI.aviso("No pude abrir esa cuenta. ¿Ya corriste el SQL admin-v7?", true);

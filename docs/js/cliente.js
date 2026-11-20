@@ -379,7 +379,7 @@
     }
     app().innerHTML = A().bandaDemo() + '<section class="hero compacto"><div class="perfil-cab"><label class="foto-perfil" title="Cambiar foto">' + UI.avatarCli(c, "avatar grande") +
       '<span class="foto-cam">' + ico("camara") + '</span><input type="file" accept="image/*" id="fotoCli" class="oculto-vista"></label>' +
-      "<div><h1>" + esc(c.nombre) + "</h1><small>" + esc(c.email || (A().usuario && A().usuario.email) || "") + "</small></div></div></section>" +
+      "<div><h1>" + esc(c.nombre) + "</h1><small>" + esc(c.email || A().correo() || "Sin correo registrado") + "</small></div></div></section>" +
       '<div class="contenido">' +
       '<div class="lbl grupo">Mi entrenador</div><div class="tarjeta sin-relleno"><div class="lista">' +
       '<div class="item"><span class="ico cuadro" style="overflow:hidden">' + (e.logo_url ? '<img src="' + esc(e.logo_url) + '" alt="">' : esc(UI.iniciales(e.marca || "P"))) + '</span><span class="txt"><div class="t1">' + esc(e.marca || "Tu entrenador") +

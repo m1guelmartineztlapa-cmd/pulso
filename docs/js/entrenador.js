@@ -935,7 +935,7 @@
       '<div class="tarjeta sin-relleno" id="adminLink" hidden><div class="lista"><a class="item" href="#/admin"><span class="ico">' + ico("grafica") +
       '</span><span class="txt"><div class="t1">Panel de administrador</div><div class="t2">Quién usa Pulso y qué hace</div></span><span class="chev">' + ico("der") + "</span></a></div></div>" +
       '<div class="tarjeta sin-relleno"><div class="lista"><div class="item" id="salir"><span class="ico">' + ico("salir") + '</span><span class="txt"><div class="t1">Cerrar sesión</div><div class="t2">' +
-      esc((A().usuario && A().usuario.email) || "") + "</div></span></div></div></div></div>";
+      esc(A().correo()) + "</div></span></div></div></div></div>";
     UI.$("#instalarApp").onclick = function () {
       UI.hoja("Instalar en tu celular", '<div class="lista" style="margin:0 -18px"><div class="item"><span class="ico">' + ico("compartir") + '</span><span class="txt"><div class="t1">iPhone</div><div class="t2" style="white-space:normal">En Safari, toca Compartir y luego «Agregar a pantalla de inicio».</div></span></div>' +
         '<div class="item"><span class="ico">' + ico("puntos") + '</span><span class="txt"><div class="t1">Android</div><div class="t2" style="white-space:normal">En Chrome, abre el menú ⋮ y toca «Instalar app».</div></span></div></div>');
@@ -1271,7 +1271,7 @@
         '<div class="fila-btns"><button class="btn vidrio" id="uCopiar">' + ico("copiar") + 'Copiar correo</button><a class="btn vidrio" href="mailto:' + esc(u.email) + '">' + ico("enlace") + "Escribirle</a></div>" : "") +
       '<button class="btn azul" id="uEntrar">' + ico("persona") + "Entrar a su cuenta</button>" +
       '<a class="btn vidrio" href="#/admin/' + esc(u.ent) + '">' + ico("grafica") + (u.rol === "entrenador" ? "Ver su actividad" : "Ver actividad de su entrenador") + "</a></div>", function (h, cerrar) {
-      h.querySelector("#uEntrar").onclick = function () { cerrar(); A().entrarComo(u.rol === "entrenador" ? "ent" : "cli", u.id.slice(1), u.nombre); };
+      h.querySelector("#uEntrar").onclick = function () { cerrar(); A().entrarComo(u.rol === "entrenador" ? "ent" : "cli", u.id.slice(1), u.nombre, u.email); };
       UI.$$("a", h).forEach(function (a) { a.addEventListener("click", cerrar); });
       var rs = h.querySelector("#uReset");
       if (rs) rs.onclick = async function () {
