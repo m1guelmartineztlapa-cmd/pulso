@@ -4,6 +4,7 @@
   --brand-2:#7AA5FF;
   --acento:#FF7A59;
   --c-entreno:var(--brand);
+  --grad:linear-gradient(135deg,var(--brand) 0%,color-mix(in srgb,var(--brand) 45%,#22D3EE) 100%);
   --c-comida:#3DDC97;
   --c-bienestar:#A78BFA;
   --c-racha:#FF7A59;
@@ -450,3 +451,58 @@ a.dato{display:block;color:inherit}
 .pulso-vivo{flex:none;width:14px;height:14px;border-radius:50%;background:var(--tenue);margin:0 6px}
 .pulso-vivo.on{background:var(--ok);box-shadow:0 0 0 6px color-mix(in srgb,var(--ok) 22%,transparent);animation:latir 1.6s ease-in-out infinite}
 @keyframes latir{50%{box-shadow:0 0 0 10px color-mix(in srgb,var(--ok) 8%,transparent)}}
+/* ── Firma visual de Pulso: degradado azul → celeste ── */
+.btn{background:var(--grad);color:#fff;box-shadow:0 8px 22px -10px color-mix(in srgb,var(--brand) 80%,transparent)}
+.btn.azul{background:var(--grad)}
+.btn.vidrio{box-shadow:none}
+.btn.peligro{box-shadow:none}
+.entreno-hoy .btn:not(.vidrio){background:#fff;color:#0B1020;box-shadow:none}
+.tab.on{background:var(--grad)}
+.chip.on{background:var(--grad)}
+.segmento button.on{background:var(--grad);color:#fff}
+.entreno-hoy{background:var(--grad)}
+.subnav{display:flex;gap:16px;align-items:baseline}
+.subnav a{font-size:30px;font-weight:800;letter-spacing:-.8px;color:var(--tenue)}
+.subnav a.on{color:#fff}
+.subnav a:not(.on){font-size:22px}
+.buscador.buscador-c{background:var(--card);border:1px solid var(--linea);backdrop-filter:none;height:46px}
+.buscador.buscador-c input::placeholder{color:var(--tenue)}
+.chip .cuenta{opacity:.7;font-weight:700;margin-left:2px}
+.cumple{display:inline-block;padding:3px 9px;border-radius:999px;font-weight:800;font-size:13.5px}
+.cumple.alto{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}
+.cumple.medio{background:color-mix(in srgb,var(--ambar) 20%,transparent);color:var(--ambar)}
+.cumple.bajo{background:color-mix(in srgb,var(--malo) 20%,transparent);color:var(--malo)}
+.cumple.grande{font-size:20px;padding:8px 14px}
+.dato .v.c-alto{color:var(--ok)}.dato .v.c-medio{color:var(--ambar)}.dato .v.c-bajo{color:var(--malo)}
+.cli-fila .der{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.cli-fila .der small{margin:0}
+.cli-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:var(--card-2);color:var(--suave);font-size:12px;font-weight:700}
+.tag svg{width:13px;height:13px}
+.tag.t-entreno{background:color-mix(in srgb,var(--c-entreno) 20%,transparent);color:var(--brand-2)}
+.tag.t-comida{background:color-mix(in srgb,var(--c-comida) 18%,transparent);color:var(--c-comida)}
+.alerta{position:absolute;right:-1px;top:-1px;width:12px;height:12px;border-radius:50%;background:var(--acento);border:2px solid var(--bg)}
+.estado{flex:none;font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:999px}
+.e-ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.e-pend{background:color-mix(in srgb,var(--brand) 22%,transparent);color:var(--brand-2)}
+.e-mal{background:color-mix(in srgb,var(--malo) 18%,transparent);color:var(--malo)}
+.e-off{background:var(--card-2);color:var(--tenue)}
+.sem-num{flex-direction:column;border-radius:14px!important;line-height:1.05;font-size:17px;font-weight:800}
+.sem-num small{font-size:10.5px;color:var(--suave);font-weight:700;text-transform:uppercase}
+.sem-dia.hoy .sem-num{background:var(--grad);color:#fff}
+.sem-dia.hoy .sem-num small{color:rgba(255,255,255,.85)}
+.barrita.ancha{max-width:none;height:8px;margin-top:14px}
+.barrita .b-medio{background:var(--ambar)}.barrita .b-bajo{background:var(--malo)}
+.seg5 button{font-size:13.5px;padding:0 2px}
+.accion .circ.c-entreno{background:color-mix(in srgb,var(--c-entreno) 30%,transparent)}
+.accion .circ.c-comida{background:color-mix(in srgb,var(--c-comida) 24%,transparent);color:var(--c-comida)}
+.accion .circ.c-bien{background:color-mix(in srgb,var(--c-bienestar) 26%,transparent);color:var(--c-bienestar)}
+.accion .circ.c-racha{background:color-mix(in srgb,var(--c-racha) 24%,transparent);color:var(--c-racha)}
+.rut-lista{display:flex;flex-direction:column;gap:12px}
+.rut-card{display:block;color:inherit}
+.rut-top{display:flex;align-items:center;gap:12px}
+.rut-top h3{margin:0}
+.rut-top p{margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rut-ico{flex:none;width:48px;height:48px;border-radius:15px;background:var(--grad);display:grid;place-items:center;color:#fff}
+.rut-ico svg{width:24px;height:24px}
+.perfil-cab h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

@@ -373,7 +373,7 @@
     app().innerHTML = UI.cargando();
     var r = await Promise.all([DB.sel("planes_alim", { entrenador_id: A().ent.id }, { orden: "actualizado", desc: true }), DB.sel("asig_alim", { entrenador_id: A().ent.id }), cargarPlantillas(), cargarRecetario()]);
     var planes = r[0], asig = r[1], pls = r[2], recetas = r[3], cat = "", q = "";
-    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><h1 class="titulo-pag" style="margin:6px 0 0">Dietas</h1>' +
+    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><h1 class="titulo-pag" style="margin:6px 0 0">Nutrición</h1>' +
       '<a class="btn-redondo" href="#/dieta/nueva" aria-label="Nuevo plan">' + ico("mas") + '</a></div><div class="segmento" id="segD" style="margin-top:14px">' +
       SEGS.map(function (s) { return '<button data-s="' + s.id + '">' + s.txt + "</button>"; }).join("") + '</div></section><div class="contenido" id="contD"></div>';
     var cont = UI.$("#contD");
@@ -643,6 +643,7 @@
     });
   }
   VE.hojaAsignarDieta = hojaAsignarDieta;
+  VE.planDeCliente = planDeCliente; VE.indiceDia = indiceDia;
 
   /* Sección "Alimentación" en la ficha del alumno (vista del entrenador) */
   VE.fichaAlim = async function (cont, c) {
