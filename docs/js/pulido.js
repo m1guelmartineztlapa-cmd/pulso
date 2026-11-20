@@ -149,12 +149,23 @@
     document.body.classList.toggle("con-hoja", abierta);
   }).observe(capa, { childList: true });
 
-  /* ── 8. Jalar hacia abajo para actualizar (en las pantallas principales) ── */
+  /* ── 8. Jalar hacia abajo para actualizar, como Safari: la pantalla baja con resistencia
+         y aparece la ruedita gris del iPhone, que se va armando y luego gira ── */
   var ptr = document.createElement("div");
   ptr.id = "ptr";
-  ptr.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>';
+  var rayas = "";
+  for (var i = 0; i < 8; i++) rayas += '<i style="transform:rotate(' + i * 45 + 'deg) translateY(-7px);--o:' + (1 - i * 0.1).toFixed(2) + '"></i>';
+  ptr.innerHTML = '<div class="ptr-rueda">' + rayas + "</div>";
   document.body.appendChild(ptr);
-  var py = null, pdy = 0, cargandoPtr = false;
+  var rueda = ptr.querySelector(".ptr-rueda"), rayasEl = rueda.querySelectorAll("i");
+  var py = null, pdy = 0, cargandoPtr = false, UMBRAL = 78;
+  function resistencia(d) { return d <= 0 ? 0 : 110 * (1 - Math.exp(-d / 160)); }
+  function pintarPtr(dist) {
+    var k = Math.min(1, dist / UMBRAL);
+    rayasEl.forEach(function (r, i) { r.style.opacity = k * 8 > i ? "" : "0"; });
+    ptr.style.opacity = dist > 6 ? "1" : "0";
+    ptr.style.transform = "translate(-50%," + Math.max(0, dist / 2 - 14) + "px)";
+  }
   document.addEventListener("touchstart", function (e) {
     py = null;
     if (cargandoPtr || hayHoja() || !tabbarVisible() || window.scrollY > 0 || e.touches.length !== 1) return;
@@ -165,21 +176,35 @@
   document.addEventListener("touchmove", function (e) {
     if (py == null) return;
     pdy = e.touches[0].clientY - py;
-    if (pdy <= 0 || window.scrollY > 0) { ptr.style.transform = ""; ptr.classList.remove("ver", "listo"); return; }
-    var d = Math.min(110, pdy * 0.5);
-    ptr.classList.add("ver");
-    ptr.classList.toggle("listo", pdy > 140);
-    ptr.style.transform = "translate(-50%," + d + "px) rotate(" + pdy * 1.6 + "deg)";
-  }, { passive: true });
+    if (pdy <= 0 || window.scrollY > 0) { app.style.transition = ""; app.style.transform = ""; pintarPtr(0); return; }
+    var dist = resistencia(pdy);
+    app.style.transition = "none";
+    app.style.transform = "translateY(" + dist + "px)";
+    pintarPtr(dist);
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
   document.addEventListener("touchend", function () {
     if (py == null) return; py = null;
-    if (pdy > 140 && window.APP && window.APP.recargar) {
+    var dist = resistencia(pdy);
+    app.style.transition = "transform .35s cubic-bezier(.2,.9,.3,1)";
+    ptr.style.transition = "transform .35s cubic-bezier(.2,.9,.3,1), opacity .2s";
+    if (dist >= UMBRAL && window.APP && window.APP.recargar) {
       cargandoPtr = true;
-      ptr.classList.add("girando"); ptr.style.transform = "translate(-50%,70px)";
+      app.style.transform = "translateY(58px)";
+      pintarPtr(UMBRAL); ptr.style.transform = "translate(-50%,16px)";
+      rueda.classList.add("gira");
+      var t0 = Date.now();
       Promise.resolve(window.APP.recargar()).then(function () {
-        setTimeout(function () { ptr.classList.remove("girando", "ver", "listo"); ptr.style.transform = ""; cargandoPtr = false; }, 650);
+        setTimeout(function () {
+          rueda.classList.remove("gira");
+          app.style.transform = ""; ptr.style.opacity = "0"; ptr.style.transform = "translate(-50%,0)";
+          setTimeout(function () { app.style.transition = ""; ptr.style.transition = ""; cargandoPtr = false; }, 360);
+        }, Math.max(0, 700 - (Date.now() - t0)));
       });
-    } else { ptr.classList.remove("ver", "listo"); ptr.style.transform = ""; }
+    } else {
+      app.style.transform = ""; pintarPtr(0);
+      setTimeout(function () { app.style.transition = ""; ptr.style.transition = ""; }, 360);
+    }
   });
 
   alCambiar();

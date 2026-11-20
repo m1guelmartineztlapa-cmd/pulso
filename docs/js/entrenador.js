@@ -126,7 +126,7 @@
       var previos = d.ses.filter(function (x) { return x.cliente_id === s.cliente_id && x.rutina_id === s.rutina_id && x.fecha < s.fecha; });
       var maxPrev = Math.max.apply(null, [0].concat(previos.map(function (x) { return (x.series || []).reduce(function (t, y) { return t + (Number(y.peso) || 0) * (Number(y.reps) || 0); }, 0); })));
       var record = vol > 0 && previos.length && vol > maxPrev;
-      html += '<a class="tarjeta feed" href="#/cliente/' + s.cliente_id + '"><div class="promo">' + UI.avatarCli(c) + '<div style="flex:1;min-width:0"><p class="f1"><b>' + esc(c.nombre.split(" ")[0]) + "</b> terminó <b>" + esc(s.rutina_nombre || "su rutina") +
+      html += '<a class="tarjeta feed" href="#/cliente/' + s.cliente_id + '"><div class="promo">' + UI.avatarCli(c, "avatar") + '<div style="flex:1;min-width:0"><p class="f1"><b>' + esc(c.nombre.split(" ")[0]) + "</b> terminó <b>" + esc(s.rutina_nombre || "su rutina") +
         '</b></p><p class="f2">' + esc(UI.fecha(s.fecha)) + (vol ? " · " + Math.round(vol).toLocaleString("es-MX") + " kg" : "") + (s.calificacion ? " · ★ " + s.calificacion : "") + "</p></div></div>" +
         (record ? '<div class="logro">🏆 Nuevo récord de volumen en esta rutina</div>' : "") + (s.comentario ? '<div class="burbuja">“' + esc(s.comentario) + "”</div>" : "") + "</a>";
     });
