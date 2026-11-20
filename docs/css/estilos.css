@@ -506,3 +506,72 @@ a.dato{display:block;color:inherit}
 .rut-ico{flex:none;width:48px;height:48px;border-radius:15px;background:var(--grad);display:grid;place-items:center;color:#fff}
 .rut-ico svg{width:24px;height:24px}
 .perfil-cab h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ── Un color por sección (lo pone la barra de abajo) ── */
+body{--sec:var(--brand);--sec-2:color-mix(in srgb,var(--sec) 62%,#fff);--grad-sec:linear-gradient(135deg,var(--sec) 0%,color-mix(in srgb,var(--sec) 70%,#fff) 100%)}
+body[data-sec="clientes"],body[data-sec="usuarios"]{--sec:#8B7CFF}
+body[data-sec="entreno"],body[data-sec="entrenos"]{--sec:#1FB5EA}
+body[data-sec="dietas"],body[data-sec="comida"]{--sec:#27C485}
+body[data-sec="progreso"]{--sec:#FF7A59}
+body[data-sec="ajustes"],body[data-sec="perfil"]{--sec:#7C8DB5}
+.hero.compacto::before{background:radial-gradient(120% 70% at 15% -20%,color-mix(in srgb,var(--sec) 58%,transparent) 0%,color-mix(in srgb,var(--sec) 15%,transparent) 55%,transparent 100%)}
+.hero:not(.compacto)::before{background:radial-gradient(130% 80% at 50% -10%,color-mix(in srgb,var(--sec) 70%,#9FE7FF 20%) 0%,color-mix(in srgb,var(--sec) 70%,var(--bg)) 26%,color-mix(in srgb,var(--sec) 20%,var(--bg)) 62%,var(--bg) 100%)}
+.tab.on{background:var(--grad-sec);color:#fff}
+.chip.on,.segmento button.on{background:var(--grad-sec)}
+.cab-txt small{color:var(--sec-2)}
+.titulo-sec a,.titulo-sec button{color:var(--sec-2)}
+.subnav a.on{color:#fff}
+.rut-ico{background:var(--grad-sec)}
+/* ── Inicio del entrenador ── */
+.semana-card{background:var(--grad-sec);border:0;padding:18px}
+.sc-top{display:flex;align-items:center;gap:16px}
+.sc-anillo{flex:none;width:84px;height:84px;position:relative;display:grid;place-items:center}
+.sc-anillo svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.sc-anillo b{font-size:19px;font-weight:800}
+.semana-card .lbl{padding:0;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.06em;font-size:11.5px;font-weight:700}
+.semana-card h2{margin:4px 0 2px;font-size:24px;font-weight:800;letter-spacing:-.5px}
+.semana-card p{color:rgba(255,255,255,.88)}
+.sc-barras{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:16px;height:92px}
+.sc-barras div{display:flex;flex-direction:column;align-items:center;gap:5px;position:relative}
+.sc-barras span{flex:1;width:100%;max-width:26px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:flex-end;overflow:hidden}
+.sc-barras i{display:block;width:100%;background:#fff;border-radius:8px}
+.sc-barras .fut i{opacity:.35}
+.sc-barras small{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.85)}
+.sc-barras .hoy small{color:#fff;text-decoration:underline;text-underline-offset:3px}
+.sc-barras em{position:absolute;top:-2px;font-style:normal;font-size:11px;font-weight:800;color:var(--sec)}
+.alerta.g1{background:var(--ambar)}.alerta.g2{background:var(--acento)}.alerta.g3{background:var(--malo)}
+.aviso-card{border-color:color-mix(in srgb,var(--acento) 40%,transparent);background:color-mix(in srgb,var(--acento) 9%,var(--card))}
+.c-racha-bg{background:color-mix(in srgb,var(--c-racha) 26%,transparent)!important;color:var(--c-racha)}
+.c-entreno-bg{background:color-mix(in srgb,var(--c-entreno) 26%,transparent)!important;color:var(--brand-2)}
+.c-comida-bg{background:color-mix(in srgb,var(--c-comida) 22%,transparent)!important;color:var(--c-comida)}
+.c-bien-bg{background:color-mix(in srgb,var(--c-bienestar) 24%,transparent)!important;color:var(--c-bienestar)}
+.accion .circ.c-ok{background:color-mix(in srgb,#25D366 24%,transparent);color:#25D366}
+.checkins{display:flex;gap:10px;overflow-x:auto;margin:0 -16px;padding:2px 16px 4px;scrollbar-width:none}
+.checkins::-webkit-scrollbar{display:none}
+.checkin{flex:none;width:112px;padding:12px 10px;border-radius:20px;background:var(--card);border:1px solid var(--linea);display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;position:relative;color:inherit}
+.checkin .cara{position:absolute;top:34px;right:26px;font-size:20px}
+.checkin b{font-size:14.5px;margin-top:4px}
+.checkin small{font-size:12px;color:var(--suave);line-height:1.2}
+.feed{display:block;color:inherit;padding:14px 16px}
+.feed .f1{color:#fff;font-size:15px;line-height:1.35}
+.feed .f2{font-size:13px;margin-top:2px}
+.logro{margin-top:10px;padding:8px 12px;border-radius:12px;background:color-mix(in srgb,var(--ambar) 16%,transparent);color:var(--ambar);font-weight:700;font-size:13.5px}
+.burbuja{margin-top:10px;padding:10px 14px;border-radius:16px 16px 16px 4px;background:var(--card-2);color:#fff;font-size:14.5px;line-height:1.4}
+/* ── Ficha del alumno ── */
+.kpi4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi4 div{background:var(--card);border:1px solid var(--linea);border-radius:18px;padding:12px 6px;text-align:center}
+.kpi4 b{display:block;font-size:19px;font-weight:800;letter-spacing:-.4px}
+.kpi4 b.c-alto{color:var(--ok)}.kpi4 b.c-medio{color:var(--ambar)}.kpi4 b.c-bajo{color:var(--malo)}
+.kpi4 small{display:block;color:var(--suave);font-size:11.5px;line-height:1.2;margin-top:3px}
+.tag.est-verde{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}
+.tag.est-coral{background:color-mix(in srgb,var(--acento) 22%,transparent);color:var(--acento)}
+.tag.est-ambar{background:color-mix(in srgb,var(--ambar) 20%,transparent);color:var(--ambar)}
+.tag.est-gris{background:var(--card-2);color:var(--suave)}
+.tag.t-bien{background:color-mix(in srgb,var(--c-bienestar) 22%,transparent);color:var(--c-bienestar)}
+.ult-ses{cursor:pointer}
+.perfil-cab small{display:block}
+/* ── Admin ── */
+.salud{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px}
+.salud b{display:block;font-size:22px;font-weight:800;letter-spacing:-.4px}
+.salud small{color:var(--suave);font-size:12.5px;line-height:1.25}
+.orden-fila{display:flex;align-items:center;gap:10px;color:var(--suave);font-size:14px}
+.orden-fila select{flex:1;height:42px}

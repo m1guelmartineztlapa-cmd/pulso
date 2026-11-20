@@ -433,6 +433,7 @@
     var t = UI.$("#tabbar");
     if (!tabs) { t.hidden = true; return; }
     t.hidden = false;
+    document.body.setAttribute("data-sec", activa || "");
     t.innerHTML = tabs.map(function (x) {
       return '<a class="tab' + (x.id === activa ? " on" : "") + '" href="#/' + x.ruta + '">' + UI.ico(x.ico) + "<span>" + x.txt + "</span></a>";
     }).join("");

@@ -40,48 +40,56 @@
   function ultimaSesion(ses, cid) { var s = ses.find(function (x) { return x.cliente_id === cid; }); return s ? s.fecha : null; }
   function inicioSemana() { var d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return DB.hoyISO(d); }
 
-  /* ───────── Inicio ───────── */
+  /* ───────── Inicio del entrenador (tablero tipo apps de coaching) ───────── */
   V[""] = async function () {
     UI.tabbar(TABS, "inicio");
     app().innerHTML = UI.cargando();
-    var d = await cargarTodo();
+    var hoyISO = DB.hoyISO();
+    var r = await Promise.all([cargarTodo(), DB.sel("registro_alim", { entrenador_id: eid(), fecha: hoyISO }).catch(function () { return []; })]);
+    var d = r[0], checkins = r[1].filter(function (x) { return x.sentir && Object.keys(x.sentir).length; });
     var activos = d.clientes.filter(function (c) { return c.activo; });
-    var semana = d.ses.filter(function (s) { return s.fecha >= inicioSemana(); }).length;
-    var pendientes = activos.filter(function (c) { return !c.user_id; });
-    var nombreCli = {}, porIdCli = {}; d.clientes.forEach(function (c) { nombreCli[c.id] = c.nombre; porIdCli[c.id] = c; });
+    var porIdCli = {}; d.clientes.forEach(function (c) { porIdCli[c.id] = c; });
+    var lun = inicioSemana(), semana = d.ses.filter(function (s) { return s.fecha >= lun; });
     var metaSem = d.asig.filter(function (a) { var c = porIdCli[a.cliente_id]; return a.activa && c && c.activo; }).reduce(function (t, a) { return t + (a.dias || []).length; }, 0);
-    var cumple = metaSem ? Math.min(100, Math.round(semana / metaSem * 100)) : null;
+    var cumple = metaSem ? Math.min(100, Math.round(semana.length / metaSem * 100)) : null;
+    var pendientes = activos.filter(function (c) { return !c.user_id; });
     var DL = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"], MS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], hoyD = new Date();
+    var nombre = ((A().ent.nombre || A().ent.marca || "Profe") + "").split(" ")[0];
+
     var html = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag">' + avatarEnt() + '<div class="cab-txt"><small>' + DL[hoyD.getDay()] + " " + hoyD.getDate() + " " + MS[hoyD.getMonth()] +
-      "</small><h1>Hola, " + esc(((A().ent.nombre || A().ent.marca || "Profe") + "").split(" ")[0]) + '</h1></div><a class="btn-redondo" href="#/clientes" aria-label="Buscar cliente">' + ico("buscar") + "</a></div>" +
-      '<div class="datos" style="margin-top:18px"><a class="dato" href="#/clientes"><div class="v">' + activos.length + '</div><div class="l">Clientes activos</div></a>' +
-      '<div class="dato"><div class="v">' + semana + '</div><div class="l">Entrenos esta semana</div></div><div class="dato"><div class="v' + (cumple == null ? "" : " c-" + cumpleClase(cumple)) + '">' + (cumple == null ? "–" : cumple + "%") +
-      '</div><div class="l">Cumplimiento</div></div></div>' +
-      '<div class="acciones">' +
-      '<button class="accion" id="aCliente"><span class="circ c-racha">' + ico("mas") + "</span>Cliente</button>" +
-      '<a class="accion" href="#/rutina/nueva"><span class="circ c-entreno">' + ico("rutinas") + "</span>Rutina</a>" +
-      '<a class="accion" href="#/dieta/nueva"><span class="circ c-comida">' + ico("plato") + "</span>Dieta</a>" +
-      '<button class="accion" id="aAsignar"><span class="circ c-bien">' + ico("calendario") + "</span>Asignar</button></div></section>" +
-      '<div class="contenido">';
-    if (pendientes.length) {
-      var hechos = activos.length - pendientes.length, pct = activos.length ? hechos / activos.length : 0;
-      html += '<div class="tarjeta"><div class="promo">' + anillo(hechos + "/" + activos.length, pct) +
-        '<div><h3>Invita a tus clientes</h3><p>' + pendientes.length + (pendientes.length === 1 ? " cliente aún no ha" : " clientes aún no han") +
-        " entrado a la app. Mándales su enlace por WhatsApp.</p></div></div>" +
-        '<a class="btn" style="margin-top:16px" href="#/cliente/' + pendientes[0].id + '">Invitar a ' + esc(pendientes[0].nombre.split(" ")[0]) + "</a></div>";
-    } else if (!d.rutinas.length) {
-      html += '<div class="tarjeta"><div class="promo">' + anillo("0/1", 0) + '<div><h3>Crea tu primera rutina</h3><p>Arma bloques con la biblioteca de ejercicios y asígnala a tus clientes.</p></div></div>' +
-        '<a class="btn" style="margin-top:16px" href="#/rutina/nueva">Crear rutina</a></div>';
-    }
-    var hace7 = new Date(); hace7.setDate(hace7.getDate() - 7); hace7 = DB.hoyISO(hace7);
-    var atn = activos.filter(function (c) { if (!c.user_id) return false; var u = ultimaSesion(d.ses, c.id); return !u || u < hace7; })
-      .map(function (c) { return { c: c, u: ultimaSesion(d.ses, c.id) }; }).sort(function (a, b) { return (a.u || "") < (b.u || "") ? -1 : 1; });
-    if (atn.length) html += '<div class="titulo-sec"><h2>Necesitan atención</h2><a href="#/clientes">Ver todos</a></div><div class="tarjeta sin-relleno atencion"><div class="lista">' +
-      atn.slice(0, 4).map(function (x) {
-        return '<a class="item" href="#/cliente/' + x.c.id + '">' + UI.avatarCli(x.c) + '<span class="txt"><div class="t1">' + esc(x.c.nombre) + '</div><div class="t2">' +
-          (x.u ? "Último entrenamiento " + esc(UI.hace(x.u).toLowerCase()) : "Todavía no entrena") + '</div></span><span class="der">' + (x.u ? "+7 días" : "Nuevo") + "</span></a>";
+      "</small><h1>Hola, " + esc(nombre) + '</h1></div><button class="btn-redondo" id="crear" aria-label="Crear">' + ico("mas") + "</button></div></section><div class=\"contenido\">";
+
+    // Tarjeta principal: la semana del negocio
+    var porDia = [0, 0, 0, 0, 0, 0, 0]; semana.forEach(function (s) { porDia[(new Date(s.fecha + "T12:00:00").getDay() + 6) % 7]++; });
+    var maxD = Math.max.apply(null, [1].concat(porDia)), hoyIdx = (hoyD.getDay() + 6) % 7, Lt = ["L", "M", "M", "J", "V", "S", "D"];
+    var cc = 2 * Math.PI * 34, pct = cumple || 0;
+    html += '<div class="tarjeta semana-card"><div class="sc-top"><div class="sc-anillo"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="8"/>' +
+      '<circle cx="40" cy="40" r="34" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + cc.toFixed(1) + '" stroke-dashoffset="' + (cc * (1 - pct / 100)).toFixed(1) + '"/></svg><b>' + (cumple == null ? "–" : cumple + "%") + "</b></div>" +
+      '<div style="flex:1;min-width:0"><div class="lbl">Cumplimiento de la semana</div><h2>' + semana.length + (metaSem ? " de " + metaSem : "") + " entrenos</h2><p>" + activos.length + (activos.length === 1 ? " cliente activo" : " clientes activos") + "</p></div></div>" +
+      '<div class="sc-barras">' + porDia.map(function (n, i) {
+        return '<div class="' + (i === hoyIdx ? "hoy" : i > hoyIdx ? "fut" : "") + '"><span><i style="height:' + Math.max(6, Math.round(n / maxD * 100)) + '%"></i></span><small>' + Lt[i] + "</small>" + (n ? "<em>" + n + "</em>" : "") + "</div>";
       }).join("") + "</div></div>";
-    var dowH = new Date().getDay(), hoyISO = DB.hoyISO();
+
+    // Necesitan atención (con el motivo)
+    var hoyMs = new Date(hoyISO + "T12:00:00").getTime();
+    var atn = activos.filter(function (c) { return c.user_id; }).map(function (c) {
+      var u = ultimaSesion(d.ses, c.id), tiene = d.asig.some(function (a) { return a.cliente_id === c.id && a.activa; });
+      if (!tiene) return { c: c, t: "Sin rutina asignada", g: 1 };
+      if (!u) return { c: c, t: "Todavía no entrena", g: 2 };
+      var dias = Math.round((hoyMs - new Date(u + "T12:00:00").getTime()) / 864e5);
+      return dias > 7 ? { c: c, t: dias + " días sin entrenar", g: dias > 14 ? 3 : 2 } : null;
+    }).filter(Boolean).sort(function (a, b) { return b.g - a.g; });
+    if (atn.length) html += '<div class="titulo-sec"><h2>Necesitan atención</h2><a href="#/clientes">Ver todos</a></div><div class="tarjeta sin-relleno"><div class="lista">' +
+      atn.slice(0, 5).map(function (x) {
+        return '<a class="item" href="#/cliente/' + x.c.id + '"><span style="position:relative;flex:none">' + UI.avatarCli(x.c) + '<i class="alerta g' + x.g + '"></i></span><span class="txt"><div class="t1">' + esc(x.c.nombre) +
+          '</div><div class="t2">' + esc(x.t) + '</div></span><span class="chev">' + ico("der") + "</span></a>";
+      }).join("") + "</div></div>";
+
+    if (pendientes.length) html += '<a class="tarjeta aviso-card" href="#/cliente/' + pendientes[0].id + '" style="display:block"><div class="promo"><span class="rut-ico c-racha-bg">' + ico("enlace") + '</span><div style="flex:1"><h3>' +
+      pendientes.length + (pendientes.length === 1 ? " cliente no ha entrado" : " clientes no han entrado") + "</h3><p>Mándales su enlace por WhatsApp para que vean su programa.</p></div>" + '<span class="chev">' + ico("der") + "</span></div></a>";
+
+    // Hoy entrenan
+    var dowH = hoyD.getDay();
     var hoyE = activos.map(function (c) {
       var a = d.asig.find(function (x) { return x.cliente_id === c.id && x.activa && (x.dias || []).indexOf(dowH) >= 0; });
       if (!a) return null;
@@ -96,21 +104,46 @@
             (x.hecho ? '<span class="estado e-ok">✓ Hecho</span>' : '<span class="estado e-pend">Pendiente</span>') + "</a>";
         }).join("") + "</div></div>";
     }
-    html += '<div class="tarjeta sin-relleno"><div class="titulo-sec" style="margin:12px 18px 4px"><h2>Actividad reciente</h2></div><div class="lista">';
-    var rec = d.ses.slice(0, 8);
-    if (!rec.length) html += '<div class="vacio">' + ico("fuego") + "Cuando tus clientes terminen una rutina, la verás aquí.</div>";
-    rec.forEach(function (s) {
+
+    // Check-ins de hoy (¿cómo se sienten?)
+    var CAR = ["😣", "🙁", "😐", "🙂", "😄"];
+    if (checkins.length) html += '<div class="titulo-sec"><h2>Cómo se sienten hoy</h2><span class="adm-de">' + checkins.length + (checkins.length === 1 ? " registro" : " registros") + '</span></div><div class="checkins">' +
+      checkins.map(function (k) {
+        var c = porIdCli[k.cliente_id]; if (!c) return "";
+        var vs = Object.keys(k.sentir).map(function (n) { return k.sentir[n]; }), prom = vs.reduce(function (t, v) { return t + v; }, 0) / vs.length;
+        var bajo = Object.keys(k.sentir).filter(function (n) { return k.sentir[n] <= 2; });
+        return '<a class="checkin" href="#/cliente/' + c.id + '">' + UI.avatarCli(c, "avatar chico") + '<span class="cara">' + CAR[Math.max(0, Math.min(4, Math.round(prom) - 1))] + "</span><b>" + esc(c.nombre.split(" ")[0]) + "</b><small>" +
+          (bajo.length ? "↓ " + esc(bajo.slice(0, 2).join(", ")) : "Todo bien") + "</small></a>";
+      }).join("") + "</div>";
+
+    // Logros y actividad
+    var feed = d.ses.slice(0, 6);
+    html += '<div class="titulo-sec"><h2>Actividad de tus alumnos</h2></div>';
+    if (!feed.length) html += '<div class="tarjeta"><div class="vacio" style="padding:8px">' + ico("fuego") + "Cuando tus alumnos terminen un entrenamiento, aparecerá aquí.</div></div>";
+    feed.forEach(function (s) {
+      var c = porIdCli[s.cliente_id] || { nombre: "Alumno" };
       var vol = (s.series || []).reduce(function (t, x) { return t + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0);
-      html += '<a class="item" href="#/cliente/' + s.cliente_id + '">' + UI.avatarCli(porIdCli[s.cliente_id] || { nombre: nombreCli[s.cliente_id] }) + '<span class="txt"><div class="t1">' +
-        esc(nombreCli[s.cliente_id] || "Cliente") + " → " + esc(s.rutina_nombre || "Rutina") + '</div><div class="t2">' + esc(UI.fecha(s.fecha)) +
-        (s.comentario ? " · “" + esc(s.comentario) + "”" : "") + '</div></span><span class="der">' + (s.calificacion ? "★ " + s.calificacion : "") +
-        (vol ? "<small>" + Math.round(vol).toLocaleString("es-MX") + " kg</small>" : "") + "</span></a>";
+      var previos = d.ses.filter(function (x) { return x.cliente_id === s.cliente_id && x.rutina_id === s.rutina_id && x.fecha < s.fecha; });
+      var maxPrev = Math.max.apply(null, [0].concat(previos.map(function (x) { return (x.series || []).reduce(function (t, y) { return t + (Number(y.peso) || 0) * (Number(y.reps) || 0); }, 0); })));
+      var record = vol > 0 && previos.length && vol > maxPrev;
+      html += '<a class="tarjeta feed" href="#/cliente/' + s.cliente_id + '"><div class="promo">' + UI.avatarCli(c) + '<div style="flex:1;min-width:0"><p class="f1"><b>' + esc(c.nombre.split(" ")[0]) + "</b> terminó <b>" + esc(s.rutina_nombre || "su rutina") +
+        '</b></p><p class="f2">' + esc(UI.fecha(s.fecha)) + (vol ? " · " + Math.round(vol).toLocaleString("es-MX") + " kg" : "") + (s.calificacion ? " · ★ " + s.calificacion : "") + "</p></div></div>" +
+        (record ? '<div class="logro">🏆 Nuevo récord de volumen en esta rutina</div>' : "") + (s.comentario ? '<div class="burbuja">“' + esc(s.comentario) + "”</div>" : "") + "</a>";
     });
-    html += "</div></div></div>";
+    html += "</div>";
     app().innerHTML = html;
     UI.cargarFotos(app());
-    UI.$("#aCliente").onclick = function () { hojaCliente(); };
-    UI.$("#aAsignar").onclick = function () { hojaAsignar({ clientes: d.clientes, rutinas: d.rutinas }); };
+    UI.$("#crear").onclick = function () {
+      UI.hoja("Crear", '<div class="lista" style="margin:0 -18px">' +
+        '<button class="item fila-btn" data-c="cliente"><span class="ico c-racha-bg">' + ico("persona") + '</span><span class="txt"><div class="t1">Nuevo cliente</div><div class="t2">Dalo de alta y mándale su enlace</div></span></button>' +
+        '<a class="item" href="#/rutina/nueva"><span class="ico c-entreno-bg">' + ico("pesa") + '</span><span class="txt"><div class="t1">Nueva rutina</div><div class="t2">Arma bloques con la biblioteca</div></span></a>' +
+        '<a class="item" href="#/dieta/nueva"><span class="ico c-comida-bg">' + ico("plato") + '</span><span class="txt"><div class="t1">Nuevo plan de comida</div><div class="t2">De lunes a domingo, con el recetario</div></span></a>' +
+        '<button class="item fila-btn" data-c="asignar"><span class="ico c-bien-bg">' + ico("calendario") + '</span><span class="txt"><div class="t1">Asignar rutina</div><div class="t2">A uno de tus clientes</div></span></button></div>', function (h, cerrar) {
+        UI.$$("a", h).forEach(function (a) { a.addEventListener("click", cerrar); });
+        h.querySelector('[data-c="cliente"]').onclick = function () { cerrar(); hojaCliente(); };
+        h.querySelector('[data-c="asignar"]').onclick = function () { cerrar(); hojaAsignar({ clientes: d.clientes, rutinas: d.rutinas }); };
+      });
+    };
   };
   function anillo(txt, pct) {
     var c = 2 * Math.PI * 25;
@@ -268,60 +301,75 @@
     var c = r[0], asig = r[1], rutinas = r[2], ses = r[3], med = r[4];
     if (!c) return A().ir("clientes");
     var rutPorId = {}; rutinas.forEach(function (x) { rutPorId[x.id] = x; });
-    var semana = ses.filter(function (s) { return s.fecha >= inicioSemana(); }).length;
-    var calif = ses.filter(function (s) { return s.calificacion; });
-    var prom = calif.length ? calif.reduce(function (t, s) { return t + s.calificacion; }, 0) / calif.length : null;
-    var ejs = UI.ejerciciosRegistrados(ses);
-    var metaF = asig.filter(function (a) { return a.activa; }).reduce(function (t, a) { return t + (a.dias || []).length; }, 0);
+    var lunI = inicioSemana(), semana = ses.filter(function (s) { return s.fecha >= lunI; }).length;
+    var asA = asig.filter(function (a) { return a.activa; });
+    var metaF = asA.reduce(function (t, a) { return t + (a.dias || []).length; }, 0);
     var pctF = metaF ? Math.min(100, Math.round(semana / metaF * 100)) : null;
-    var html = A().bandaDemo() + '<section class="hero compacto">' + '<div class="barra-sup" style="justify-content:space-between">' + atras("clientes", "Clientes") +
+    var h7 = new Date(); h7.setDate(h7.getDate() - 7); h7 = DB.hoyISO(h7);
+    var est = !c.activo ? ["gris", "Pausado"] : !c.user_id ? ["ambar", "Sin entrar"] : (!ses[0] || ses[0].fecha < h7) ? ["coral", "Necesita atención"] : ["verde", "Al día"];
+    // racha: semanas seguidas con al menos un entrenamiento
+    var semanas = {}; ses.forEach(function (s) { var d = new Date(s.fecha + "T12:00:00"); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); semanas[DB.hoyISO(d)] = 1; });
+    var racha = 0, cur = new Date(lunI + "T12:00:00"); if (!semanas[lunI]) cur.setDate(cur.getDate() - 7);
+    while (semanas[DB.hoyISO(cur)]) { racha++; cur.setDate(cur.getDate() - 7); }
+    var pesoU = med.filter(function (m) { return m.peso; }).slice(-1)[0];
+    var ejs = UI.ejerciciosRegistrados(ses);
+    var tel = c.telefono ? (function (t) { t = t.replace(/\D/g, ""); return t.length === 10 ? "52" + t : t; })(c.telefono) : "";
+
+    var html = A().bandaDemo() + '<section class="hero compacto"><div class="barra-sup" style="justify-content:space-between">' + atras("clientes", "Clientes") +
       '<button class="btn-redondo" id="editar" aria-label="Editar">' + ico("editar") + "</button></div>" +
       '<div class="perfil-cab"><label class="foto-perfil" title="Cambiar foto">' + UI.avatarCli(c, "avatar grande") +
       '<span class="foto-cam">' + ico("camara") + '</span><input type="file" accept="image/*" id="fotoCli" class="oculto-vista"></label>' +
-      '<div style="min-width:0"><h1>' + esc(c.nombre) + "</h1><small>" + (c.objetivo ? esc(c.objetivo) + " · " : "") + esc(UI.hace(ses[0] && ses[0].fecha)) + "</small>" +
-      (pctF != null ? '<div style="margin-top:6px"><span class="cumple ' + cumpleClase(pctF) + '">' + pctF + "% esta semana</span></div>" : "") + "</div></div>" +
+      '<div style="min-width:0;flex:1"><h1>' + esc(c.nombre) + "</h1><small>" + esc(c.objetivo || "Sin objetivo definido") + '</small><div class="cli-tags" style="margin-top:8px"><span class="tag est-' + est[0] + '">' + est[1] + "</span>" +
+      (c.email ? '<span class="tag">' + esc(c.email) + "</span>" : "") + "</div></div></div>" +
       '<div class="acciones">' +
       '<button class="accion" id="asignar"><span class="circ c-entreno">' + ico("pesa") + "</span>Rutina</button>" +
       '<button class="accion" id="dietaCli"><span class="circ c-comida">' + ico("plato") + "</span>Dieta</button>" +
       (c.user_id ? '<button class="accion" id="medir"><span class="circ c-bien">' + ico("regla") + "</span>Medidas</button>" : '<button class="accion" id="invitar"><span class="circ c-racha">' + ico("enlace") + "</span>Invitar</button>") +
-      '<a class="accion" ' + (c.telefono ? 'target="_blank" rel="noopener" href="https://wa.me/' + (function (t) { t = t.replace(/\D/g, ""); return t.length === 10 ? "52" + t : t; })(c.telefono) + '"' : 'href="javascript:void 0" id="sinTel"') +
-      '><span class="circ">' + ico("whatsapp") + "</span>Mensaje</a></div></section>" +
-      '<div class="contenido"><div class="segmento pegado seg5" id="segF"><button data-p="resumen">Resumen</button><button data-p="semana">Semana</button><button data-p="entreno">Entreno</button><button data-p="comida">Comida</button><button data-p="medidas">Medidas</button></div>' +
-      '<div data-pan="semana" hidden><div id="semanaCli">' + UI.cargando().replace("cargando", "cargando chico") + "</div></div>" +
-      '<div data-pan="resumen"><div class="datos"><div class="dato"><div class="v">' + ses.length + '</div><div class="l">Sesiones</div></div>' +
-      '<div class="dato"><div class="v">' + semana + '</div><div class="l">Esta semana</div></div><div class="dato"><div class="v">' + (prom ? "★ " + UI.num(prom) : "–") +
-      '</div><div class="l">Calificación</div></div></div>';
-    if (!c.user_id) html += '<div class="tarjeta"><h3>Aún no entra a la app</h3><p>Mándale su enlace para que cree su cuenta y vea sus rutinas.</p><button class="btn" style="margin-top:14px" id="invitar2">' + ico("whatsapp") + "Mandar invitación</button></div>";
-    html += '</div><div data-pan="entreno"><div class="titulo-sec"><h2>Rutinas asignadas</h2><button id="asignar2">+ Asignar</button></div><div class="tarjeta sin-relleno"><div class="lista">';
-    html += asig.length ? asig.map(function (a) {
-      var rt = rutPorId[a.rutina_id] || { nombre: "Rutina eliminada" };
-      var n = (rt.bloques || []).reduce(function (t, b) { return t + b.items.length; }, 0);
-      return '<div class="item" data-asig="' + a.id + '"><span class="ico cuadro">' + ico("rutinas") + '</span><span class="txt"><div class="t1">' + esc(rt.nombre) +
-        '</div><div class="t2">' + esc(UI.diasTxt(a.dias)) + " · " + n + ' ejercicios</div></span><span class="chev">' + ico("der") + "</span></div>";
-    }).join("") : '<div class="vacio">Sin rutinas todavía.</div>';
-    html += "</div></div></div><div data-pan=\"resumen\">";
-    if (iaActiva() && (ses.length || med.length)) html += '<div class="tarjeta" id="iaResumen"><div class="promo"><span class="avatar" style="background:var(--brand)">' + ico("chispa", ' width="22" height="22"') +
-      '</span><div><h3>¿Cómo va ' + esc(c.nombre.split(" ")[0]) + '?</h3><p>La IA lee sus sesiones, comentarios y medidas y te da un resumen con sugerencias.</p></div></div>' +
-      '<button class="btn vidrio" style="margin-top:14px" id="pedirResumen">' + ico("chispa") + "Resumen con IA</button></div>";
-    html += '<div class="titulo-sec"><h2>Resumen de progreso</h2></div><div class="tarjeta" id="resumenCli"></div>';
-    if (c.notas) html += '<div class="titulo-sec"><h2>Notas</h2></div><div class="tarjeta"><p style="white-space:pre-wrap">' + esc(c.notas) + "</p></div>";
-    html += '</div><div data-pan="comida"><div class="titulo-sec"><h2>Alimentación</h2></div><div class="tarjeta" id="alimCli">' + UI.cargando().replace("cargando", "cargando chico") + "</div></div>";
-    html += '<div data-pan="entreno"><div class="titulo-sec"><h2>Progreso de fuerza</h2></div><div class="tarjeta">';
-    if (ejs.length) {
-      html += '<div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
-        '</div><div id="graf" style="margin-top:12px"></div>';
-    } else html += '<div class="vacio" style="padding:10px">Cuando registre pesos, aquí verás su progreso.</div>';
+      '<a class="accion" ' + (tel ? 'target="_blank" rel="noopener" href="https://wa.me/' + tel + '"' : 'href="javascript:void 0" id="sinTel"') + '><span class="circ c-ok">' + ico("whatsapp") + "</span>Mensaje</a></div></section>" +
+      '<div class="contenido"><div class="kpi4">' +
+      '<div><b class="' + (pctF == null ? "" : "c-" + cumpleClase(pctF)) + '">' + (metaF ? semana + "/" + metaF : semana) + "</b><small>Esta semana</small></div>" +
+      "<div><b>" + (racha ? "🔥 " + racha : "0") + "</b><small>" + (racha === 1 ? "Semana seguida" : "Semanas seguidas") + "</small></div>" +
+      "<div><b>" + ses.length + "</b><small>Entrenos</small></div>" +
+      "<div><b>" + (pesoU ? UI.num(pesoU.peso) : "–") + "</b><small>Peso (kg)</small></div></div>" +
+      '<div class="segmento pegado seg5" id="segF"><button data-p="resumen">Resumen</button><button data-p="semana">Semana</button><button data-p="entreno">Entreno</button><button data-p="comida">Comida</button><button data-p="medidas">Cuerpo</button></div>';
+
+    // ── Resumen ──
+    html += '<div data-pan="resumen">';
+    if (!c.user_id) html += '<div class="tarjeta aviso-card"><h3>Aún no entra a la app</h3><p>Mándale su enlace para que cree su cuenta y vea su programa.</p><button class="btn" style="margin-top:14px" id="invitar2">' + ico("whatsapp") + "Mandar invitación</button></div>";
+    html += '<div class="titulo-sec"><h2>Programa actual</h2></div><div class="tarjeta sin-relleno"><div class="lista">' +
+      (asig.length ? asig.map(function (a) {
+        var rt = rutPorId[a.rutina_id] || { nombre: "Rutina eliminada" };
+        var n = (rt.bloques || []).reduce(function (t, b) { return t + b.items.length; }, 0);
+        return '<div class="item" data-asig="' + a.id + '"><span class="ico cuadro c-entreno-bg">' + ico("pesa") + '</span><span class="txt"><div class="t1">' + esc(rt.nombre) +
+          '</div><div class="t2">' + esc(UI.diasTxt(a.dias)) + " · " + n + " ejercicios" + (a.activa ? "" : " · pausada") + '</div></span><span class="chev">' + ico("der") + "</span></div>";
+      }).join("") : '<div class="item" id="asignar3"><span class="ico cuadro c-entreno-bg">' + ico("mas") + '</span><span class="txt"><div class="t1">Asignar una rutina</div><div class="t2">Aún no tiene entrenamiento</div></span><span class="chev">' + ico("der") + "</span></div>") +
+      '<div class="item" id="progAlim"><span class="ico cuadro c-comida-bg"><span style="font-size:19px">🥗</span></span><span class="txt"><div class="t1">Plan de comida</div><div class="t2" id="progAlimTxt">Cargando…</div></span><span class="chev">' + ico("der") + "</span></div></div></div>";
+    if (ses[0]) {
+      var s0 = ses[0], vol0 = (s0.series || []).reduce(function (t, x) { return t + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0);
+      html += '<div class="titulo-sec"><h2>Último entrenamiento</h2></div><div class="tarjeta ult-ses" data-ses="' + s0.id + '"><div class="promo"><span class="rut-ico">' + ico("check") + '</span><div style="flex:1;min-width:0"><h3>' + esc(s0.rutina_nombre || "Rutina") +
+        "</h3><p>" + esc(UI.fecha(s0.fecha)) + " · " + (s0.series || []).length + " series" + (vol0 ? " · " + Math.round(vol0).toLocaleString("es-MX") + " kg" : "") + "</p></div>" +
+        (s0.calificacion ? '<span class="cumple alto">★ ' + s0.calificacion + "</span>" : "") + "</div>" + (s0.comentario ? '<div class="burbuja">“' + esc(s0.comentario) + "”</div>" : "") + "</div>";
+    }
+    html += '<div class="titulo-sec"><h2>Notas privadas</h2><button id="editarNotas">Editar</button></div><div class="tarjeta"><p style="white-space:pre-wrap">' + (c.notas ? esc(c.notas) : '<span style="color:var(--tenue)">Lesiones, preferencias, horarios… Solo tú las ves.</span>') + "</p></div>";
     html += "</div>";
-    html += '<div class="titulo-sec"><h2>Historial</h2></div><div class="tarjeta sin-relleno"><div class="lista">';
-    html += ses.length ? ses.slice(0, 30).map(function (s) {
-      return '<div class="item" data-ses="' + s.id + '"><span class="ico">' + ico("check") + '</span><span class="txt"><div class="t1">' + esc(s.rutina_nombre || "Rutina") +
-        '</div><div class="t2">' + esc(UI.fecha(s.fecha)) + (s.comentario ? " · “" + esc(s.comentario) + "”" : "") + '</div></span><span class="der">' + (s.calificacion ? "★ " + s.calificacion : "") + "</span></div>";
-    }).join("") : '<div class="vacio">Aún no ha entrenado.</div>';
-    html += "</div></div>";
-    html += '</div><div data-pan="medidas"><div class="titulo-sec"><h2>Medidas y fotos</h2><button id="medir2">+ Agregar</button></div><div class="tarjeta" id="medidas">' + resumenMedidas(med) + "</div></div>";
-    html += "</div>";
+
+    // ── Entreno ──
+    html += '<div data-pan="entreno"><div class="titulo-sec"><h2>Resumen de progreso</h2></div><div class="tarjeta" id="resumenCli"></div>' +
+      '<div class="titulo-sec"><h2>Progreso de fuerza</h2></div><div class="tarjeta">' +
+      (ejs.length ? '<div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
+        '</div><div id="graf" style="margin-top:12px"></div>' : '<div class="vacio" style="padding:10px">Cuando registre pesos, aquí verás su progreso.</div>') + "</div>" +
+      '<div class="titulo-sec"><h2>Historial</h2></div><div class="tarjeta sin-relleno"><div class="lista">' +
+      (ses.length ? ses.slice(0, 30).map(function (s) {
+        return '<div class="item" data-ses="' + s.id + '"><span class="ico">' + ico("check") + '</span><span class="txt"><div class="t1">' + esc(s.rutina_nombre || "Rutina") +
+          '</div><div class="t2">' + esc(UI.fecha(s.fecha)) + (s.comentario ? " · “" + esc(s.comentario) + "”" : "") + '</div></span><span class="der">' + (s.calificacion ? "★ " + s.calificacion : "") + "</span></div>";
+      }).join("") : '<div class="vacio">Aún no ha entrenado.</div>') + "</div></div></div>";
+    // ── Comida y Cuerpo ──
+    html += '<div data-pan="comida"><div class="tarjeta" id="alimCli">' + UI.cargando().replace("cargando", "cargando chico") + "</div></div>";
+    html += '<div data-pan="medidas"><div class="titulo-sec"><h2>Medidas y fotos</h2><button id="medir2">+ Agregar</button></div><div class="tarjeta" id="medidas">' + resumenMedidas(med) + "</div></div>";
+    html += '<div data-pan="semana" hidden><div id="semanaCli">' + UI.cargando().replace("cargando", "cargando chico") + "</div></div></div>";
     app().innerHTML = html;
     pintarFotos(med);
+
     function verPanel(pn) {
       UI.$$("#segF button").forEach(function (b) { b.classList.toggle("on", b.dataset.p === pn); });
       UI.$$("[data-pan]").forEach(function (el) { el.hidden = el.dataset.pan !== pn; });
@@ -339,6 +387,10 @@
     UI.cargarFotos(app());
     UI.montarResumen(UI.$("#resumenCli"), { ses: ses, med: med, asig: asig });
     if (V.fichaAlim) V.fichaAlim(UI.$("#alimCli"), c);
+    (V.planDeCliente ? V.planDeCliente(c.id) : Promise.resolve(null)).then(function (pd) {
+      var t = UI.$("#progAlimTxt"); if (t) t.textContent = pd ? pd.plan.nombre + " · desde " + UI.fecha(pd.asig.inicio) : "Sin plan · toca para asignar";
+    }).catch(function () {});
+    UI.$("#progAlim").onclick = function () { if (V.hojaAsignarDieta) V.hojaAsignarDieta({ clienteId: c.id }); };
     UI.$("#fotoCli").onchange = async function () {
       var f = this.files[0]; if (!f) return;
       try {
@@ -349,38 +401,19 @@
       } catch (er) { UI.error(er); }
     };
     UI.$("#editar").onclick = function () { hojaCliente(c); };
+    UI.$("#editarNotas").onclick = function () { hojaCliente(c); };
     ["#invitar", "#invitar2"].forEach(function (s) { var b = UI.$(s); if (b) b.onclick = function () { hojaInvitar(c); }; });
-    ["#asignar", "#asignar2"].forEach(function (s) { UI.$(s).onclick = function () { hojaAsignar({ clienteId: c.id, rutinas: rutinas }); }; });
+    ["#asignar", "#asignar3"].forEach(function (s) { var b = UI.$(s); if (b) b.onclick = function () { hojaAsignar({ clienteId: c.id, rutinas: rutinas }); }; });
     ["#medir", "#medir2"].forEach(function (s) { var b = UI.$(s); if (b) b.onclick = function () { V.hojaMedida(c); }; });
     UI.$("#dietaCli").onclick = function () { if (V.hojaAsignarDieta) V.hojaAsignarDieta({ clienteId: c.id }); };
-    pintarSemanaCli(c, asig, rutPorId, ses);
-    var st = UI.$("#sinTel"); if (st) st.onclick = function () { UI.aviso("Agrega su teléfono en Editar", true); };
-    var pr = UI.$("#pedirResumen");
-    if (pr) pr.onclick = async function () {
-      pr.disabled = true; pr.innerHTML = '<span class="girar" style="width:18px;height:18px;border-width:2px"></span>Pensando…';
-      var datos = {
-        objetivo: c.objetivo || "", notas_del_entrenador: c.notas || "",
-        sesiones: ses.slice(0, 12).map(function (s) {
-          var porEj = {};
-          (s.series || []).forEach(function (x) { (porEj[x.nombre] = porEj[x.nombre] || []).push((x.peso ? x.peso + "kg×" : "") + (x.reps || "?")); });
-          return { fecha: s.fecha, rutina: s.rutina_nombre, calificacion: s.calificacion, comentario: s.comentario || "", series: porEj };
-        }),
-        medidas: med.slice(-6).map(function (m) { return { fecha: m.fecha, peso: m.peso, cintura: m.cintura, cadera: m.cadera, grasa: m.grasa }; })
-      };
-      try {
-        var r = await DB.ia({ accion: "resumen", datos: datos });
-        UI.$("#iaResumen").innerHTML = '<h3 style="display:flex;align-items:center;gap:8px">' + ico("chispa", ' width="20" height="20"') + "Resumen con IA</h3>" +
-          '<p style="color:#fff;margin-top:8px;line-height:1.5">' + esc(r.resumen) + '</p><div class="lbl" style="margin:14px 0 6px">Sugerencias</div>' +
-          (r.sugerencias || []).map(function (s) { return '<p style="margin-top:6px">• ' + esc(s) + "</p>"; }).join("") +
-          '<p class="nota-demo" style="text-align:left;margin-top:12px">Hecho con IA: revísalo con tu criterio.</p>';
-      } catch (e) { UI.error(e); pr.disabled = false; pr.innerHTML = ico("chispa") + "Resumen con IA"; }
-    };
+    var st = UI.$("#sinTel"); if (st) st.onclick = function () { UI.aviso("Agrega su teléfono con el botón de editar", true); };
     UI.$$("[data-asig]").forEach(function (el) {
       el.onclick = function () { hojaAsignar({ asig: asig.find(function (a) { return a.id === el.dataset.asig; }) }); };
     });
     UI.$$("[data-ses]").forEach(function (el) {
       el.onclick = function () { V.hojaSesion(ses.find(function (s) { return s.id === el.dataset.ses; })); };
     });
+    pintarSemanaCli(c, asig, rutPorId, ses);
   };
 
   /* Semana del alumno tipo calendario: rutina y comida de cada día, y si cumplió */
@@ -933,10 +966,11 @@
   /* ───────── Panel de administrador (solo el dueño de la plataforma) ───────── */
   var TABS_ADMIN = [
     { id: "panel", ruta: "", ico: "grafica", txt: "Panel" },
+    { id: "usuarios", ruta: "usuarios", ico: "clientes", txt: "Usuarios" },
     { id: "ajustes", ruta: "ajustes", ico: "ajustes", txt: "Ajustes" }
   ];
   function esModoAdmin() { return A().rol === "admin"; }
-  function tabsAdmin(activa) { if (esModoAdmin()) UI.tabbar(TABS_ADMIN, activa === "ajustes" ? "ajustes" : "panel"); else UI.tabbar(TABS, "ajustes"); }
+  function tabsAdmin(activa) { if (esModoAdmin()) UI.tabbar(TABS_ADMIN, activa === "ajustes" || activa === "usuarios" ? activa : "panel"); else UI.tabbar(TABS, "ajustes"); }
   var MESES_C = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
   var DIA_C = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   function cuando(iso) {
@@ -1087,6 +1121,19 @@
       '<div class="dato"><div class="v">' + accP.length + '</div><div class="l">Visitas · ' + nomP + "<br>hoy: " + accHoy.length + "</div></div>" +
       '<div class="dato"><div class="v">' + Object.keys(personasP).length + '</div><div class="l">Personas que la usaron · ' + nomP + "</div></div>" +
       '<div class="dato"><div class="v">' + entrenosP + '</div><div class="l">Entrenamientos · ' + nomP + "<br>hoy: " + entrenosHoy + "</div></div></div>" +
+      (function () {
+        var regP = act.filter(function (a) { return a.tipo === "registro" && enPeriodo(a); }).length;
+        var conC = t.alumnos ? Math.round((t.alumnos_con_cuenta || 0) / t.alumnos * 100) : 0;
+        var entAct = ents.filter(function (e) { return usoEnt(e).length; }).length;
+        return '<div class="titulo-sec"><h2>Salud de la plataforma</h2></div><div class="tarjeta salud">' +
+          '<div><b>' + regP + '</b><small>Cuentas nuevas · ' + nomP + "</small></div>" +
+          '<div><b>' + entAct + " / " + ents.length + "</b><small>Entrenadores que la usaron · " + nomP + "</small></div>" +
+          '<div><b>' + (t.activos_7d || 0) + "</b><small>Personas activas (7 días)</small></div>" +
+          '<div><b>' + conC + "%</b><small>Alumnos que ya crearon cuenta</small></div>" +
+          '<div><b>' + (t.sesiones || 0) + "</b><small>Entrenamientos en total</small></div>" +
+          '<div><b>' + (t.rutinas || 0) + "</b><small>Rutinas creadas</small></div></div>" +
+          '<a class="tarjeta aviso-card" href="#/usuarios" style="display:block"><div class="promo"><span class="rut-ico">' + ico("clientes") + '</span><div style="flex:1"><h3>Usuarios y correos</h3><p>Todas las cuentas ordenadas, con su correo, alta y último acceso.</p></div><span class="chev">' + ico("der") + "</span></div></a>";
+      })() +
       '<div class="titulo-sec"><h2>Uso · ' + nomP + '</h2></div><div class="tarjeta">' + graficaUso(usoSemana(accesos), true) + "</div>" +
       '<div class="titulo-sec"><h2>Entrenadores</h2><span class="adm-de">' + (t.entrenadores || ents.length) + "</span></div>" +
       '<div class="tarjeta sin-relleno"><div class="lista">' + (ents.length ? ents.map(function (e) {
@@ -1130,6 +1177,84 @@
   VIS_ADMIN[""] = function () { return V.admin(); };
   VIS_ADMIN.admin = function (id) { return V.admin(id); };
   VIS_ADMIN.ajustes = adminAjustes;
+  VIS_ADMIN.usuarios = adminUsuarios;
+  /* Usuarios: todas las cuentas con su correo, rol, alta y último acceso */
+  async function adminUsuarios() {
+    tabsAdmin("usuarios");
+    app().innerHTML = UI.cargando();
+    var d; try { d = await datosAdmin(); } catch (e) { d = null; }
+    if (!d) return sinAcceso();
+    var ents = d.entrenadores || [], alus = d.alumnos || [];
+    var todos = ents.map(function (e) { return { id: "e" + e.id, rol: "entrenador", nombre: e.nombre || "(sin nombre)", email: e.email, marca: e.marca, alta: e.alta, ultimo: e.ultimo_acceso, en_linea: e.en_linea, cuenta: true, ent: e.id,
+      extra: (e.alumnos || 0) + " alumnos · " + (e.rutinas || 0) + " rutinas", min7: e.min_7d, av: avatarAdm(e) }; })
+      .concat(alus.map(function (c) { return { id: "c" + c.id, rol: "alumno", nombre: c.nombre, email: c.email, marca: c.marca || c.entrenador, alta: c.alta, ultimo: c.ultimo_acceso, en_linea: c.en_linea, cuenta: c.tiene_cuenta, ent: c.ent,
+        extra: (c.sesiones || 0) + " entrenos · entrena con " + (c.entrenador || c.marca || "—"), min7: c.min_7d, activo: c.activo, av: UI.avatarCli(c) }; }));
+    var h7 = Date.now() - 7 * 864e5;
+    var nuevos = todos.filter(function (u) { return u.alta && new Date(u.alta).getTime() >= h7; }).length;
+    var F = [{ id: "todos", t: "Todos" }, { id: "entrenador", t: "Entrenadores" }, { id: "alumno", t: "Alumnos" }, { id: "sincuenta", t: "Sin cuenta" }, { id: "linea", t: "En línea" }];
+    function pasa(u, f) { return f === "todos" || (f === "sincuenta" ? !u.cuenta : f === "linea" ? u.en_linea : u.rol === f); }
+    var filtro = "todos", orden = "alta", q = "";
+    app().innerHTML = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag"><span class="marca-mini" style="color:var(--sec-2)">' + ico("clientes", ' width="22" height="22"') + '</span><div class="cab-txt"><small>' +
+      todos.length + ' cuentas · Administración</small><h1>Usuarios</h1></div><button class="btn-redondo" id="exportar" aria-label="Descargar lista" title="Descargar lista (CSV)">' + ico("compartir") + "</button></div></section>" +
+      '<div class="contenido"><div class="kpi4"><div><b>' + ents.length + "</b><small>Entrenadores</small></div><div><b>" + alus.filter(function (c) { return c.tiene_cuenta; }).length + "</b><small>Alumnos con cuenta</small></div><div><b>" +
+      alus.filter(function (c) { return !c.tiene_cuenta; }).length + "</b><small>Sin cuenta</small></div><div><b>" + nuevos + "</b><small>Nuevos (7 días)</small></div></div>" +
+      '<label class="buscador buscador-c">' + ico("buscar", ' width="19" height="19"') + '<input id="qU" placeholder="Buscar por nombre, correo o marca" autocomplete="off"></label>' +
+      '<div class="chips scroll" id="fU">' + F.map(function (f) { var n = todos.filter(function (u) { return pasa(u, f.id); }).length; return '<button class="chip' + (f.id === "todos" ? " on" : "") + '" data-f="' + f.id + '">' + f.t + ' <span class="cuenta">' + n + "</span></button>"; }).join("") + "</div>" +
+      '<div class="orden-fila"><span>Ordenar por</span><select class="entrada" id="oU"><option value="alta">Más recientes</option><option value="ultimo">Último acceso</option><option value="nombre">Nombre (A–Z)</option><option value="email">Correo (A–Z)</option><option value="uso">Más uso (7 días)</option></select></div>' +
+      '<div class="tarjeta sin-relleno"><div class="lista" id="lU"></div></div>' +
+      '<p class="nota-demo" style="text-align:left;margin:0 4px">Las contraseñas no se pueden ver: Supabase las guarda cifradas para proteger a tus usuarios. Si alguien la olvidó, ábrelo y mándale el enlace para cambiarla.</p></div>';
+    function lista() {
+      var n = UI.normal(q);
+      var l = todos.filter(function (u) { return pasa(u, filtro) && (!n || UI.normal(u.nombre + " " + (u.email || "") + " " + (u.marca || "")).indexOf(n) >= 0); });
+      l.sort(function (a, b) {
+        if (orden === "nombre") return a.nombre.localeCompare(b.nombre);
+        if (orden === "email") return (a.email || "~").localeCompare(b.email || "~");
+        if (orden === "uso") return (b.min7 || 0) - (a.min7 || 0);
+        var k = orden === "ultimo" ? "ultimo" : "alta"; return String(b[k] || "").localeCompare(String(a[k] || ""));
+      });
+      UI.$("#lU").innerHTML = l.length ? l.map(function (u) {
+        return '<button class="item fila-btn" data-u="' + u.id + '"><span style="position:relative;flex:none">' + u.av + puntoEnLinea(u.en_linea) + '</span><span class="txt"><div class="t1">' + esc(u.nombre) +
+          '</div><div class="t2">' + (u.email ? esc(u.email) : '<span style="color:var(--ambar)">Sin cuenta todavía</span>') + '</div><div class="cli-tags"><span class="tag ' + (u.rol === "entrenador" ? "t-entreno" : "t-bien") + '">' + (u.rol === "entrenador" ? "Entrenador" : "Alumno") + "</span>" +
+          (u.marca ? '<span class="tag">' + esc(u.marca) + "</span>" : "") + '</div></span><span class="der"><small>' + (u.en_linea ? '<b style="color:var(--ok)">En línea</b>' : esc(u.ultimo ? cuando(u.ultimo) : "Nunca")) + "</small></span></button>";
+      }).join("") : '<div class="vacio">Nadie coincide.</div>';
+      UI.cargarFotos(UI.$("#lU"));
+      UI.$$("[data-u]", UI.$("#lU")).forEach(function (b) { b.onclick = function () { hojaUsuario(todos.find(function (u) { return u.id === b.dataset.u; })); }; });
+    }
+    UI.$("#qU").oninput = function () { q = this.value; lista(); };
+    UI.$("#oU").onchange = function () { orden = this.value; lista(); };
+    UI.$$("#fU .chip").forEach(function (b) { b.onclick = function () { filtro = b.dataset.f; UI.$$("#fU .chip").forEach(function (x) { x.classList.toggle("on", x === b); }); lista(); }; });
+    UI.$("#exportar").onclick = function () {
+      var filas = [["Nombre", "Correo", "Rol", "Marca / entrenador", "Alta", "Último acceso", "Tiene cuenta"]].concat(todos.map(function (u) {
+        return [u.nombre, u.email || "", u.rol, u.marca || "", u.alta ? String(u.alta).slice(0, 10) : "", u.ultimo ? String(u.ultimo).slice(0, 16).replace("T", " ") : "", u.cuenta ? "sí" : "no"];
+      }));
+      var csv = "﻿" + filas.map(function (f) { return f.map(function (x) { return '"' + String(x).replace(/"/g, '""') + '"'; }).join(","); }).join("\n");
+      var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "pulso-usuarios-" + DB.hoyISO() + ".csv"; a.click();
+      UI.aviso("Lista descargada ✓");
+    };
+    lista();
+  }
+  function hojaUsuario(u) {
+    function fila(t, v) { return '<div class="item"><span class="txt"><div class="t2">' + t + '</div><div class="t1" style="white-space:normal;word-break:break-word">' + v + "</div></span></div>"; }
+    UI.hoja(u.nombre, '<div class="cli-tags" style="margin:-6px 0 12px"><span class="tag ' + (u.rol === "entrenador" ? "t-entreno" : "t-bien") + '">' + (u.rol === "entrenador" ? "Entrenador" : "Alumno") + "</span>" +
+      (u.en_linea ? '<span class="tag t-comida">En línea ahora</span>' : "") + (u.activo === false ? '<span class="tag">Pausado</span>' : "") + "</div>" +
+      '<div class="tarjeta sin-relleno"><div class="lista">' + fila("Correo", u.email ? esc(u.email) : "Sin cuenta todavía") + fila(u.rol === "entrenador" ? "Marca" : "Entrenador", esc(u.marca || "—")) +
+      fila("Alta", u.alta ? esc(fechaHora(u.alta)) : "—") + fila("Último acceso", u.ultimo ? esc(fechaHora(u.ultimo)) : "Nunca") + fila("Uso últimos 7 días", mins(u.min7 || 0)) + fila("Actividad", esc(u.extra)) +
+      fila("Contraseña", '<span style="color:var(--suave)">Cifrada · nadie puede verla</span>') + "</div></div>" +
+      '<div class="form" style="margin-top:14px">' +
+      (u.email ? '<button class="btn" id="uReset">' + ico("enlace") + "Mandar enlace para cambiar contraseña</button>" +
+        '<div class="fila-btns"><button class="btn vidrio" id="uCopiar">' + ico("copiar") + 'Copiar correo</button><a class="btn vidrio" href="mailto:' + esc(u.email) + '">' + ico("enlace") + "Escribirle</a></div>" : "") +
+      '<a class="btn vidrio" href="#/admin/' + esc(u.ent) + '">' + ico("grafica") + (u.rol === "entrenador" ? "Ver su actividad" : "Ver actividad de su entrenador") + "</a></div>", function (h, cerrar) {
+      UI.$$("a", h).forEach(function (a) { a.addEventListener("click", cerrar); });
+      var rs = h.querySelector("#uReset");
+      if (rs) rs.onclick = async function () {
+        if (!(await UI.confirmar("¿Mandar el enlace a " + u.email + "?", "Le llega un correo para que elija una contraseña nueva. La actual sigue funcionando hasta que la cambie.", "Mandar enlace"))) return;
+        try { await DB.recuperar(u.email); UI.aviso("Enlace enviado a " + u.email + " ✓"); } catch (e) { UI.error(e); }
+      };
+      var cp = h.querySelector("#uCopiar");
+      if (cp) cp.onclick = function () { try { navigator.clipboard.writeText(u.email); UI.aviso("Correo copiado ✓"); } catch (e) { UI.aviso(u.email); } };
+    });
+  }
+
 
   function filaAlumno(c) {
     return '<a class="item" href="#/admin/' + c.ent + '"><span style="position:relative;flex:none">' + UI.avatarCli(c) + puntoEnLinea(c.en_linea) + '</span><span class="txt"><div class="t1">' +
