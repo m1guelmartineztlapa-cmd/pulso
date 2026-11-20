@@ -85,7 +85,35 @@
     capa.appendChild(f);
     var cerrar = function () { f.remove(); };
     f.addEventListener("click", function (e) { if (e.target === f || e.target.closest("[data-cerrar]")) cerrar(); });
-    if (alMontar) alMontar(f.querySelector(".hoja"), cerrar);
+    // Deslizar hacia abajo para cerrar (como en el iPhone). Si el contenido está bajado, primero sube.
+    var h = f.querySelector(".hoja"), y0 = null, dy = 0, t0 = 0, arrastre = false;
+    h.addEventListener("touchstart", function (e) {
+      if (e.touches.length !== 1 || (h.scrollTop > 0 && !e.target.closest(".asa,.cab"))) { y0 = null; return; }
+      y0 = e.touches[0].clientY; dy = 0; t0 = Date.now(); arrastre = false;
+    }, { passive: true });
+    h.addEventListener("touchmove", function (e) {
+      if (y0 == null) return;
+      var d = e.touches[0].clientY - y0;
+      if (!arrastre) {
+        if (d < -4) { y0 = null; return; }
+        if (d < 6) return;
+        arrastre = true; h.style.transition = "none"; h.style.animation = "none";
+      }
+      dy = Math.max(0, d);
+      h.style.transform = "translateY(" + dy + "px)";
+      f.style.opacity = String(Math.max(.35, 1 - dy / 600));
+      if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+    function soltar() {
+      if (y0 == null) return; y0 = null;
+      if (!arrastre) return;
+      var vel = dy / Math.max(1, Date.now() - t0);
+      h.style.transition = "transform .22s cubic-bezier(.2,.8,.2,1)"; f.style.transition = "opacity .22s";
+      if (dy > 120 || (vel > 0.55 && dy > 40)) { h.style.transform = "translateY(100%)"; f.style.opacity = "0"; setTimeout(cerrar, 210); }
+      else { h.style.transform = ""; f.style.opacity = ""; }
+    }
+    h.addEventListener("touchend", soltar); h.addEventListener("touchcancel", soltar);
+    if (alMontar) alMontar(h, cerrar);
     return cerrar;
   };
   UI.confirmar = function (titulo, texto, boton) {

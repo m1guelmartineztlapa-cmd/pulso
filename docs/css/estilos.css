@@ -643,3 +643,5 @@ body[data-sec="ajustes"],body[data-sec="perfil"]{--sec:#7C8DB5}
 .btn-redondo{transition:transform .12s,background .2s}
 .btn-redondo:active{transform:scale(.92)}
 ::selection{background:color-mix(in srgb,var(--sec) 45%,transparent)}
+.hoja{overscroll-behavior:contain}
+.hoja .asa{width:44px;height:5px;margin-bottom:12px;cursor:grab}
