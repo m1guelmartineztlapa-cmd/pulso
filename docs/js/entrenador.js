@@ -817,8 +817,8 @@
   V.ajustes = async function () {
     UI.tabbar(TABS, "ajustes");
     var e = A().ent;
-    app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><h1 class="titulo-pag" style="margin-top:30px">Ajustes</h1></section><div class="contenido">' +
-      '<div class="titulo-sec"><h2>Tu marca</h2></div><div class="tarjeta form">' +
+    app().innerHTML = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag">' + avatarEnt() + '<div class="cab-txt"><small>' + esc(e.marca || "Pulso") + "</small><h1>Ajustes</h1></div></div></section><div class=\"contenido\">" +
+      '<div class="lbl grupo">Tu marca</div><div class="tarjeta form">' +
       '<p>Tus clientes ven tu logo, tu nombre de marca y tu color en su app.</p>' +
       '<div style="display:flex;align-items:center;gap:14px"><div class="avatar grande" id="logoPrev">' + (e.logo_url ? '<img src="' + esc(e.logo_url) + '" alt="">' : esc(UI.iniciales(e.marca))) +
       '</div><label class="btn vidrio chico" style="cursor:pointer">' + ico("camara") + 'Cambiar logo<input type="file" accept="image/*" id="logo" class="oculto-vista"></label></div>' +
@@ -828,12 +828,17 @@
         return '<button style="background:' + c + '" data-c="' + c + '" class="' + (c.toLowerCase() === String(e.color).toLowerCase() ? "on" : "") + '" aria-label="Color ' + c + '"></button>'; }).join("") +
       '<input type="color" id="colorLibre" value="' + esc(e.color || "#3B7BFF") + '" style="width:40px;height:40px;border:0;background:none;padding:0;cursor:pointer" aria-label="Otro color"></div></div>' +
       '<button class="btn" id="guardarMarca">Guardar</button></div>' +
-      '<div class="titulo-sec"><h2>Instalar en tu celular</h2></div><div class="tarjeta"><p><b style="color:#fff">iPhone:</b> en Safari, botón Compartir → «Agregar a pantalla de inicio».<br>' +
-      '<b style="color:#fff">Android:</b> en Chrome, menú ⋮ → «Instalar app».<br>Tus clientes hacen lo mismo con su enlace.</p></div>' +
+      '<div class="lbl grupo">App</div><div class="tarjeta sin-relleno"><div class="lista"><div class="item" id="instalarApp"><span class="ico">' + ico("compartir") + '</span><span class="txt"><div class="t1">Instalar en tu celular</div><div class="t2">Tus clientes hacen lo mismo con su enlace</div></span><span class="chev">' + ico("der") + "</span></div>" +
+      '<a class="item" href="#/dietas/recetario"><span class="ico"><span style="font-size:18px">📖</span></span><span class="txt"><div class="t1">Recetario</div><div class="t2">57 recetas para tus planes</div></span><span class="chev">' + ico("der") + "</span></a></div></div>" +
+      '<div class="lbl grupo">Cuenta</div>' +
       '<div class="tarjeta sin-relleno" id="adminLink" hidden><div class="lista"><a class="item" href="#/admin"><span class="ico">' + ico("grafica") +
       '</span><span class="txt"><div class="t1">Panel de administrador</div><div class="t2">Quién usa Pulso y qué hace</div></span><span class="chev">' + ico("der") + "</span></a></div></div>" +
       '<div class="tarjeta sin-relleno"><div class="lista"><div class="item" id="salir"><span class="ico">' + ico("salir") + '</span><span class="txt"><div class="t1">Cerrar sesión</div><div class="t2">' +
       esc((A().usuario && A().usuario.email) || "") + "</div></span></div></div></div></div>";
+    UI.$("#instalarApp").onclick = function () {
+      UI.hoja("Instalar en tu celular", '<div class="lista" style="margin:0 -18px"><div class="item"><span class="ico">' + ico("compartir") + '</span><span class="txt"><div class="t1">iPhone</div><div class="t2" style="white-space:normal">En Safari, toca Compartir y luego «Agregar a pantalla de inicio».</div></span></div>' +
+        '<div class="item"><span class="ico">' + ico("puntos") + '</span><span class="txt"><div class="t1">Android</div><div class="t2" style="white-space:normal">En Chrome, abre el menú ⋮ y toca «Instalar app».</div></span></div></div>');
+    };
     var color = e.color;
     UI.$$("#colores [data-c]").forEach(function (b) { b.onclick = function () { color = b.dataset.c; UI.aplicarMarca(color); UI.$$("#colores [data-c]").forEach(function (x) { x.classList.toggle("on", x === b); }); }; });
     UI.$("#colorLibre").oninput = function () { color = this.value; UI.aplicarMarca(color); UI.$$("#colores [data-c]").forEach(function (x) { x.classList.remove("on"); }); };

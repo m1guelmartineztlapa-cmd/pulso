@@ -80,13 +80,23 @@
     }
 
     // Tu día: lista de pendientes
-    function tarea(ok, icono, t1, t2, href) {
-      return '<a class="item tarea' + (ok ? " ok" : "") + '" href="' + href + '"><span class="ico">' + (ok ? ico("check") : icono) + '</span><span class="txt"><div class="t1">' + t1 + '</div><div class="t2">' + t2 + '</div></span><span class="chev">' + ico("der") + "</span></a>";
+    function tarea(ok, icono, t1, t2, href, cls) {
+      return '<a class="item tarea ' + (cls || "") + (ok ? " ok" : "") + '" href="' + href + '"><span class="ico">' + (ok ? ico("check") : icono) + '</span><span class="txt"><div class="t1">' + t1 + '</div><div class="t2">' + t2 + '</div></span><span class="chev">' + ico("der") + "</span></a>";
     }
-    html += '<div class="titulo-sec"><h2>Tu día</h2></div><div class="tarjeta sin-relleno"><div class="lista">';
-    html += tarea(hechaHoy || (!hoy && d.asig.length > 0), ico("pesa"), "Entrenamiento", hechaHoy ? "Hecho" : hoy ? esc(hoy.rutina.nombre) : "Hoy toca descanso", principal ? "#/entrenar/" + principal.id : "#/entrenos");
-    if (al && al.total) html += tarea(al.hechas >= al.total, '<span style="font-size:19px">🥗</span>', "Comidas", al.hechas + " de " + al.total + " registradas", "#/comida");
-    html += tarea(al && al.sentir, '<span style="font-size:19px">🙂</span>', "¿Cómo te sientes?", al && al.sentir ? "Ya lo registraste" : "Toma 1 minuto", "#/comida");
+    var okEnt = hechaHoy || (!hoy && d.asig.length > 0);
+    var aros = [{ x: "var(--c-entreno)", t: "Entreno", v: okEnt ? 1 : 0, txt: hechaHoy ? "Hecho" : hoy ? "Pendiente" : "Descanso" }];
+    if (al && al.total) aros.push({ x: "var(--c-comida)", t: "Comidas", v: al.hechas / al.total, txt: al.hechas + "/" + al.total });
+    aros.push({ x: "var(--c-bienestar)", t: "Bienestar", v: al && al.sentir ? 1 : 0, txt: al && al.sentir ? "Listo" : "Pendiente" });
+    var svg = '<svg viewBox="0 0 120 120">' + aros.map(function (a, i) {
+      var rr = 52 - i * 14, cc = 2 * Math.PI * rr;
+      return '<circle cx="60" cy="60" r="' + rr + '" fill="none" stroke="' + a.x + '" stroke-opacity=".18" stroke-width="11"/>' +
+        '<circle cx="60" cy="60" r="' + rr + '" fill="none" stroke="' + a.x + '" stroke-width="11" stroke-linecap="round" stroke-dasharray="' + cc.toFixed(1) + '" stroke-dashoffset="' + (cc * (1 - Math.min(1, a.v))).toFixed(1) + '"' + (a.v > 0 ? "" : ' opacity="0"') + "/>";
+    }).join("") + "</svg>";
+    html += '<div class="titulo-sec"><h2>Tu día</h2></div><div class="tarjeta sin-relleno"><div class="anillos">' + svg + "<ul>" +
+      aros.map(function (a) { return '<li style="--x:' + a.x + '"><i></i><span>' + a.t + "</span><b>" + a.txt + "</b></li>"; }).join("") + '</ul></div><div class="lista">';
+    html += tarea(okEnt, ico("pesa"), "Entrenamiento", hechaHoy ? "Hecho" : hoy ? esc(hoy.rutina.nombre) : "Hoy toca descanso", principal ? "#/entrenar/" + principal.id : "#/entrenos", "t-entreno");
+    if (al && al.total) html += tarea(al.hechas >= al.total, '<span style="font-size:19px">🥗</span>', "Comidas", al.hechas + " de " + al.total + " registradas", "#/comida", "t-comida");
+    html += tarea(al && al.sentir, '<span style="font-size:19px">🙂</span>', "¿Cómo te sientes?", al && al.sentir ? "Ya lo registraste" : "Toma 1 minuto", "#/comida", "t-bien");
     html += "</div></div>";
 
     // Tu semana

@@ -49,8 +49,8 @@
   }
   function macroCajas(c) {
     if (c.kcal == null && c.prot == null) return "";
-    function caja(v, u, t) { return "<div><b>" + (v == null ? "—" : v + u) + "</b><small>" + t + "</small></div>"; }
-    return '<div class="macro-cajas">' + caja(c.kcal, "", "kcal") + caja(c.prot, "g", "proteína") + caja(c.carbs, "g", "carbs") + caja(c.grasa, "g", "grasa") + "</div>";
+    function caja(v, u, t, k) { return '<div class="m-' + k + '"><b>' + (v == null ? "—" : v + u) + "</b><small>" + t + "</small></div>"; }
+    return '<div class="macro-cajas">' + caja(c.kcal, "", "kcal", "kcal") + caja(c.prot, "g", "proteína", "prot") + caja(c.carbs, "g", "carbs", "carb") + caja(c.grasa, "g", "grasa", "grasa") + "</div>";
   }
   function pasosHTML(txt) {
     var p = String(txt || "").split(/\.\s+(?=[A-ZÁÉÍÓÚÑ¿¡])/).map(function (x) { return x.trim().replace(/\.$/, ""); }).filter(Boolean);
@@ -177,16 +177,19 @@
     var pd = await planDeCliente(cli.id);
     var reg = await registroDe(cli.id, fecha);
     var plan = pd && pd.plan;
-    var html = A().bandaDemo() + '<section class="hero" style="padding-bottom:10px">' + '<div class="barra-sup" style="justify-content:space-between"><h1 class="titulo-pag" style="margin:6px 0 0">Alimentación</h1>' +
-      '<div style="display:flex;gap:8px">' + (fecha !== sumarDias(hoy, -6) ? '<button class="btn-redondo" id="diaAnt" aria-label="Día anterior">' + ico("izq") + "</button>" : "") +
-      (fecha < hoy ? '<button class="btn-redondo" id="diaSig" aria-label="Día siguiente">' + ico("der") + "</button>" : "") + "</div></div>";
     var dia = null;
-    if (plan) {
-      var idx = indiceDia(pd.asig, plan, fecha); dia = plan.dias[idx];
-      html += '<div class="saldo" style="margin-top:16px"><div class="etq">' + (fecha === hoy ? "Hoy" : UI.fecha(fecha)) + " · " + esc(plan.nombre) + '</div><div class="cifra" style="font-size:30px;letter-spacing:-.6px">' +
-        esc(dia ? dia.nombre : "Día " + (idx + 1)) + "</div>" + (dia && dia.consejo ? '<div class="sub">💡 ' + esc(dia.consejo) + "</div>" : "") + "</div>";
+    if (plan) { var idx = indiceDia(pd.asig, plan, fecha); dia = plan.dias[idx]; }
+    var html = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag"><div class="cab-txt"><small>' + (fecha === hoy ? "Hoy" : esc(UI.fecha(fecha))) + (plan ? " · " + esc(plan.nombre) : "") +
+      "</small><h1>" + esc(dia ? dia.nombre : "Comida") + '</h1></div><div style="display:flex;gap:8px">' + (fecha !== sumarDias(hoy, -6) ? '<button class="btn-redondo" id="diaAnt" aria-label="Día anterior">' + ico("izq") + "</button>" : "") +
+      (fecha < hoy ? '<button class="btn-redondo" id="diaSig" aria-label="Día siguiente">' + ico("der") + "</button>" : "") + "</div></div></section><div class=\"contenido\">";
+    if (dia && dia.consejo) html += '<div class="consejo-dia"><span>💡</span><span>' + esc(dia.consejo) + "</span></div>";
+    var cdd = (dia && dia.comidas) || [];
+    if (cdd.length && cdd.every(function (c) { return c.kcal != null; })) {
+      var tot = { kcal: 0, prot: 0, carbs: 0, grasa: 0 }, todas = { carbs: true, grasa: true };
+      cdd.forEach(function (c) { tot.kcal += Number(c.kcal) || 0; tot.prot += Number(c.prot) || 0; if (c.carbs == null) todas.carbs = false; else tot.carbs += Number(c.carbs); if (c.grasa == null) todas.grasa = false; else tot.grasa += Number(c.grasa); });
+      if (!todas.carbs) tot.carbs = null; if (!todas.grasa) tot.grasa = null;
+      html += '<div class="tarjeta" style="padding:14px 14px 0"><div class="lbl" style="padding:0 2px 8px">Tu día en números</div>' + macroCajas(tot) + "</div>";
     }
-    html += "</section><div class=\"contenido\">";
     // ¿Cómo te sientes?
     var sentir = (reg && reg.sentir) || {}, inds = indicadoresDe(plan), hechos = inds.filter(function (n) { return sentir[n]; });
     html += '<button class="tarjeta sentir-tarjeta" id="abrirSentir"><div class="promo"><span class="avatar" style="background:var(--brand);font-size:22px">' + (hechos.length ? CARITAS[Math.round(hechos.reduce(function (t, n) { return t + sentir[n]; }, 0) / hechos.length) - 1] : "🙂") +

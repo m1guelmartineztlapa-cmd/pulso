@@ -3,6 +3,14 @@
   --brand:#3B7BFF;
   --brand-2:#7AA5FF;
   --acento:#FF7A59;
+  --c-entreno:var(--brand);
+  --c-comida:#3DDC97;
+  --c-bienestar:#A78BFA;
+  --c-racha:#FF7A59;
+  --m-kcal:#7AA5FF;
+  --m-prot:#FF7A59;
+  --m-carb:#FBBF24;
+  --m-grasa:#38BDF8;
   --bg:#090C14;
   --bg-2:#111624;
   --card:#121725;
@@ -420,3 +428,21 @@ a.dato{display:block;color:inherit}
 .barrita{height:5px;border-radius:99px;background:var(--card-2);margin-top:7px;overflow:hidden;max-width:180px}
 .barrita i{display:block;height:100%;border-radius:99px;background:var(--ok)}
 .tabbar .tab{font-size:10.5px}
+/* Paleta por secciones (entreno, comida, bienestar) y macros */
+.macro-cajas div{box-shadow:inset 0 3px 0 var(--x,transparent)}
+.macro-cajas b{color:var(--x,#fff)}
+.m-kcal{--x:var(--m-kcal)}.m-prot{--x:var(--m-prot)}.m-carb{--x:var(--m-carb)}.m-grasa{--x:var(--m-grasa)}
+.dia-total b:nth-of-type(1){color:var(--m-kcal)}.dia-total b:nth-of-type(2){color:var(--m-prot)}
+.tarea.t-entreno .ico{background:color-mix(in srgb,var(--c-entreno) 24%,transparent);color:var(--c-entreno)}
+.tarea.t-comida .ico{background:color-mix(in srgb,var(--c-comida) 22%,transparent);color:var(--c-comida)}
+.tarea.t-bien .ico{background:color-mix(in srgb,var(--c-bienestar) 24%,transparent);color:var(--c-bienestar)}
+.tarea.ok .ico{background:var(--ok);color:#06281A}
+.anillos{display:flex;align-items:center;gap:18px;padding:18px 18px 8px}
+.anillos svg{flex:none;width:118px;height:118px;transform:rotate(-90deg)}
+.anillos ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;flex:1;min-width:0}
+.anillos li{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600}
+.anillos li i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--x)}
+.anillos li span{flex:1;color:var(--suave);font-weight:500}
+.anillos li b{color:var(--x)}
+.consejo-dia{display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:18px;background:color-mix(in srgb,var(--c-comida) 12%,var(--card));border:1px solid color-mix(in srgb,var(--c-comida) 30%,transparent);color:#fff;font-size:14.5px;line-height:1.4}
+.lbl.grupo{color:var(--suave)}
