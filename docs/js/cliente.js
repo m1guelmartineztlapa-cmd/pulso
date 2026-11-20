@@ -80,8 +80,10 @@
     var hoy = deHoy(d.asig), hoyISO = DB.hoyISO();
     var hechaHoy = d.ses.some(function (s) { return s.fecha === hoyISO; });
     var lunes = new Date(); lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));
-    var semana = d.ses.filter(function (s) { return s.fecha >= DB.hoyISO(lunes); }).length;
-    var meta = Math.max(1, d.asig.reduce(function (t, a) { return t + (a.dias || []).length; }, 0) || d.asig.length);
+    var diasHechos = {}; d.ses.forEach(function (s) { if (s.fecha >= DB.hoyISO(lunes)) diasHechos[s.fecha] = 1; });
+    var semana = Object.keys(diasHechos).length;
+    var diasProg = {}; d.asig.forEach(function (a) { (a.dias || []).forEach(function (x) { diasProg[x] = 1; }); });
+    var meta = Math.max(1, Object.keys(diasProg).length || d.asig.length);
     var principal = hoy || (d.asig.find(function (a) { return !(a.dias || []).length; }) || null);
     var racha = rachaSemanas(d.ses);
     var html = A().bandaDemo() + cabPag("Hola, " + cli().nombre.split(" ")[0], fechaLarga(),
@@ -127,8 +129,8 @@
     html += '<div class="titulo-sec"><h2>Tu día</h2></div><div class="tarjeta sin-relleno"><div class="anillos">' + svg + "<ul>" +
       aros.map(function (a) { return '<li style="--x:' + a.x + '"><i></i><span>' + a.t + "</span><b>" + a.txt + "</b></li>"; }).join("") + '</ul></div><div class="lista">';
     html += tarea(okEnt, ico("pesa"), "Entrenamiento", hechaHoy ? "Hecho" : hoy ? esc(hoy.rutina.nombre) : "Hoy toca descanso", principal ? "#/entrenar/" + principal.id : "#/entrenos", "t-entreno");
-    if (al && al.total) html += tarea(al.hechas >= al.total, '<span style="font-size:19px">🥗</span>', "Comidas", al.hechas + " de " + al.total + " registradas" +
-      (al.siguiente ? " · sigue " + esc(al.siguiente.tiempo.toLowerCase()) + ": " + esc(al.siguiente.nombre) : ""), "#/comida", "t-comida");
+    if (al && al.total) html += tarea(al.hechas >= al.total, '<span style="font-size:19px">🥗</span>', "Comidas · " + al.hechas + "/" + al.total,
+      al.siguiente ? "Sigue: " + esc(al.siguiente.nombre) : "Todas registradas", "#/comida", "t-comida");
     html += tarea(al && al.sentir, '<span style="font-size:19px">🙂</span>', "¿Cómo te sientes?", al && al.sentir ? "Ya lo registraste" : "Toma 1 minuto", "#/comida", "t-bien");
     html += "</div></div>";
 
@@ -136,8 +138,8 @@
     var c = 2 * Math.PI * 25, pct = Math.min(1, semana / meta);
     html += '<div class="titulo-sec"><h2>Tu semana</h2><a href="#/entrenos">Ver plan</a></div><div class="tarjeta"><div class="promo"><div class="anillo"><svg viewBox="0 0 58 58"><circle cx="29" cy="29" r="25" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4"/>' +
       '<circle cx="29" cy="29" r="25" fill="none" stroke="var(--brand-2)" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + (c * (1 - pct)).toFixed(1) + '"/></svg>' +
-      semana + "/" + meta + '</div><div><h3>' + (semana >= meta ? "¡Semana completa! 🔥" : "Meta: " + meta + (meta === 1 ? " entrenamiento" : " entrenamientos")) + "</h3><p>" +
-      (semana >= meta ? "Cumpliste todas tus sesiones. Tu entrenador lo verá." : "Llevas " + semana + ". ¡Sigue así!") + "</p></div></div>" + tiraSemana(d, lunes) + "</div>";
+      semana + "/" + meta + '</div><div><h3>' + (semana >= meta ? "¡Semana completa! 🔥" : "Meta: " + meta + (meta === 1 ? " día" : " días") + " de entreno") + "</h3><p>" +
+      (semana >= meta ? "Cumpliste todos tus días. Tu entrenador lo verá." : semana ? "Llevas " + semana + " de " + meta + ". ¡Sigue así!" : "Aún no entrenas esta semana. ¡Hoy puede ser el día!") + "</p></div></div>" + tiraSemana(d, lunes) + "</div>";
 
     var dowHoy = new Date().getDay();
     if ((dowHoy === 0 || dowHoy === 6) && semana > 0) {
@@ -165,7 +167,7 @@
       var rs = d.asig.filter(function (a) { return (a.dias || []).indexOf(dd) >= 0; }), ok = hechoEl(dd);
       return '<div class="item dia-sem' + (ok ? " hecho" : "") + '"><span class="ico" style="' + (ok ? "" : dd === hoyDow ? "background:var(--sec);color:#fff" : "") + '">' + (ok ? ico("check", ' stroke-width="3"') : UI.DIAS[dd]) + '</span><span class="txt"><div class="t1">' +
         (rs.length ? esc(rs.map(function (a) { return a.rutina.nombre; }).join(" + ")) : '<span style="color:var(--suave)">' + (ok ? "Entreno extra" : "Descanso") + "</span>") +
-        '</div><div class="t2">' + UI.DIAS_L[dd] + (dd === hoyDow ? " · hoy" : "") + (ok ? " · hecho ✓" : "") + "</div></span>" +
+        '</div><div class="t2">' + (dd === hoyDow ? "Hoy" : UI.DIAS_L[dd].charAt(0).toUpperCase() + UI.DIAS_L[dd].slice(1)) + (ok ? " · hecho ✓" : "") + "</div></span>" +
         (rs.length ? '<a class="btn chico' + (dd === hoyDow && !ok ? "" : " vidrio") + '" href="#/entrenar/' + rs[0].id + '">' + (dd === hoyDow ? (ok ? "Repetir" : "Empezar") : "Abrir") + "</a>" : "") + "</div>";
     }).join("") + "</div></div>";
     html += '<div class="titulo-sec"><h2>Mis rutinas</h2></div><div class="tarjeta sin-relleno"><div class="lista">' + (d.asig.length ? d.asig.map(function (a) {
@@ -186,7 +188,7 @@
       var f = new Date(lunes); f.setDate(f.getDate() + i); var iso = DB.hoyISO(f), dow = f.getDay();
       var hecho = d.ses.some(function (s) { return s.fecha === iso; });
       var toca = d.asig.some(function (a) { return (a.dias || []).indexOf(dow) >= 0; });
-      html += '<div class="' + [hecho ? "hecho" : "", toca ? "toca" : "", iso === hoyISO ? "hoy" : ""].join(" ") + '"><span>' + (hecho ? "✓" : f.getDate()) + "</span>" + L[i] + "</div>";
+      html += '<div class="' + [hecho ? "hecho" : "", toca ? "toca" : "", iso === hoyISO ? "hoy" : "", toca && !hecho && iso < hoyISO ? "paso" : ""].join(" ") + '"><span>' + (hecho ? "✓" : f.getDate()) + "</span>" + L[i] + "</div>";
     }
     return html + "</div>";
   }
@@ -194,7 +196,7 @@
     var vol = (s.series || []).reduce(function (t, x) { return t + (Number(x.peso) || 0) * (Number(x.reps) || 0); }, 0);
     return '<div class="item" data-ses="' + s.id + '"><span class="ico">' + ico("check") + '</span><span class="txt"><div class="t1">' + esc(s.rutina_nombre || "Rutina") +
       '</div><div class="t2">' + esc(UI.fecha(s.fecha)) + " · " + (s.series || []).length + ' series</div></span><span class="der">' +
-      (vol ? Math.round(vol).toLocaleString("es-MX") + " kg" : "") + (s.calificacion ? "<small>★ " + s.calificacion + "</small>" : "") + "</span></div>";
+      (vol ? Math.round(vol).toLocaleString("es-MX") + " kg" : "") + (s.calificacion ? "<small>★ " + s.calificacion + "</small>" : "") + '</span><span class="chev">' + ico("der") + "</span></div>";
   }
   function enlazarSesiones(ses) {
     UI.$$("[data-ses]").forEach(function (el) { el.onclick = function () { VIS.entrenador.hojaSesion(ses.find(function (s) { return s.id === el.dataset.ses; })); }; });
@@ -237,17 +239,23 @@
     var total = todos.reduce(function (t, it) { return t + (Number(it.series) || 1); }, 0);
     function hechas() { var n = 0; Object.keys(est.v).forEach(function (k) { est.v[k].forEach(function (s) { if (s && s.ok) n++; }); }); return n; }
 
+    function durDesc(s) { return s >= 60 ? (s % 60 ? Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") + " min" : s / 60 + " min") : s + " s"; }
+    // "4 × 62.5 kg × 8" si todas las series fueron iguales
+    function resumenPrev(xs) {
+      var t = xs.map(function (x) { return (x.peso ? UI.num(x.peso) + " kg × " : "") + (x.reps || "–"); });
+      return t.every(function (v) { return v === t[0]; }) && t.length > 1 ? t.length + " series de " + t[0] : t.join(", ");
+    }
     function tarjeta(it, bi) {
       var prev = anterior(it.ref);
       var vals = est.v[it.id] || (est.v[it.id] = []);
       var n = Number(it.series) || 1;
       var yt = UI.youtube(it.video) || UI.esVideoArchivo(it.video);
       var html = '<div class="tarjeta" data-it="' + it.id + '"><div class="ej-cab"><span class="ico" style="width:52px;height:52px">' + UI.miniEj(it) + '</span><div class="nom" style="font-size:17px">' +
-        esc(it.nombre) + "<small>" + esc([n + " series", it.reps && it.reps + " reps", it.tiempo, it.intTipo && it.int && it.intTipo + " " + it.int, it.descanso && it.descanso + " s descanso"].filter(Boolean).join(" · ")) +
+        esc(it.nombre) + "<small>" + esc([n + " series", it.reps && it.reps + " reps", it.tiempo, it.intTipo && it.int && it.intTipo + " " + it.int, it.descanso && durDesc(Number(it.descanso)) + " de descanso"].filter(Boolean).join(" · ")) +
         '</small></div><button class="mini" data-ver aria-label="Ver cómo se hace">' + ico(yt ? "video" : "info") + "</button></div>" +
         (it.grupo ? '<div class="liga-super">' + ico("liga", ' width="15" height="15"') + "Superserie " + esc(it.grupo) + " · alterna con el ejercicio unido</div>" : "") +
         (it.nota ? '<div class="antes" style="color:#fff">📝 ' + esc(it.nota) + "</div>" : "") +
-        (prev ? '<div class="antes">La vez pasada (' + esc(UI.fecha(prev.fecha)) + "): " + esc(prev.series.map(function (x) { return (x.peso ? UI.num(x.peso) + "×" : "") + (x.reps || "–"); }).join(", ")) + "</div>" : "") +
+        (prev ? '<div class="antes">La vez pasada (' + esc(UI.fecha(prev.fecha)) + "): " + esc(resumenPrev(prev.series)) + "</div>" : "") +
         '<div class="serie-cab"><span>#</span><span>kg</span><span>Reps</span><span>' + (it.intTipo === "RPE" ? "RPE" : "RIR") + "</span><span></span></div>";
       for (var i = 0; i < n; i++) {
         var v = vals[i] || {}, p = prev && prev.series[i];
@@ -363,7 +371,7 @@
       todos.forEach(function (it) {
         (est.v[it.id] || []).forEach(function (s, i) {
           if (!s || (!s.ok && !s.peso && !s.reps)) return;
-          series.push({ ref: it.ref, nombre: it.nombre, serie: i + 1, peso: s.peso === "" || s.peso == null ? null : Number(s.peso), reps: s.reps === "" || s.reps == null ? null : Number(s.reps), rir: s.rir == null ? "" : s.rir });
+          series.push({ ref: it.ref, nombre: it.nombre, serie: i + 1, peso: s.peso === "" || s.peso == null ? null : Number(s.peso), reps: s.reps === "" || s.reps == null ? null : Number(s.reps), rir: s.rir == null ? "" : s.rir, tipo: it.intTipo === "RPE" ? "RPE" : "RIR" });
         });
       });
       var calif = 0, minT = Math.max(1, Math.round((Date.now() - est.inicio) / 60000));

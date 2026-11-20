@@ -974,3 +974,8 @@ input.switch:checked::after{transform:translateX(20px)}
 .comida.registrada .comida-cab{opacity:.75}
 .comida-btns button{transition:background .18s,border-color .18s,color .18s,transform .12s}
 .comida-btns button:active{transform:scale(.95)}
+/* ── Pulido del alumno ── */
+.semana-tira .paso span{border-style:dashed;border-color:rgba(255,255,255,.22);color:var(--tenue)}
+.res-periodo button{white-space:nowrap;font-size:13.5px}
+[data-ses]{cursor:pointer}
+[data-ses] .chev{margin-left:2px}

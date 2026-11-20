@@ -578,7 +578,7 @@
         var g = grupos[k];
         return '<div class="tarjeta" style="margin-bottom:10px;padding:14px"><h3 style="font-size:16px">' + esc(g.nombre) + "</h3>" + g.series.map(function (x) {
           return '<div style="display:flex;justify-content:space-between;color:var(--suave);font-size:14px;margin-top:6px"><span>Serie ' + x.serie + "</span><span>" +
-            (x.peso ? UI.num(x.peso) + " kg × " : "") + (x.reps || "–") + (x.rir !== "" && x.rir != null ? " · RIR " + esc(x.rir) : "") + "</span></div>";
+            (x.peso ? UI.num(x.peso) + " kg × " : "") + (x.reps ? x.reps + " reps" : "–") + (x.rir !== "" && x.rir != null ? " · " + (x.tipo || "RIR") + " " + esc(x.rir) : "") + "</span></div>";
         }).join("") + "</div>";
       }).join("") + (Object.keys(grupos).length ? "" : '<div class="vacio">No registró series.</div>'));
   };
