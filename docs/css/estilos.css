@@ -876,3 +876,12 @@ input.switch:checked::after{transform:translateX(20px)}
 .ctx-menu button:active{background:rgba(255,255,255,.08)}
 .ctx-menu svg{width:20px;height:20px;flex:none}
 .ctx-menu [data-ctx="wa"]{color:#25D366}
+/* ── Experiencia del entrenador ── */
+.paso{position:relative}
+.paso-num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--grad-sec);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center}
+.msj .t2{line-height:1.35;margin-top:3px}
+.msj .chev{color:#25D366}
+.elegible .marca-sel{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.25);display:grid;place-items:center;font-size:12.5px;font-weight:800;color:#fff;transition:background .15s,border-color .15s,transform .15s}
+.elegible.sel{background:color-mix(in srgb,var(--sec) 10%,transparent)}
+.elegible.sel .marca-sel{background:var(--sec);border-color:var(--sec);animation:pop .3s}
+.elegir-barra{position:sticky;bottom:calc(-22px - var(--abajo));margin:10px -18px calc(-22px - var(--abajo));padding:10px 18px calc(14px + var(--abajo));background:linear-gradient(180deg,transparent,#111624 30%)}

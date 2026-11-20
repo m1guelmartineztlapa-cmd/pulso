@@ -232,6 +232,7 @@
         try {
           var g = c.id ? await DB.upd("clientes", c.id, datos) : await DB.ins("clientes", Object.assign({ entrenador_id: eid() }, datos));
           cerrar(); UI.aviso(c.id ? "Guardado ✓" : "Cliente creado ✓");
+          if (!c.id) { try { sessionStorage.setItem("pulso_pasos_nuevo", g.id); sessionStorage.setItem("pulso_ficha_panel", "resumen"); } catch (e) {} }
           A().ir("cliente/" + g.id);
         } catch (e) { UI.error(e); }
       };
@@ -330,7 +331,7 @@
       '<button class="accion" id="asignar"><span class="circ c-entreno">' + ico("pesa") + "</span>Rutina</button>" +
       '<button class="accion" id="dietaCli"><span class="circ c-comida">' + ico("plato") + "</span>Dieta</button>" +
       (c.user_id ? '<button class="accion" id="medir"><span class="circ c-bien">' + ico("regla") + "</span>Medidas</button>" : '<button class="accion" id="invitar"><span class="circ c-racha">' + ico("enlace") + "</span>Invitar</button>") +
-      '<a class="accion" ' + (tel ? 'target="_blank" rel="noopener" href="https://wa.me/' + tel + '"' : 'href="javascript:void 0" id="sinTel"') + '><span class="circ c-ok">' + ico("whatsapp") + "</span>Mensaje</a></div></section>" +
+      '<button class="accion" id="mensajeCli"><span class="circ c-ok">' + ico("whatsapp") + "</span>Mensaje</button></div></section>" +
       '<div class="contenido"><div class="kpi4">' +
       '<div><b class="' + (pctF == null ? "" : "c-" + cumpleClase(pctF)) + '">' + (metaF ? semana + "/" + metaF : semana) + "</b><small>Esta semana</small></div>" +
       "<div><b>" + (racha ? "🔥 " + racha : "0") + "</b><small>" + (racha === 1 ? "Semana seguida" : "Semanas seguidas") + "</small></div>" +
@@ -411,7 +412,10 @@
     ["#asignar", "#asignar3"].forEach(function (s) { var b = UI.$(s); if (b) b.onclick = function () { hojaAsignar({ clienteId: c.id, rutinas: rutinas }); }; });
     ["#medir", "#medir2"].forEach(function (s) { var b = UI.$(s); if (b) b.onclick = function () { V.hojaMedida(c); }; });
     UI.$("#dietaCli").onclick = function () { if (V.hojaAsignarDieta) V.hojaAsignarDieta({ clienteId: c.id }); };
-    var st = UI.$("#sinTel"); if (st) st.onclick = function () { UI.aviso("Agrega su teléfono con el botón de editar", true); };
+    UI.$("#mensajeCli").onclick = function () {
+      var dow = new Date().getDay(), aH = asig.find(function (x) { return x.activa && (x.dias || []).indexOf(dow) >= 0; });
+      hojaMensaje(c, { hoy: aH && rutPorId[aH.rutina_id] ? rutPorId[aH.rutina_id].nombre : "" });
+    };
     UI.$$("[data-asig]").forEach(function (el) {
       el.onclick = function () { hojaAsignar({ asig: asig.find(function (a) { return a.id === el.dataset.asig; }) }); };
     });
@@ -419,7 +423,51 @@
       el.onclick = function () { V.hojaSesion(ses.find(function (s) { return s.id === el.dataset.ses; })); };
     });
     pintarSemanaCli(c, asig, rutPorId, ses);
+    var nuevo = null; try { nuevo = sessionStorage.getItem("pulso_pasos_nuevo"); } catch (e) {}
+    if (nuevo === c.id) { try { sessionStorage.removeItem("pulso_pasos_nuevo"); } catch (e) {} setTimeout(function () { hojaPasos(c, rutinas); }, 350); }
   };
+  /* Pasos guiados después de dar de alta a un alumno */
+  function hojaPasos(c, rutinas) {
+    var n = c.nombre.split(" ")[0];
+    function paso(num, k, icono, t1, t2) { return '<button class="item fila-btn paso" data-p="' + k + '"><span class="paso-num">' + num + '</span><span class="ico ' + icono + '">' + ico(k === "inv" ? "whatsapp" : k === "rut" ? "pesa" : "plato") + '</span><span class="txt"><div class="t1">' + t1 + '</div><div class="t2">' + t2 + '</div></span><span class="chev">' + ico("der") + "</span></button>"; }
+    UI.hoja("¡" + n + " ya está en tu lista! 🎉", '<p class="ayuda" style="margin:-8px 0 12px">Termina de prepararle su app en 3 pasos. Puedes hacerlos ahora o después desde su ficha.</p>' +
+      '<div class="tarjeta sin-relleno"><div class="lista">' + paso(1, "inv", "c-racha-bg", "Mandarle su invitación", "Por WhatsApp, para que cree su cuenta") +
+      paso(2, "rut", "c-entreno-bg", "Asignarle una rutina", rutinas.length ? "Elige de tus " + rutinas.length + " rutinas y sus días" : "Primero crea una rutina en Entreno") +
+      paso(3, "die", "c-comida-bg", "Asignarle un plan de comida", "Opcional · de lunes a domingo") + "</div></div>" +
+      '<button class="btn vidrio" data-cerrar style="margin-top:14px">Lo hago después</button>', function (h, cerrar) {
+      UI.$$("[data-p]", h).forEach(function (b) {
+        b.onclick = function () {
+          var k = b.dataset.p; cerrar();
+          if (k === "inv") hojaInvitar(c);
+          else if (k === "rut") { if (rutinas.length) hojaAsignar({ clienteId: c.id, rutinas: rutinas }); else A().ir("rutina/nueva"); }
+          else if (V.hojaAsignarDieta) V.hojaAsignarDieta({ clienteId: c.id });
+        };
+      });
+    });
+  }
+  /* Mensajes de WhatsApp listos para mandar */
+  function hojaMensaje(c, ctx) {
+    var n = c.nombre.split(" ")[0], tel = String(c.telefono || "").replace(/\D/g, "");
+    if (tel.length === 10) tel = "52" + tel;
+    var P = [
+      ["💪", "Felicitar", "¡Buen entrenamiento, " + n + "! Vas muy bien, sigue así 💪"],
+      ["👋", "Ver cómo va", "Hola " + n + ", ¿cómo vas? Hace unos días que no entrenas, ¿todo bien? Aquí estoy para ayudarte."],
+      ctx && ctx.hoy ? ["📅", "Recordar la rutina de hoy", n + ", hoy te toca " + ctx.hoy + ". ¡Tú puedes! Avísame cómo te fue."] : null,
+      ["🥗", "Recordar su comida", n + ", no olvides registrar tus comidas y cómo te sientes en la app, me ayuda mucho a ajustar tu plan."],
+      ["🔥", "Celebrar un logro", "¡Felicidades " + n + "! Superaste tu marca, se nota tu esfuerzo 🔥"],
+      ["📏", "Pedir medidas", n + ", esta semana toca registrar tus medidas y una foto de progreso en la app, ¿me ayudas?"]
+    ].filter(Boolean);
+    UI.hoja("Mensaje para " + n, (tel ? "" : '<p class="ayuda" style="margin:-8px 0 12px;color:var(--ambar)">No tiene teléfono guardado: WhatsApp te pedirá elegir el contacto.</p>') +
+      '<div class="tarjeta sin-relleno"><div class="lista">' + P.map(function (p, i) {
+        return '<button class="item fila-btn msj" data-m="' + i + '"><span class="ico" style="font-size:20px">' + p[0] + '</span><span class="txt"><div class="t1">' + esc(p[1]) + '</div><div class="t2" style="white-space:normal">' + esc(p[2]) + '</div></span><span class="chev">' + ico("whatsapp") + "</span></button>";
+      }).join("") + "</div></div>" +
+      '<div class="campo" style="margin-top:14px"><label>O escribe el tuyo</label><textarea class="entrada" id="mLibre" rows="3" placeholder="Hola ' + esc(n) + ', …"></textarea></div>' +
+      '<button class="btn" id="mEnviar" style="margin-top:10px">' + ico("whatsapp") + "Mandar por WhatsApp</button>", function (h, cerrar) {
+      function abrir(txt) { window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(txt), "_blank"); cerrar(); }
+      UI.$$("[data-m]", h).forEach(function (b) { b.onclick = function () { abrir(P[Number(b.dataset.m)][2]); }; });
+      h.querySelector("#mEnviar").onclick = function () { var t = h.querySelector("#mLibre").value.trim(); if (!t) return UI.aviso("Escribe tu mensaje o elige uno de arriba", true); abrir(t); };
+    });
+  }
 
   /* Semana del alumno tipo calendario: rutina y comida de cada día, y si cumplió */
   async function pintarSemanaCli(c, asig, rutPorId, ses) {
@@ -647,7 +695,7 @@
             var bi = Number(el.dataset.b), acc = btn.dataset.bacc;
             if (acc === "agrega") return elegirEjercicio(function (ej) {
               b.items.push({ id: DB.uuid(), ref: ej.ref, nombre: ej.nombre, img: ej.img || "", video: ej.video || "", series: 3, reps: "10", tiempo: "", descanso: 60, peso: "", intTipo: "", int: "", nota: "", grupo: "" });
-              marcar(); dibujar();
+              marcar(); clearTimeout(window.__tDib); window.__tDib = setTimeout(dibujar, 0);
               setTimeout(function () { var bl = UI.$$(".bloque")[bi]; var ult = bl && UI.$$(".ej", bl).pop(); if (ult) ult.scrollIntoView({ block: "center", behavior: "smooth" }); }, 50);
             });
             if (acc === "quita") {
@@ -770,11 +818,16 @@
     var todos = r[1].map(function (e) { return { ref: "own:" + e.id, nombre: e.nombre, m: e.musculo || "Propio", e: e.equipo || "", img: e.imagen_url || "", video: e.video_url || "", propio: true }; })
       .concat(r[0].map(function (e) { return { ref: "lib:" + e.id, nombre: e.n, en: e.en, m: e.m, e: e.e, img: e.img[0] || "" }; }));
     var musculos = ["Todos", "Propios"].concat(Array.from(new Set(r[0].map(function (e) { return e.m; }))).sort());
-    var filtro = "Todos", q = "";
-    UI.hoja("Agregar ejercicio", '<label class="buscador" style="background:rgba(255,255,255,.08)">' + ico("buscar", ' width="20" height="20"') +
+    var filtro = "Todos", q = "", sel = [];
+    UI.hoja("Agregar ejercicios", '<p class="ayuda" style="margin:-8px 0 10px">Toca todos los que quieras y agrégalos juntos.</p><label class="buscador" style="background:rgba(255,255,255,.08)">' + ico("buscar", ' width="20" height="20"') +
       '<input id="eq" placeholder="Buscar: sentadilla, press, curl…"></label><div class="chips scroll" id="em" style="margin-top:12px">' +
       musculos.map(function (m, i) { return '<button class="chip' + (i ? "" : " on") + '" data-m="' + esc(m) + '">' + esc(m) + "</button>"; }).join("") +
-      '</div><div class="lista" id="el" style="margin:8px -18px 0"></div>', function (h, cerrar) {
+      '</div><div class="lista" id="el" style="margin:8px -18px 0"></div><div class="elegir-barra" id="eBarra" hidden><button class="btn" id="eAgregar"></button></div>', function (h, cerrar) {
+      function barra() {
+        var b = h.querySelector("#eBarra"); b.hidden = !sel.length;
+        h.querySelector("#eAgregar").innerHTML = ico("mas") + "Agregar " + sel.length + (sel.length === 1 ? " ejercicio" : " ejercicios");
+      }
+      h.querySelector("#eAgregar").onclick = function () { var l = sel.slice(); cerrar(); l.forEach(function (i) { alElegir(todos[i]); }); if (l.length > 1) UI.aviso(l.length + " ejercicios agregados"); };
       function lista() {
         var n = UI.normal(q);
         var fs = todos.filter(function (e) {
@@ -783,10 +836,17 @@
           return !n || UI.normal(e.nombre + " " + (e.en || "")).indexOf(n) >= 0;
         }).slice(0, 80);
         h.querySelector("#el").innerHTML = fs.length ? fs.map(function (e, i) {
-          return '<div class="item" data-i="' + todos.indexOf(e) + '"><span class="ico cuadro">' + UI.miniEj(e) + '</span><span class="txt"><div class="t1">' + esc(e.nombre) +
-            '</div><div class="t2">' + esc([e.m, e.e].filter(Boolean).join(" · ")) + '</div></span><span class="chev">' + ico("mas") + "</span></div>";
+          var ix = todos.indexOf(e), k = sel.indexOf(ix);
+          return '<div class="item elegible' + (k >= 0 ? " sel" : "") + '" data-i="' + ix + '"><span class="ico cuadro">' + UI.miniEj(e) + '</span><span class="txt"><div class="t1">' + esc(e.nombre) +
+            '</div><div class="t2">' + esc([e.m, e.e].filter(Boolean).join(" · ")) + '</div></span><span class="marca-sel">' + (k >= 0 ? k + 1 : "") + "</span></div>";
         }).join("") : '<div class="vacio">Nada encontrado. Puedes crear tu propio ejercicio en la pestaña Ejercicios.</div>';
-        UI.$$("[data-i]", h).forEach(function (el) { el.onclick = function () { alElegir(todos[Number(el.dataset.i)]); cerrar(); }; });
+        UI.$$("[data-i]", h).forEach(function (el) {
+          el.onclick = function () {
+            var ix = Number(el.dataset.i), k = sel.indexOf(ix);
+            if (k >= 0) sel.splice(k, 1); else sel.push(ix);
+            lista(); barra();
+          };
+        });
       }
       lista();
       h.querySelector("#eq").oninput = function () { q = this.value; lista(); };
