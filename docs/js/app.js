@@ -131,8 +131,9 @@
     var app = UI.$("#app"), modo = "cliente", crear = false;
     function dibujar() {
       var demo = DB.modo === "demo";
-      app.innerHTML = bandaDemo() + '<section class="entrar"><div class="marca-grande">' + logoMarca() +
-        "<h1>" + esc(C.MARCA || "Pulso") + "</h1><p>Tus rutinas, tu progreso y tu entrenador en una sola app.</p></div>" +
+      app.innerHTML = bandaDemo() + '<section class="entrar"><div class="aurora"><i></i><i></i><i></i></div><div class="marca-grande">' + logoMarca() +
+        "<h1>" + esc(C.MARCA || "Pulso") + "</h1><p>Tus rutinas, tu progreso y tu entrenador en una sola app.</p>" +
+        '<div class="entrar-pills"><span>💪 Rutinas</span><span>🥗 Nutrición</span><span>📈 Progreso</span></div></div>' +
         (demo ?
           '<div class="form"><button class="btn" data-demo="entrenador@demo">' + ico("rutinas") + 'Entrar como entrenador</button>' +
           '<button class="btn vidrio" data-demo="cliente@demo">' + ico("persona") + 'Entrar como cliente</button>' +
