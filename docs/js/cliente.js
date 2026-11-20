@@ -6,9 +6,11 @@
   var V = VIS.cliente;
   var TABS = [
     { id: "hoy", ruta: "", ico: "inicio", txt: "Hoy" },
+    { id: "comida", ruta: "comida", ico: "plato", txt: "Comida" },
     { id: "progreso", ruta: "progreso", ico: "grafica", txt: "Progreso" },
     { id: "perfil", ruta: "perfil", ico: "persona", txt: "Perfil" }
   ];
+  V.__TABS = TABS;
   function A() { return window.APP; }
   function app() { return UI.$("#app"); }
   function cli() { return A().cli; }
@@ -82,6 +84,7 @@
         '</span><div><h3>Tu semana en números 📊</h3><p>' + semana + (semana === 1 ? " entrenamiento" : " entrenamientos") + (volS ? " · " + Math.round(volS).toLocaleString("es-MX") + " kg levantados" : "") +
         ". Toca para ver tu resumen completo.</p></div></div></a>";
     }
+    html += '<div id="alimHoy"></div>';
     html += '<div class="titulo-sec"><h2>Mis rutinas</h2></div><div class="tarjeta sin-relleno"><div class="lista">' + (d.asig.length ? d.asig.map(function (a) {
       return '<a class="item" href="#/entrenar/' + a.id + '"><span class="ico cuadro">' + ico("rutinas") + '</span><span class="txt"><div class="t1">' + esc(a.rutina.nombre) +
         '</div><div class="t2">' + esc(UI.diasTxt(a.dias)) + " · " + contar(a.rutina) + ' ejercicios</div></span><span class="chev">' + ico("der") + "</span></a>";
@@ -90,6 +93,7 @@
       (d.ses.length ? d.ses.slice(0, 5).map(filaSesion).join("") : '<div class="vacio">Aquí verás tus entrenamientos terminados.</div>') + "</div></div></div>";
     app().innerHTML = html;
     UI.cargarFotos(app());
+    if (V.tarjetaAlimHoy) V.tarjetaAlimHoy(UI.$("#alimHoy"));
     enlazarSesiones(d.ses);
     ["#semana", "#semana2"].forEach(function (s) { UI.$(s).onclick = function () { hojaSemana(d.asig); }; });
   };
@@ -280,6 +284,7 @@
     app().innerHTML = A().bandaDemo() + '<section class="hero">' + cabecera() + '<div class="saldo"><div class="etq">Peso total levantado</div><div class="cifra">' +
       Math.round(vol).toLocaleString("es-MX") + '<small> kg</small></div><div class="sub">' + ico("fuego") + ses.length + " entrenamientos · " + delMes + " este mes</div></div></section>" +
       '<div class="contenido"><div class="titulo-sec"><h2>Mi resumen</h2></div><div class="tarjeta" id="resumenYo"></div>' +
+      '<div class="titulo-sec"><h2>Mi alimentación</h2><a href="#/comida">Ver hoy</a></div><div class="tarjeta" id="alimYo"></div>' +
       '<div class="titulo-sec"><h2>Fuerza</h2></div><div class="tarjeta">' +
       (ejs.length ? '<div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
         '</div><div id="graf" style="margin-top:12px"></div>' : '<div class="vacio" style="padding:10px">Registra tus pesos al entrenar y aquí verás cómo subes.</div>') + "</div>" +
@@ -289,6 +294,7 @@
     VIS.entrenador.pintarFotos(med);
     UI.cargarFotos(app());
     UI.montarResumen(UI.$("#resumenYo"), { ses: ses, med: med, asig: asigC });
+    if (V.cargarResumenAlim) V.cargarResumenAlim(UI.$("#alimYo"), c.id);
     function graf(ref) { UI.$("#graf").innerHTML = UI.grafica(UI.serieFuerza(ses, ref), "kg"); }
     if (ejs.length) {
       graf(ejs[0].ref);

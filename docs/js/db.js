@@ -93,7 +93,7 @@
   var LLAVE = "pulso_demo_v1";
   var ENT = "00000000-0000-4000-8000-000000000001";
   var USR_CLI = "00000000-0000-4000-8000-000000000002";
-  var TABLAS = ["entrenadores", "clientes", "ejercicios", "rutinas", "asignaciones", "sesiones", "medidas"];
+  var TABLAS = ["entrenadores", "clientes", "ejercicios", "rutinas", "asignaciones", "sesiones", "medidas", "planes_alim", "asig_alim", "registro_alim"];
 
   function semilla() {
     var t = {}; TABLAS.forEach(function (k) { t[k] = []; });
@@ -146,6 +146,7 @@
     var est;
     try { est = JSON.parse(localStorage.getItem(LLAVE)); } catch (e) { est = null; }
     if (!est || !est.tablas) est = semilla();
+    TABLAS.forEach(function (t) { if (!est.tablas[t]) est.tablas[t] = []; });
     function guardar() { try { localStorage.setItem(LLAVE, JSON.stringify(est)); } catch (e) { /* sin espacio: seguimos en memoria */ } }
     guardar();
     function coincide(f, filtro) {
@@ -191,7 +192,8 @@
         var n = Object.assign({ id: uuid(), creado: ahora }, fila);
         var uid = est.usuario && est.usuario.id;
         if (tabla === "entrenadores") n.id = fila.id || uid;
-        if (["clientes", "ejercicios", "rutinas", "asignaciones"].indexOf(tabla) >= 0 && !n.entrenador_id) n.entrenador_id = uid;
+        if (["clientes", "ejercicios", "rutinas", "asignaciones", "planes_alim", "asig_alim"].indexOf(tabla) >= 0 && !n.entrenador_id) n.entrenador_id = uid;
+        if (tabla === "planes_alim") n.actualizado = ahora;
         if (tabla === "clientes") { if (!n.codigo) n.codigo = Math.random().toString(16).slice(2, 14); if (n.activo === undefined) n.activo = true; if (n.user_id === undefined) n.user_id = null; }
         if (tabla === "rutinas") { n.actualizado = ahora; if (!n.bloques) n.bloques = []; }
         if (tabla === "sesiones" && !n.fecha) n.fecha = hoyISO();

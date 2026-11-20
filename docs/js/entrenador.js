@@ -7,9 +7,10 @@
     { id: "inicio", ruta: "", ico: "inicio", txt: "Inicio" },
     { id: "clientes", ruta: "clientes", ico: "clientes", txt: "Clientes" },
     { id: "rutinas", ruta: "rutinas", ico: "rutinas", txt: "Rutinas" },
-    { id: "biblioteca", ruta: "biblioteca", ico: "biblio", txt: "Ejercicios" },
-    { id: "ajustes", ruta: "ajustes", ico: "ajustes", txt: "Ajustes" }
+    { id: "dietas", ruta: "dietas", ico: "plato", txt: "Dietas" },
+    { id: "biblioteca", ruta: "biblioteca", ico: "biblio", txt: "Ejercicios" }
   ];
+  V.__TABS = function () { return TABS; };
   function A() { return window.APP; }
   function iaActiva() { return DB.modo === "supabase" && !!(window.PULSO_CONFIG || {}).IA_ACTIVA; }
   function app() { return UI.$("#app"); }
@@ -250,6 +251,7 @@
       '</span><div><h3>¿Cómo va ' + esc(c.nombre.split(" ")[0]) + '?</h3><p>La IA lee sus sesiones, comentarios y medidas y te da un resumen con sugerencias.</p></div></div>' +
       '<button class="btn vidrio" style="margin-top:14px" id="pedirResumen">' + ico("chispa") + "Resumen con IA</button></div>";
     html += '<div class="titulo-sec"><h2>Resumen de progreso</h2></div><div class="tarjeta" id="resumenCli"></div>';
+    html += '<div class="titulo-sec"><h2>Alimentación</h2></div><div class="tarjeta" id="alimCli">' + UI.cargando().replace("cargando", "cargando chico") + "</div>";
     html += '<div class="titulo-sec"><h2>Progreso de fuerza</h2></div><div class="tarjeta">';
     if (ejs.length) {
       html += '<div class="chips scroll" id="chipsEj">' + ejs.map(function (e, i) { return '<button class="chip' + (i ? "" : " on") + '" data-ref="' + esc(e.ref) + '">' + esc(e.nombre) + "</button>"; }).join("") +
@@ -275,6 +277,7 @@
     }
     UI.cargarFotos(app());
     UI.montarResumen(UI.$("#resumenCli"), { ses: ses, med: med, asig: asig });
+    if (V.fichaAlim) V.fichaAlim(UI.$("#alimCli"), c);
     UI.$("#fotoCli").onchange = async function () {
       var f = this.files[0]; if (!f) return;
       try {

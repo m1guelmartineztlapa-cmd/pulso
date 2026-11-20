@@ -1,0 +1,94 @@
+[
+  {
+    "id": "antiinflamatorio-7",
+    "nombre": "7 días antiinflamatorio",
+    "descripcion": "Plan de comida real, sin azúcares añadidos, rico en vegetales, fibra, especias y grasas saludables. Desayuno, almuerzo, cena, snack y bebida cada día.",
+    "indicadores": ["Energía", "Digestión", "Hinchazón", "Glucosa", "Hidratación", "Descanso"],
+    "dias": [
+      {
+        "nombre": "Día 1 · Arranque suave",
+        "consejo": "Haz la cena ligera para descansar mejor.",
+        "checklist": ["Vegetales", "Proteína", "Especias", "Grasas saludables", "Hidratación"],
+        "comidas": [
+          {"tiempo": "desayuno", "nombre": "Pudín de chía y coco con moras", "ingredientes": ["3 cdas de chía", "180 ml de leche de coco ligera", "1/2 taza de moras", "1/2 cdta de canela", "1 cda de semillas de calabaza"], "preparacion": "Mezcla la chía con la leche de coco y la canela. Déjalo en el refri al menos 4 horas (o toda la noche). Sirve con las moras y las semillas.", "sustitucion": "Fresas o arándanos en lugar de moras.", "clave": "Omega-3 + antioxidantes"},
+          {"tiempo": "almuerzo", "nombre": "Bowl de quinoa con pollo al limón", "ingredientes": ["100–120 g de pechuga de pollo", "3/4 taza de quinoa cocida", "1 taza de espinaca baby", "1/2 pepino en rodajas", "1 cda de aceite de oliva", "Jugo de 1/2 limón", "1/2 cdta de cúrcuma", "Orégano, sal y pimienta"], "preparacion": "Sazona el pollo con cúrcuma, sal y pimienta y cocínalo a la plancha. Arma el bowl con quinoa, espinaca y pepino, pon el pollo encima y termina con aceite de oliva, limón y orégano.", "sustitucion": "Arroz integral en lugar de quinoa.", "clave": "Quinoa + cúrcuma + hojas verdes"},
+          {"tiempo": "cena", "nombre": "Crema de calabaza y jengibre", "ingredientes": ["2 tazas de calabaza asada en cubos", "1 1/2 tazas de caldo de verduras", "1 cdta de jengibre fresco rallado", "2 cdas de leche de coco ligera", "1 cda de semillas de girasol", "Sal y pimienta"], "preparacion": "Licúa la calabaza con el caldo, el jengibre y la leche de coco hasta que quede cremoso. Calienta sin que hierva y sirve con semillas de girasol y pimienta.", "sustitucion": "Camote o zanahoria en lugar de calabaza.", "clave": "Jengibre + carotenoides"},
+          {"tiempo": "snack", "nombre": "Zanahoria con crema de aguacate y limón", "ingredientes": ["1 zanahoria grande en bastones", "1/2 aguacate", "Jugo de 1/2 limón", "Pizca de sal"], "preparacion": "Machaca el aguacate con el limón y la sal hasta hacer una crema. Acompáñala con los bastones de zanahoria.", "sustitucion": "Pepino o jícama en lugar de zanahoria."},
+          {"tiempo": "bebida", "nombre": "Té tibio de jengibre y limón", "ingredientes": ["250 ml de agua caliente", "4 rodajas de jengibre", "Cáscara de limón"], "preparacion": "Deja el jengibre y la cáscara de limón en el agua caliente 5 a 8 minutos. Cuela y toma tibio."}
+        ]
+      },
+      {
+        "nombre": "Día 2 · Crucíferas y omega-3",
+        "consejo": "Si preparas el almuerzo desde antes, guarda el aderezo aparte.",
+        "checklist": ["Crucíferas", "Proteína", "Polifenoles", "Grasas saludables", "Hidratación"],
+        "comidas": [
+          {"tiempo": "desayuno", "nombre": "Huevos pochados sobre camote asado", "ingredientes": ["2 huevos", "4 rodajas de camote asado", "1/4 de aguacate en láminas", "Germinados o cilantro", "1 cdta de aceite de oliva", "Sal y pimienta"], "preparacion": "Cocina los huevos pochados. Ponlos sobre las rodajas de camote y termina con aguacate, germinados y un hilo de aceite de oliva.", "sustitucion": "Huevo a la plancha si quieres algo más rápido.", "clave": "Colina + carotenoides"},
+          {"tiempo": "almuerzo", "nombre": "Ensalada tibia de salmón, brócoli y col morada", "ingredientes": ["120 g de salmón o trucha", "1 taza de brócoli al vapor", "1/2 taza de col morada en tiras", "Hojas verdes", "1 cda de tahini", "Jugo de 1/2 limón", "Sal y pimienta"], "preparacion": "Hornea el salmón con hierbas. Haz una base de hojas verdes con el brócoli y la col. Mezcla el tahini con limón y un chorrito de agua para el aderezo. Pon el salmón encima y baña con el aderezo.", "sustitucion": "Sardinas o pollo si no tienes salmón.", "clave": "Omega-3 + crucíferas"},
+          {"tiempo": "cena", "nombre": "Salteado rápido de pollo y verduras", "ingredientes": ["100 g de pechuga de pollo en tiras", "1 taza de champiñones", "1/2 calabacita en medias lunas", "1/4 de cebolla morada", "1 diente de ajo picado", "1 cdta de aceite de oliva", "Brócoli", "Sal y pimienta"], "preparacion": "Dora el ajo en el aceite, agrega el pollo y después las verduras. Cocina a fuego alto hasta que estén suaves pero firmes.", "sustitucion": "Tofu firme en lugar de pollo.", "clave": "Ajo + cebolla + vegetales variados"},
+          {"tiempo": "snack", "nombre": "Nueces con chocolate oscuro", "ingredientes": ["1 puñito de nueces", "1 cuadrito de chocolate oscuro 85%"], "preparacion": "Listo para comer. Disfrútalo despacio."},
+          {"tiempo": "bebida", "nombre": "Té verde frío con menta", "ingredientes": ["250 ml de té verde frío", "Hojas de menta", "Hielo"], "preparacion": "Prepara el té, déjalo enfriar y sírvelo con menta y hielo."}
+        ]
+      },
+      {
+        "nombre": "Día 3 · Fibra y microbiota",
+        "consejo": "El tónico de vinagre ayuda a algunas personas con la digestión: ajústalo a cómo te sientas.",
+        "checklist": ["Vegetales", "Proteína", "Fibra", "Grasas saludables", "Hidratación"],
+        "comidas": [
+          {"tiempo": "desayuno", "nombre": "Avena con linaza y frutos rojos", "ingredientes": ["1/2 taza de avena en hojuelas", "1 taza de agua o bebida vegetal sin azúcar", "1 cda de linaza molida", "1/3 taza de arándanos o fresas", "Canela y nuez moscada al gusto"], "preparacion": "Cocina la avena en el agua o bebida vegetal 5 a 7 minutos moviendo. Agrega linaza y canela, cocina 1 minuto más y sirve con los frutos rojos encima.", "sustitucion": "Chía hidratada si prefieres no comer avena.", "clave": "Fibra soluble"},
+          {"tiempo": "almuerzo", "nombre": "Bowl caribeño de arroz, frijol y pollo", "ingredientes": ["3/4 taza de arroz integral cocido y frío", "1/2 taza de frijoles negros", "120 g de pechuga deshebrada", "1/2 tomate en cubos", "1/4 de aguacate", "Hojas verdes y limón"], "preparacion": "Pon en un bowl el arroz y los frijoles, agrega el pollo, el tomate y el aguacate. Termina con hojas verdes y limón.", "sustitucion": "Quinoa en lugar de arroz o pavo en lugar de pollo.", "clave": "Fibra + almidón resistente"},
+          {"tiempo": "cena", "nombre": "Pescado blanco en papillote con romero", "ingredientes": ["1 filete de tilapia o pescado blanco (140 g)", "6 espárragos o 1/2 taza de ejotes", "2 rodajas de limón", "1 cdta de aceite de oliva", "1 diente de ajo picado", "Romero, sal y pimienta"], "preparacion": "Precalienta el horno a 190 °C. Pon el pescado sobre papel para hornear con las verduras, limón, ajo, aceite y romero. Cierra el paquete y hornea 15 a 18 minutos.", "sustitucion": "Merluza o pechuga de pollo.", "clave": "Proteína magra + hierbas"},
+          {"tiempo": "snack", "nombre": "Yogur con canela y manzana verde", "ingredientes": ["1/2 taza de yogur griego natural", "1/2 manzana verde en rodajas", "Canela al gusto"], "preparacion": "Sirve el yogur, pon la manzana encima y espolvorea canela."},
+          {"tiempo": "bebida", "nombre": "Agua tibia con vinagre de manzana", "ingredientes": ["1 vaso de agua tibia", "1 cdta de vinagre de manzana", "Unas gotas de limón (opcional)"], "preparacion": "Mezcla todo y tómalo antes del almuerzo si te cae bien."}
+        ]
+      },
+      {
+        "nombre": "Día 4 · Variedad vegetal y especias",
+        "consejo": "Usa cúrcuma, jengibre, orégano o canela para dar sabor sin azúcar ni salsas pesadas.",
+        "checklist": ["Vegetales", "Proteína", "Fibra", "Especias", "Hidratación"],
+        "comidas": [
+          {"tiempo": "desayuno", "nombre": "Licuado verde", "ingredientes": ["1 taza de espinaca", "1/2 pepino", "1/3 taza de piña", "1 cdta de jengibre rallado", "200 ml de agua de coco", "1 cda de chía"], "preparacion": "Licúa todo hasta que quede uniforme. Sirve frío y deja reposar 2 minutos para que la chía se hidrate.", "sustitucion": "Manzana verde o pera en lugar de piña.", "clave": "Jengibre + chía"},
+          {"tiempo": "almuerzo", "nombre": "Guisado ligero de lentejas al curry", "ingredientes": ["3/4 taza de lentejas cocidas", "1/4 de cebolla", "1/2 zanahoria en cubos", "1/2 tomate picado", "1/2 cdta de curry suave", "Pizca de comino", "1 cdta de aceite de oliva", "Arúgula al lado"], "preparacion": "Sofríe la cebolla en el aceite. Agrega zanahoria, tomate, curry y comino y cocina 5 minutos. Añade las lentejas con un poco de agua, cocina 5 a 7 minutos más y sirve con arúgula.", "sustitucion": "Garbanzos cocidos si no tienes lentejas.", "clave": "Legumbres + especias"},
+          {"tiempo": "cena", "nombre": "Tortilla abierta de espinaca y cebolla", "ingredientes": ["2 huevos", "1 taza de espinaca", "1/4 de cebolla en tiras", "1 cdta de aceite de oliva", "Ensalada verde al lado"], "preparacion": "Bate los huevos con sal. Acitrona la cebolla, agrega la espinaca 2 minutos y vierte los huevos. Cocina a fuego medio hasta que cuaje y sirve con ensalada.", "sustitucion": "Tofu firme revuelto en lugar de huevo.", "clave": "Proteína + hojas verdes"},
+          {"tiempo": "snack", "nombre": "Pepino con limón y ajonjolí", "ingredientes": ["1/2 pepino en rodajas", "Jugo de 1/2 limón", "Pizca de sal", "1 cdta de ajonjolí tostado"], "preparacion": "Pon el pepino en un plato, agrega limón y sal y espolvorea el ajonjolí."},
+          {"tiempo": "bebida", "nombre": "Agua de jamaica con canela", "ingredientes": ["500 ml de infusión fría de jamaica", "1 raja de canela", "Hielo (opcional)"], "preparacion": "Deja la canela en la infusión al menos 2 horas en el refri. Sirve fría, sin azúcar."}
+        ]
+      },
+      {
+        "nombre": "Día 5 · Color y circulación",
+        "consejo": "Disfruta las colaciones con calma y en porción moderada.",
+        "checklist": ["Vegetales", "Proteína", "Fruta", "Grasas saludables", "Hidratación"],
+        "comidas": [
+          {"tiempo": "desayuno", "nombre": "Arepa con huevo, tomate y cúrcuma", "ingredientes": ["1 arepa delgada de maíz", "2 huevos", "2 cdas de tomate picado", "Pizca de cúrcuma", "1 cdta de aceite de oliva", "1/4 de aguacate"], "preparacion": "Dora la arepa en un sartén. Haz los huevos revueltos con tomate y cúrcuma y rellena la arepa. Sirve con aguacate.", "sustitucion": "Tortilla de maíz o pan integral.", "clave": "Cúrcuma + aguacate"},
+          {"tiempo": "almuerzo", "nombre": "Ensalada tibia de quinoa, betabel y pollo", "ingredientes": ["3/4 taza de quinoa cocida", "1/2 taza de betabel cocido en cubos", "120 g de pollo a la plancha", "Arúgula", "1 cda de nuez picada", "Aderezo de mostaza"], "preparacion": "Mezcla la quinoa tibia con el betabel, agrega el pollo en tiras y la arúgula. Termina con nuez y aderezo de mostaza.", "sustitucion": "Pavo o garbanzos en lugar de pollo.", "clave": "Betabel + hojas verdes"},
+          {"tiempo": "cena", "nombre": "Sopa de verduras con pollo", "ingredientes": ["1 taza de caldo", "1/4 taza de calabacita", "1/4 taza de zanahoria", "1/4 taza de apio", "1/4 taza de poro", "80 g de pechuga cocida en cubos"], "preparacion": "Calienta el caldo, agrega las verduras picadas y cocina 10 a 12 minutos. Añade el pollo, cocina 2 minutos más y sirve caliente.", "clave": "Verduras suaves + caldo"},
+          {"tiempo": "snack", "nombre": "Mandarina con almendras", "ingredientes": ["1 mandarina", "10 almendras sin sal"], "preparacion": "Listo para comer."},
+          {"tiempo": "bebida", "nombre": "Rooibos frío con naranja", "ingredientes": ["300–400 ml de rooibos frío", "2 rodajas de naranja", "Hielo (opcional)"], "preparacion": "Prepara el rooibos, déjalo enfriar y sírvelo con naranja."}
+        ]
+      },
+      {
+        "nombre": "Día 6 · Protección celular",
+        "consejo": "Pequeñas elecciones diarias, grandes cambios a largo plazo.",
+        "checklist": ["Vegetales", "Proteína", "Especias", "Grasas saludables", "Hidratación"],
+        "comidas": [
+          {"tiempo": "desayuno", "nombre": "Yogur de coco o kéfir con papaya", "ingredientes": ["3/4 taza de yogur de coco sin azúcar o kéfir", "1/2 taza de papaya en cubos", "1 cda de semillas de calabaza", "Pizca de canela"], "preparacion": "Sirve el yogur o kéfir, agrega la papaya y las semillas y espolvorea canela.", "sustitucion": "Yogur griego natural.", "clave": "Papaya + fermentados"},
+          {"tiempo": "almuerzo", "nombre": "Carne magra estilo mediterráneo con puré de calabaza", "ingredientes": ["120 g de pavo o carne magra molida", "1/2 taza de calabacita en cubos", "Ajo y orégano", "3/4 taza de puré de calabaza", "Ensalada verde"], "preparacion": "Cocina la carne con ajo y orégano, agrega la calabacita y saltea hasta que esté suave. Sirve con el puré de calabaza y una ensalada.", "sustitucion": "Pollo molido.", "clave": "Proteína + hierbas"},
+          {"tiempo": "cena", "nombre": "Atún sellado con ejotes y jitomate cherry", "ingredientes": ["140 g de atún fresco", "1 taza de ejotes al dente", "1/2 taza de jitomate cherry", "1 cdta de aceite de oliva", "Pimienta y limón"], "preparacion": "Sella el atún 1 a 2 minutos por lado en el aceite. Saltea ligeramente los ejotes y los jitomates y sirve con pimienta y limón.", "sustitucion": "Salmón o pollo.", "clave": "Omega-3 + vegetales"},
+          {"tiempo": "snack", "nombre": "Garbanzos crujientes al horno", "ingredientes": ["1/2 taza de garbanzos cocidos y secos", "1 cdta de aceite de oliva", "Pimentón y sal"], "preparacion": "Mezcla los garbanzos con aceite, pimentón y sal. Hornea a 200 °C de 20 a 25 minutos, moviendo a la mitad."},
+          {"tiempo": "bebida", "nombre": "Leche dorada ligera", "ingredientes": ["1 taza de bebida de almendra sin azúcar", "1/4 cdta de cúrcuma", "Canela y pimienta"], "preparacion": "Calienta la bebida de almendra, agrega cúrcuma, canela y pimienta y mezcla bien. Toma tibia."}
+        ]
+      },
+      {
+        "nombre": "Día 7 · Cierre y consolidación",
+        "consejo": "Repite las comidas que más te gustaron de la semana: así se vuelve hábito.",
+        "checklist": ["Vegetales", "Proteína", "Fruta", "Hidratación", "Descanso"],
+        "comidas": [
+          {"tiempo": "desayuno", "nombre": "Hot cakes de avena con frutos rojos", "ingredientes": ["1 huevo", "3 cdas de harina de avena", "1/2 cdta de canela", "1/3 taza de frutos rojos calientes"], "preparacion": "Bate el huevo con la avena y la canela. Cocina en sartén antiadherente por ambos lados y sirve con los frutos rojos encima.", "sustitucion": "Mezcla de chía y huevo.", "clave": "Avena + frutos rojos"},
+          {"tiempo": "almuerzo", "nombre": "Trucha o salmón al ajillo con ensalada", "ingredientes": ["140 g de trucha o salmón", "Hojas verdes", "1/4 de aguacate", "Pepino", "Vinagreta de hierbas"], "preparacion": "Cocina el pescado a la plancha con ajo picado hasta que dore. Arma la ensalada con hojas, pepino y aguacate y sirve con la vinagreta.", "sustitucion": "Pollo a la plancha o tofu.", "clave": "Pescado + grasas saludables"},
+          {"tiempo": "cena", "nombre": "Huevos con espinaca y crema de calabacita", "ingredientes": ["2 huevos", "1 taza de espinaca salteada con ajo", "1 taza de crema de calabacita"], "preparacion": "Saltea la espinaca con ajo. Cocina los huevos a la plancha y sírvelos sobre la crema de calabacita con la espinaca al lado.", "clave": "Cena ligera"},
+          {"tiempo": "snack", "nombre": "Manzana verde con canela", "ingredientes": ["1/2 a 1 manzana verde en láminas", "Canela"], "preparacion": "Corta la manzana y espolvorea canela al momento."},
+          {"tiempo": "bebida", "nombre": "Té digestivo de manzanilla, menta y anís", "ingredientes": ["1 taza de agua", "Manzanilla", "Hojas de menta", "1 anís estrella"], "preparacion": "Hierve el agua, agrega las hierbas y deja reposar 8 a 10 minutos. Cuela y toma tibio."}
+        ]
+      }
+    ]
+  }
+]

@@ -301,3 +301,37 @@ select.entrada{appearance:none;-webkit-appearance:none}
 .res-rec{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--linea);font-size:14px}
 .res-rec span:first-child{flex:1;min-width:0;color:var(--suave)}
 .res-rec b{white-space:nowrap}
+
+/* Alimentación */
+.cargando.chico{min-height:80px}
+.sentir{display:flex;flex-direction:column;gap:10px}
+.sentir-fila{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--linea)}
+.sentir-nom{font-weight:600;min-width:96px}
+.sentir-nom small{display:block;color:var(--suave);font-weight:500;font-size:12.5px}
+.sentir-caras{display:flex;gap:4px}
+.sentir-caras button{width:42px;height:42px;border-radius:12px;border:1px solid var(--linea);background:rgba(255,255,255,.04);font-size:22px;cursor:pointer;filter:grayscale(1);opacity:.55;transition:transform .1s}
+.sentir-caras button.on{filter:none;opacity:1;background:color-mix(in srgb,var(--brand) 30%,transparent);border-color:var(--brand-2);transform:scale(1.08)}
+.sentir-tarjeta{width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit}
+.comida{padding:12px}
+.comida-cab{display:flex;align-items:center;gap:12px;cursor:pointer}
+.comida-img{flex:none;width:58px;height:58px;border-radius:14px;overflow:hidden;background:var(--card-2);display:grid;place-items:center}
+.comida-img img{width:100%;height:100%;object-fit:cover}
+.comida-cab .txt{flex:1;min-width:0}
+.comida-cab .t1{font-weight:700;font-size:16px}
+.comida-cab .t2{color:var(--suave);font-size:13px;margin-top:2px}
+.comida-cab .lbl{padding:0;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em}
+.comida-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.comida-btns button{height:38px;border-radius:12px;border:1px solid var(--linea);background:rgba(255,255,255,.05);color:var(--suave);font-weight:600;font-size:13.5px;cursor:pointer}
+.comida-btns button.on.ok{background:rgba(52,211,153,.18);border-color:var(--ok);color:var(--ok)}
+.comida-btns button.on.amb{background:rgba(251,191,36,.16);border-color:var(--ambar);color:var(--ambar)}
+.comida-btns button.on.mal{background:rgba(255,107,107,.14);border-color:var(--malo);color:var(--malo)}
+.checklist{display:flex;flex-direction:column;gap:2px}
+.chk{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--linea);cursor:pointer}
+.chk:last-child{border-bottom:0}
+.chk input{width:22px;height:22px;accent-color:var(--ok);flex:none}
+.receta-lista{margin:6px 0 0;padding-left:20px;line-height:1.7;color:#fff}
+.receta-txt{margin:6px 0 0;line-height:1.55;color:#fff}
+.ind-lista{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.ind{display:flex;align-items:center;gap:10px;font-size:14px}
+.ind span{width:96px;flex:none;color:var(--suave)}
+.ind b{width:58px;text-align:right;flex:none;font-size:13px}

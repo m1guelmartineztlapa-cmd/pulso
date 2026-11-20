@@ -30,6 +30,7 @@
     izq: '<path d="m15 5-7 7 7 7"/>',
     play: '<path d="M7 4.5v15l13-7.5z"/>',
     recargar: '<path d="M20 11a8 8 0 0 0-14.6-4.5L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.6 4.5L20 16"/><path d="M20 20.5V16h-4.5"/>',
+    plato: '<circle cx="13" cy="12" r="7"/><circle cx="13" cy="12" r="3.5"/><path d="M3 3.5v5.5a1.5 1.5 0 0 0 3 0V3.5M4.5 10.5V20.5"/>',
     reloj: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
     camara: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
     estrella: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="currentColor"/>',
