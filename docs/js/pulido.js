@@ -224,43 +224,11 @@
     UI.aviso = function (msg, error) { if (!error && /guardad|copiad/i.test(String(msg))) { var b = barraGuardar(); if (b) b.classList.remove("sucio"); } return avisoOrig.apply(this, arguments); };
   }
 
-  /* ── 10. Deslizar una fila de cliente a la izquierda para ver acciones (como Mail del iPhone) ── */
-  var sw = null, swAbierta = null, ANCHO = 150;
-  function cerrarSwipe(f) { if (!f) return; f.querySelector(".cli-fila").style.transform = ""; f.classList.remove("abierta"); if (swAbierta === f) swAbierta = null; }
-  document.addEventListener("touchstart", function (e) {
-    var f = e.target.closest && e.target.closest(".swipe-fila");
-    if (swAbierta && swAbierta !== f) cerrarSwipe(swAbierta);
-    if (!f || e.target.closest(".swipe-acc")) { sw = null; return; }
-    sw = { f: f, row: f.querySelector(".cli-fila"), x: e.touches[0].clientX, y: e.touches[0].clientY, dx: 0, base: f.classList.contains("abierta") ? -ANCHO : 0, horiz: null };
-  }, { passive: true });
-  document.addEventListener("touchmove", function (e) {
-    if (!sw) return;
-    var dx = e.touches[0].clientX - sw.x, dy = e.touches[0].clientY - sw.y;
-    if (sw.horiz == null) { if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return; sw.horiz = Math.abs(dx) > Math.abs(dy); }
-    if (!sw.horiz) { sw = null; return; }
-    sw.dx = dx; var x = Math.max(-ANCHO - 30, Math.min(0, sw.base + dx));
-    sw.row.style.transition = "none"; sw.row.style.transform = "translateX(" + x + "px)";
-    if (e.cancelable) e.preventDefault();
-  }, { passive: false });
-  document.addEventListener("touchend", function () {
-    if (!sw) return; var s = sw; sw = null;
-    if (!s.horiz) return;
-    s.row.style.transition = "transform .3s cubic-bezier(.2,.9,.3,1)";
-    var fin = s.base + s.dx;
-    if (fin < -ANCHO / 2) { s.row.style.transform = "translateX(" + -ANCHO + "px)"; s.f.classList.add("abierta"); swAbierta = s.f; }
-    else cerrarSwipe(s.f);
-    s.row.dataset.recienDeslizada = "1"; setTimeout(function () { delete s.row.dataset.recienDeslizada; }, 350);
-  });
-  document.addEventListener("click", function (e) {
-    var row = e.target.closest && e.target.closest(".cli-fila");
-    if (row && (row.dataset.recienDeslizada || row.parentNode.classList.contains("abierta"))) { e.preventDefault(); e.stopPropagation(); if (!row.dataset.recienDeslizada) cerrarSwipe(row.parentNode); }
-  }, true);
-
   /* ── 11. Dejar presionado un alumno: menú rápido (como en el iPhone) ── */
   var lp = null, suprimirClick = false;
   function menuContexto(row) {
-    var f = row.closest(".swipe-fila"), id = (row.getAttribute("href") || "").split("/").pop();
-    var wa = f && f.querySelector("a.sw-wa"), nombre = (row.querySelector(".t1") || {}).textContent || "";
+    var id = (row.getAttribute("href") || "").split("/").pop(), tel = row.dataset.tel || "";
+    var wa = tel ? { href: "https://wa.me/" + tel } : null, nombre = (row.querySelector(".t1") || {}).textContent || "";
     if (navigator.vibrate) navigator.vibrate(12);
     var o = document.createElement("div"); o.className = "ctx";
     var prev = row.cloneNode(true); prev.removeAttribute("href"); prev.style.transform = "";

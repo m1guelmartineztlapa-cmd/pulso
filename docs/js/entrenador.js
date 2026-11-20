@@ -59,15 +59,28 @@
     var html = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag">' + avatarEnt() + '<div class="cab-txt"><small>' + DL[hoyD.getDay()] + " " + hoyD.getDate() + " " + MS[hoyD.getMonth()] +
       "</small><h1>Hola, " + esc(nombre) + '</h1></div><button class="btn-redondo" id="crear" aria-label="Crear">' + ico("mas") + "</button></div></section><div class=\"contenido\">";
 
-    // Tarjeta principal: la semana del negocio
-    var porDia = [0, 0, 0, 0, 0, 0, 0]; semana.forEach(function (s) { porDia[(new Date(s.fecha + "T12:00:00").getDay() + 6) % 7]++; });
-    var maxD = Math.max.apply(null, [1].concat(porDia)), hoyIdx = (hoyD.getDay() + 6) % 7, Lt = ["L", "M", "M", "J", "V", "S", "D"];
+    // Tarjeta principal "Esta semana": entrenamientos programados contra hechos, día por día
+    var hoyIdx = (hoyD.getDay() + 6) % 7, Lt = ["L", "M", "M", "J", "V", "S", "D"], DLc = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+    var prog = [0, 0, 0, 0, 0, 0, 0], hech = [0, 0, 0, 0, 0, 0, 0], lunD = new Date(lun + "T12:00:00");
+    var asigAct = d.asig.filter(function (a) { var c = porIdCli[a.cliente_id]; return a.activa && c && c.activo; });
+    asigAct.forEach(function (a) { (a.dias || []).forEach(function (dw) { prog[(dw + 6) % 7]++; }); });
+    for (var di = 0; di < 7; di++) {
+      var fD = new Date(lunD); fD.setDate(fD.getDate() + di); var isoD = DB.hoyISO(fD);
+      hech[di] = d.ses.filter(function (s) { return s.fecha === isoD && porIdCli[s.cliente_id] && porIdCli[s.cliente_id].activo; }).length;
+    }
+    var hastaHoy = prog.slice(0, hoyIdx + 1).reduce(function (t, n) { return t + n; }, 0), hechosHastaHoy = hech.slice(0, hoyIdx + 1).reduce(function (t, n) { return t + n; }, 0);
+    var conRutina = activos.filter(function (c) { return asigAct.some(function (a) { return a.cliente_id === c.id; }); });
+    var entrenaron = conRutina.filter(function (c) { return semana.some(function (s) { return s.cliente_id === c.id; }); }).length;
     var cc = 2 * Math.PI * 34, pct = cumple || 0;
     html += '<div class="tarjeta semana-card"><div class="sc-top"><div class="sc-anillo"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="8"/>' +
       '<circle cx="40" cy="40" r="34" fill="none" stroke="var(--sec)" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + cc.toFixed(1) + '" stroke-dashoffset="' + (cc * (1 - pct / 100)).toFixed(1) + '"/></svg><b>' + (cumple == null ? "–" : cumple + "%") + "</b></div>" +
-      '<div style="flex:1;min-width:0"><div class="lbl">Cumplimiento de la semana</div><h2>' + semana.length + (metaSem ? " de " + metaSem : "") + " entrenos</h2><p>" + activos.length + (activos.length === 1 ? " cliente activo" : " clientes activos") + "</p></div></div>" +
-      '<div class="sc-barras">' + porDia.map(function (n, i) {
-        return '<div class="' + (i === hoyIdx ? "hoy" : i > hoyIdx ? "fut" : "") + '"><span><i style="height:' + (n ? Math.max(10, Math.round(n / maxD * 100)) : 0) + '%"></i></span><small>' + Lt[i] + "</small>" + (n ? "<em>" + n + "</em>" : "") + "</div>";
+      '<div style="flex:1;min-width:0"><div class="lbl">Esta semana</div><h2>' + (metaSem ? semana.length + " de " + metaSem : semana.length) + ' entrenos</h2><p>' + (metaSem ? "hechos de los que programaste" : "asigna rutinas con días para medir el avance") + "</p>" + '</div></div>' +
+      '<div class="sc-stats"><div><b>' + entrenaron + "<span>/" + conRutina.length + "</span></b><small>alumnos ya entrenaron</small></div>" +
+      "<div><b>" + hech[hoyIdx] + "<span>/" + prog[hoyIdx] + "</span></b><small>entrenos de hoy</small></div>" +
+      "<div><b>" + Math.max(0, hastaHoy - hechosHastaHoy) + "</b><small>pendientes hasta hoy</small></div></div>" +
+      '<div class="sc-dias-tit">Hechos / programados por día</div><div class="sc-dias">' + prog.map(function (p, i) {
+        var h = hech[i], k = p ? Math.min(1, h / p) : 0, cls = i === hoyIdx ? "hoy" : i > hoyIdx ? "fut" : (p && h >= p ? "ok" : p ? "falta" : "");
+        return '<div class="' + cls + '" title="' + DLc[i] + ": " + h + " de " + p + '"><span class="scd-barra"><i style="height:' + Math.round(k * 100) + '%"></i></span><b>' + (p || h ? h + "/" + p : "–") + "</b><small>" + Lt[i] + "</small></div>";
       }).join("") + "</div></div>";
 
     // Necesitan atención (con el motivo)
@@ -198,12 +211,10 @@
         var der = x.est === "pausado" ? '<span class="etiqueta gris">Pausado</span>' : x.est === "sinentrar" ? '<span class="etiqueta ambar">Invitar</span>' :
           x.pct == null ? '<span class="etiqueta gris">Sin rutina</span>' : '<span class="cumple ' + cumpleClase(x.pct) + '">' + x.pct + "%</span><small>esta semana</small>";
         var tel = c.telefono ? (function (t) { t = t.replace(/\D/g, ""); return t.length === 10 ? "52" + t : t; })(c.telefono) : "";
-        return '<div class="swipe-fila"><div class="swipe-acc">' + (tel ? '<a class="sw-wa" target="_blank" rel="noopener" href="https://wa.me/' + tel + '">' + ico("whatsapp") + "<span>Mensaje</span></a>" : '<span class="sw-wa off">' + ico("whatsapp") + "<span>Sin tel.</span></span>") +
-          '<a class="sw-ver" href="#/cliente/' + c.id + '">' + ico("persona") + "<span>Ficha</span></a></div>" +
-          '<a class="item cli-fila est-' + x.est + '" href="#/cliente/' + c.id + '"><span style="position:relative;flex:none">' + UI.avatarCli(c) + (x.est === "atencion" ? '<i class="alerta"></i>' : "") + "</span>" +
+        return '<a class="item cli-fila est-' + x.est + '" data-tel="' + esc(tel) + '" href="#/cliente/' + c.id + '"><span style="position:relative;flex:none">' + UI.avatarCli(c) + (x.est === "atencion" ? '<i class="alerta"></i>' : "") + "</span>" +
           '<span class="txt"><div class="t1">' + esc(c.nombre) + '</div><div class="t2">' + esc(t2) + '</div><div class="cli-tags">' +
           (x.asA.length ? '<span class="tag t-entreno">' + ico("pesa") + x.hechas + "/" + (x.meta || x.asA.length) + "</span>" : "") + (x.dieta ? '<span class="tag t-comida">🥗 Dieta</span>' : "") +
-          '</div></span><span class="der">' + der + "</span></a></div>";
+          '</div></span><span class="der">' + der + "</span></a>";
       }).join("") : '<div class="vacio">' + ico("clientes") + (d.clientes.length ? "Nadie coincide." : "Aún no tienes clientes. Pulsa + para dar de alta al primero.") + "</div>";
       UI.cargarFotos(UI.$("#lista"));
     }

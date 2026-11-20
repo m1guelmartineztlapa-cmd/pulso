@@ -901,3 +901,23 @@ input.switch:checked::after{transform:translateX(20px)}
 .pc-emoji{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:color-mix(in srgb,var(--sec) 18%,transparent)}
 .plant-card b{font-size:16px;margin-top:4px}
 .plant-card small{color:var(--suave);font-size:13px;line-height:1.35;flex:1}
+/* ── Tarjeta "Esta semana" v2 ── */
+.sc-barras{display:none}
+.sc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.sc-stats div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:10px 8px;text-align:center}
+.sc-stats b{display:block;font-size:20px;font-weight:800;letter-spacing:-.4px}
+.sc-stats b span{font-size:14px;color:var(--tenue);font-weight:700}
+.sc-stats small{display:block;font-size:11.5px;color:var(--suave);line-height:1.2;margin-top:2px}
+.sc-dias-tit{margin-top:16px;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--tenue)}
+.sc-dias{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}
+.sc-dias>div{display:flex;flex-direction:column;align-items:center;gap:4px}
+.scd-barra{width:100%;max-width:30px;height:46px;border-radius:9px;background:rgba(255,255,255,.06);display:flex;align-items:flex-end;overflow:hidden}
+.scd-barra i{display:block;width:100%;border-radius:9px;background:linear-gradient(180deg,var(--sec-2),var(--sec));animation:crecerY .8s cubic-bezier(.2,.8,.2,1) both}
+.sc-dias b{font-size:11.5px;font-weight:800;color:var(--suave);font-variant-numeric:tabular-nums}
+.sc-dias small{font-size:11.5px;font-weight:700;color:var(--tenue)}
+.sc-dias .ok i{background:linear-gradient(180deg,#6EE7B7,var(--ok))}
+.sc-dias .ok b{color:var(--ok)}
+.sc-dias .falta b{color:var(--ambar)}
+.sc-dias .hoy .scd-barra{box-shadow:0 0 0 1.5px var(--sec)}
+.sc-dias .hoy small,.sc-dias .hoy b{color:var(--sec-2)}
+.sc-dias .fut{opacity:.45}
