@@ -763,6 +763,55 @@
             "clave": "Proteína"
           }
         ]
+      },
+      {
+        "nombre": "Sábado · Comida libre y consciente",
+        "consejo": "Disfruta con calma: come despacio y para cuando te sientas satisfecho.",
+        "checklist": [
+          "Vegetales",
+          "Proteína",
+          "Hidratación"
+        ],
+        "comidas": [
+          {
+            "tiempo": "almuerzo",
+            "nombre": "Bowl libre con lo que quede",
+            "ingredientes": [
+              "Proteína que te sobre",
+              "Vegetales frescos",
+              "Aderezo casero"
+            ],
+            "preparacion": "Arma un bowl con lo que tengas en el refri.",
+            "porcion": "2 puños (vegetales)"
+          }
+        ]
+      },
+      {
+        "nombre": "Domingo · Día de preparar",
+        "consejo": "Unos 90 minutos hoy te resuelven toda la semana. Refrigera lo de lunes a miércoles y congela lo de jueves y viernes.",
+        "checklist": [
+          "Precalentar horno",
+          "Cocinar granos",
+          "Hervir huevos",
+          "Hornear pollo y vegetales",
+          "Lavar y secar hojas",
+          "Preparar aderezos",
+          "Porcionar y etiquetar"
+        ],
+        "comidas": [
+          {
+            "tiempo": "comida",
+            "nombre": "Pechuga recién hecha con vegetales al horno",
+            "ingredientes": [
+              "120 g de pechuga al horno",
+              "Vegetales al horno",
+              "1/2 taza de quinoa al limón"
+            ],
+            "preparacion": "Sirve una porción de lo que acabas de cocinar y guarda el resto en recipientes.",
+            "porcion": "1 palma (proteína)",
+            "clave": "Proteína"
+          }
+        ]
       }
     ]
   }

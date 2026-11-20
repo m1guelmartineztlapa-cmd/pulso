@@ -341,3 +341,40 @@ select.entrada{appearance:none;-webkit-appearance:none}
 .chev{flex:none;display:inline-flex;color:var(--tenue);width:18px;height:18px}
 .chev svg{width:100%;height:100%}
 #rL .t1{white-space:normal;line-height:1.25}
+/* Dietas v2 */
+.fila-btn{width:100%;text-align:left;background:none;border:0;color:inherit;font:inherit}
+.cat-verde{background:rgba(52,211,153,.18)!important}.cat-azul{background:rgba(47,107,255,.28)!important}.cat-ambar{background:rgba(251,191,36,.18)!important}
+.cat-rosa{background:rgba(244,114,182,.18)!important}.cat-morado{background:rgba(167,139,250,.22)!important}
+.cat-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.cat-tile{border:1px solid var(--linea);border-radius:20px;padding:14px;text-align:left;color:#fff;cursor:pointer;font:inherit;min-height:108px;display:flex;flex-direction:column;justify-content:space-between;gap:8px}
+.cat-tile .e{font-size:30px;line-height:1}.cat-tile b{display:block;font-size:16.5px}.cat-tile small{color:var(--suave);font-size:13px}
+.macro-cajas{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 14px}
+.macro-cajas div{background:var(--card-2);border-radius:14px;padding:10px 2px;text-align:center}
+.macro-cajas b{display:block;font-size:18px;color:#fff}.macro-cajas small{color:var(--suave);font-size:12px}
+.pasos{margin:4px 0 0;padding:0;list-style:none;counter-reset:p}
+.pasos li{counter-increment:p;display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--linea);line-height:1.45;color:#fff}
+.pasos li:last-child{border-bottom:0}
+.pasos li::before{content:counter(p);flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center}
+.receta-banner{height:110px;border-radius:20px;display:grid;place-items:center;font-size:54px;margin-bottom:4px}
+.dias-sem{display:flex;gap:6px;margin-top:14px}
+.dia-btn{flex:1;height:52px;border-radius:16px;border:1px solid var(--linea);background:var(--card);color:var(--suave);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font:inherit}
+.dia-btn b{font-size:16px}.dia-btn i{width:6px;height:6px;border-radius:50%;background:transparent}.dia-btn i.lleno{background:var(--ok)}
+.dia-btn.on{background:var(--brand);border-color:var(--brand);color:#fff}.dia-btn.on i.lleno{background:#fff}
+.chips.dias-sem .chip{flex:1;text-align:center;padding:9px 0;font-size:14px}
+.dia-cab{display:flex;align-items:flex-start;gap:6px}
+.dia-cab h2{margin:0;font-size:24px;letter-spacing:-.3px}
+.dia-cab input{background:none;border:0;outline:0;color:var(--suave);font:inherit;font-size:15px;width:100%;padding:2px 0}
+.dia-total{color:var(--suave);font-size:14px;margin:6px 0 4px}.dia-total b{color:#fff}
+.slot{margin-top:16px}
+.slot-lbl{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--suave);font-weight:700;margin:0 2px 8px}
+.slot-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:16px;background:var(--card-2);margin-bottom:6px;cursor:pointer}
+.slot-item .comida-img{flex:none;width:48px;height:48px;border-radius:12px;overflow:hidden;background:var(--card);display:grid;place-items:center}
+.slot-item .comida-img img{width:100%;height:100%;object-fit:cover}
+.slot-item .txt{flex:1;min-width:0}.slot-item .t1{font-weight:600;line-height:1.25}.slot-item .t2{color:var(--suave);font-size:13px;margin-top:2px}
+.slot-add{width:100%;min-height:48px;margin-top:10px;border-radius:16px;border:1.5px dashed rgba(91,140,255,.45);background:none;color:var(--brand-2);font-weight:600;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit}
+.slot-add.chico{min-height:34px;margin-top:0;border:0;justify-content:flex-start;padding:0 4px;font-size:14px}
+.slot-add.chico svg{width:16px;height:16px}
+details.mas{margin-top:16px;border-top:1px solid var(--linea)}
+details.mas summary{cursor:pointer;color:var(--brand-2);font-weight:600;padding:14px 2px 6px;list-style:none}
+details.mas summary::-webkit-details-marker{display:none}
+.fila-btn .t1{white-space:normal;line-height:1.25}

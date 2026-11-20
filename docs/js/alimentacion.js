@@ -30,37 +30,61 @@
     return recetario;
   }
   var CATS = [
-    { id: "", txt: "Todas" }, { id: "frasco", txt: "🫙 Ensaladas en frasco" }, { id: "proteina", txt: "🍗 Proteínas" }, { id: "base", txt: "🍱 Bases de la semana" },
-    { id: "salsa", txt: "🥣 Salsas y untables" }, { id: "topping", txt: "🥜 Toppings crujientes" }
+    { id: "frasco", txt: "Ensaladas en frasco", corto: "Ensaladas", e: "🫙", cls: "verde" },
+    { id: "proteina", txt: "Proteínas", corto: "Proteínas", e: "🍗", cls: "azul" },
+    { id: "salsa", txt: "Salsas y untables", corto: "Salsas", e: "🥣", cls: "ambar" },
+    { id: "topping", txt: "Toppings crujientes", corto: "Toppings", e: "🥜", cls: "rosa" },
+    { id: "base", txt: "Bases para cocinar el domingo", corto: "Bases", e: "🍱", cls: "morado" }
   ];
-  function sinAcentos(x) { return String(x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
-  function macros(c) {
-    if (c.kcal == null && c.prot == null) return "";
-    var m = []; if (c.kcal != null) m.push("<b>" + c.kcal + "</b> kcal"); if (c.prot != null) m.push("<b>" + c.prot + "</b> g proteína");
-    if (c.carbs != null) m.push("<b>" + c.carbs + "</b> g carbs"); if (c.grasa != null) m.push("<b>" + c.grasa + "</b> g grasa");
-    return '<div class="macros">' + m.join("<span>·</span>") + "</div>";
+  function catDe(id) { return CATS.find(function (k) { return k.id === id; }) || { e: "🍽️", cls: "azul", txt: "" }; }
+  function sinAcentos(x) { return String(x || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+  function buscarRecetas(lista, q, cat) {
+    var qq = sinAcentos(q);
+    return lista.filter(function (r) { return (!cat || r.categoria === cat) && (!qq || sinAcentos(r.nombre + " " + (r.ingredientes || []).join(" ")).indexOf(qq) >= 0); });
   }
-  /* Recetario: buscar y elegir (o solo ver si no hay alElegir) */
-  async function hojaRecetario(alElegir) {
+  function filaReceta(r) {
+    var k = catDe(r.categoria);
+    return '<button type="button" class="item fila-btn" data-r="' + esc(r.id) + '"><span class="ico cuadro cat-' + k.cls + '" style="font-size:22px">' + k.e + '</span><span class="txt"><div class="t1">' + esc(r.nombre) +
+      '</div><div class="t2">' + esc([r.kcal != null ? r.kcal + " kcal" : "", r.prot != null ? r.prot + " g proteína" : "", r.porcion].filter(Boolean).slice(0, 2).join(" · ")) + '</div></span><span class="chev">' + ico("der") + "</span></button>";
+  }
+  function macroCajas(c) {
+    if (c.kcal == null && c.prot == null) return "";
+    function caja(v, u, t) { return "<div><b>" + (v == null ? "—" : v + u) + "</b><small>" + t + "</small></div>"; }
+    return '<div class="macro-cajas">' + caja(c.kcal, "", "kcal") + caja(c.prot, "g", "proteína") + caja(c.carbs, "g", "carbs") + caja(c.grasa, "g", "grasa") + "</div>";
+  }
+  function pasosHTML(txt) {
+    var p = String(txt || "").split(/\.\s+(?=[A-ZÁÉÍÓÚÑ¿¡])/).map(function (x) { return x.trim().replace(/\.$/, ""); }).filter(Boolean);
+    if (p.length < 2) return '<p class="receta-txt">' + esc(txt) + "</p>";
+    return '<ol class="pasos">' + p.map(function (x) { return "<li><span>" + esc(x) + ".</span></li>"; }).join("") + "</ol>";
+  }
+  function recetaAComida(r, tiempo) {
+    var c = JSON.parse(JSON.stringify(r)); delete c.id; delete c.categoria;
+    c.tiempo = tiempo || r.tiempo || "comida"; return c;
+  }
+  function ordenarComidas(d) {
+    var ord = TIEMPOS.map(function (t) { return t.id; });
+    d.comidas = (d.comidas || []).map(function (c, i) { return { c: c, i: i }; }).sort(function (a, b) {
+      return (ord.indexOf(a.c.tiempo || "comida") - ord.indexOf(b.c.tiempo || "comida")) || (a.i - b.i);
+    }).map(function (x) { return x.c; });
+  }
+  /* Elegir una receta (desde el editor del plan) */
+  async function hojaRecetario(alElegir, o) {
+    o = o || {};
     var lista = await cargarRecetario(), cat = "", q = "";
-    UI.hoja("Recetario", '<p class="ayuda" style="margin:-8px 0 10px">' + lista.length + (alElegir ? " recetas. Toca una para usarla en esta comida; después la puedes ajustar." : " recetas listas para armar tus planes.") + "</p>" +
-      '<input class="entrada" id="rB" type="search" placeholder="Buscar: pollo, aguacate, frasco…" style="margin-bottom:10px">' +
-      '<div class="chips" id="rC" style="flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px">' + CATS.map(function (k) { return '<button type="button" class="chip' + (k.id === "" ? " on" : "") + '" data-k="' + k.id + '" style="flex:none">' + k.txt + "</button>"; }).join("") + "</div>" +
+    var titulo = o.tiempo && T[o.tiempo] ? "Agregar " + T[o.tiempo].txt.toLowerCase() : "Elegir receta";
+    UI.hoja(titulo, (o.alPropia ? '<button type="button" class="btn vidrio" id="rPropia" style="margin-bottom:12px">' + ico("editar") + "Escribir mi propia receta</button>" : "") +
+      '<input class="entrada" id="rB" type="search" placeholder="Buscar: pollo, aguacate, salmón…" style="margin-bottom:10px">' +
+      '<div class="chips" id="rC" style="flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px"><button type="button" class="chip on" data-k="" style="flex:none">Todas</button>' +
+      CATS.map(function (k) { return '<button type="button" class="chip" data-k="' + k.id + '" style="flex:none">' + k.e + " " + k.corto + "</button>"; }).join("") + "</div>" +
       '<div class="lista" id="rL" style="margin-top:8px"></div>', function (h, cerrar) {
       function pintar() {
-        var qq = sinAcentos(q), vis = lista.filter(function (r) { return (!cat || r.categoria === cat) && (!qq || sinAcentos(r.nombre + " " + (r.ingredientes || []).join(" ")).indexOf(qq) >= 0); });
-        h.querySelector("#rL").innerHTML = vis.length ? vis.map(function (r) {
-          var k = CATS.find(function (x) { return x.id === r.categoria; }) || {};
-          return '<button class="item" data-r="' + esc(r.id) + '" style="width:100%;text-align:left;background:none;border:0;color:inherit;font:inherit;cursor:pointer"><span class="ico cuadro" style="font-size:20px">' + (k.txt || "🍽️").split(" ")[0] + '</span><span class="txt"><div class="t1">' + esc(r.nombre) +
-            '</div><div class="t2">' + esc([r.porcion, r.kcal != null ? r.kcal + " kcal" : "", r.prot != null ? r.prot + " g proteína" : ""].filter(Boolean).join(" · ")) + "</div></span><span class=\"chev\">" + ico("der") + "</span></button>";
-        }).join("") : '<div class="vacio">No encontré recetas con eso.</div>';
+        var vis = buscarRecetas(lista, q, cat);
+        h.querySelector("#rL").innerHTML = vis.length ? vis.map(filaReceta).join("") : '<div class="vacio">No encontré recetas con eso.</div>';
         UI.$$("[data-r]", h).forEach(function (b) {
-          b.onclick = function () {
-            var r = lista.find(function (x) { return x.id === b.dataset.r; });
-            if (alElegir) { cerrar(); alElegir(JSON.parse(JSON.stringify(r))); } else hojaReceta(r);
-          };
+          b.onclick = function () { var r = lista.find(function (x) { return x.id === b.dataset.r; }); cerrar(); alElegir(JSON.parse(JSON.stringify(r))); };
         });
       }
+      var pr = h.querySelector("#rPropia"); if (pr) pr.onclick = function () { cerrar(); o.alPropia(); };
       h.querySelector("#rB").oninput = function () { q = this.value; pintar(); };
       UI.$$("#rC .chip", h).forEach(function (b) { b.onclick = function () { cat = b.dataset.k; UI.$$("#rC .chip", h).forEach(function (x) { x.classList.toggle("on", x === b); }); pintar(); }; });
       pintar();
@@ -69,9 +93,22 @@
   VE.hojaRecetario = hojaRecetario;
   function diasEntre(a, b) { return Math.round((new Date(b + "T12:00:00") - new Date(a + "T12:00:00")) / 864e5); }
   function sumarDias(iso, n) { var d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return DB.hoyISO(d); }
-  // Qué día del plan toca en una fecha (el plan se repite en ciclo)
+  var SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  function diaSemanaIdx(iso) { return (new Date(iso + "T12:00:00").getDay() + 6) % 7; }
+  function temaDe(nombre) { return String(nombre || "").replace(/^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo|Día\s*\d+)\s*(·|-|:)?\s*/i, "").trim(); }
+  // Deja el plan con 7 días (lunes a domingo) y nombres por día de la semana
+  function semanaCompleta(dias) {
+    var out = JSON.parse(JSON.stringify(dias || []));
+    for (var i = 0; i < 7; i++) {
+      if (!out[i]) out[i] = { consejo: "", checklist: ((out[i - 1] || {}).checklist || ["Vegetales", "Proteína", "Hidratación"]).slice(), comidas: [] };
+      var t = temaDe(out[i].nombre); out[i].nombre = SEMANA[i] + (t ? " · " + t : "");
+    }
+    return out;
+  }
+  // Qué día del plan toca: los planes de 7 días van por día de la semana; los demás se repiten en ciclo
   function indiceDia(asig, plan, fecha) {
     var n = (plan.dias || []).length; if (!n) return 0;
+    if (n === 7) return diaSemanaIdx(fecha);
     var d = diasEntre(asig.inicio, fecha); return ((d % n) + n) % n;
   }
   function claveComida(c, i) { return (c.tiempo || "comida") + "-" + i; }
@@ -117,15 +154,19 @@
     });
   }
 
-  /* Ver una receta completa */
-  function hojaReceta(c) {
-    UI.hoja(c.nombre, (c.img ? '<img class="foto-ej" src="' + esc(c.img) + '" alt="" style="object-fit:cover">' : "") +
-      '<div class="chips" style="margin:10px 0">' + '<span class="chip on">' + esc((T[c.tiempo] || {}).txt || "Comida") + "</span>" + (c.porcion ? '<span class="chip">' + esc(c.porcion) + "</span>" : "") +
-      (c.clave ? '<span class="chip">⭐ ' + esc(c.clave) + "</span>" : "") + (c.dura ? '<span class="chip">🧊 ' + esc(c.dura) + "</span>" : "") + "</div>" + macros(c) +
+  /* Ver una receta completa (o.alAgregar muestra el botón "Agregar a un plan") */
+  function hojaReceta(c, o) {
+    var k = c.categoria ? catDe(c.categoria) : null;
+    UI.hoja(c.nombre, (c.img ? '<img class="foto-ej" src="' + esc(c.img) + '" alt="" style="object-fit:cover">' : (k ? '<div class="receta-banner cat-' + k.cls + '">' + k.e + "</div>" : "")) +
+      '<div class="chips" style="margin:10px 0">' + '<span class="chip on">' + esc(k ? k.corto : ((T[c.tiempo] || {}).txt || "Comida")) + "</span>" + (c.porcion ? '<span class="chip">' + esc(c.porcion) + "</span>" : "") +
+      (c.clave ? '<span class="chip">⭐ ' + esc(c.clave) + "</span>" : "") + (c.dura ? '<span class="chip">🧊 ' + esc(c.dura) + "</span>" : "") + "</div>" + macroCajas(c) +
       ((c.ingredientes || []).length ? '<div class="lbl">Ingredientes</div><ul class="receta-lista">' + c.ingredientes.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "") +
-      (c.preparacion ? '<div class="lbl" style="margin-top:12px">Preparación</div><p class="receta-txt">' + esc(c.preparacion) + "</p>" : "") +
+      (c.preparacion ? '<div class="lbl" style="margin-top:14px">Pasos</div>' + pasosHTML(c.preparacion) : "") +
       (c.sustitucion ? '<div class="tarjeta" style="margin-top:12px;padding:12px"><p>🔄 <b style="color:#fff">Puedes cambiarlo por:</b> ' + esc(c.sustitucion) + "</p></div>" : "") +
-      (c.nota ? '<p class="ayuda" style="margin-top:10px">💡 ' + esc(c.nota) + "</p>" : ""));
+      (c.nota ? '<p class="ayuda" style="margin-top:10px">💡 ' + esc(c.nota) + "</p>" : "") +
+      (o && o.alAgregar ? '<button class="btn" id="rAgregar" style="margin-top:16px">' + ico("mas") + "Agregar a un plan</button>" : ""), function (h, cerrar) {
+      var b = h.querySelector("#rAgregar"); if (b) b.onclick = function () { cerrar(); o.alAgregar(c); };
+    });
   }
 
   /* ───────── ALUMNO: pestaña Comida ───────── */
@@ -307,105 +348,193 @@
     return r[1];
   };
 
-  /* ───────── ENTRENADOR: Dietas ───────── */
-  VE.dietas = async function () {
+  /* ───────── ENTRENADOR: Dietas (Mis planes · Recetario · Plantillas) ───────── */
+  var SEGS = [{ id: "planes", txt: "Mis planes" }, { id: "recetario", txt: "Recetario" }, { id: "plantillas", txt: "Plantillas" }];
+  VE.dietas = async function (seg) {
     UI.tabbar(VE.__TABS(), "dietas");
+    seg = SEGS.some(function (s) { return s.id === seg; }) ? seg : "planes";
     app().innerHTML = UI.cargando();
-    var r = await Promise.all([DB.sel("planes_alim", { entrenador_id: A().ent.id }, { orden: "actualizado", desc: true }), DB.sel("asig_alim", { entrenador_id: A().ent.id }), cargarPlantillas()]);
-    var planes = r[0], asig = r[1], pls = r[2];
+    var r = await Promise.all([DB.sel("planes_alim", { entrenador_id: A().ent.id }, { orden: "actualizado", desc: true }), DB.sel("asig_alim", { entrenador_id: A().ent.id }), cargarPlantillas(), cargarRecetario()]);
+    var planes = r[0], asig = r[1], pls = r[2], recetas = r[3], cat = "", q = "";
     app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:8px"><div class="barra-sup" style="justify-content:space-between"><h1 class="titulo-pag" style="margin:6px 0 0">Dietas</h1>' +
-      '<a class="btn-redondo" href="#/dieta/nueva" aria-label="Nuevo plan">' + ico("mas") + "</a></div></section><div class=\"contenido\">" +
-      '<div class="tarjeta sin-relleno"><div class="lista">' + (planes.length ? planes.map(function (p) {
+      '<a class="btn-redondo" href="#/dieta/nueva" aria-label="Nuevo plan">' + ico("mas") + '</a></div><div class="segmento" id="segD" style="margin-top:14px">' +
+      SEGS.map(function (s) { return '<button data-s="' + s.id + '">' + s.txt + "</button>"; }).join("") + '</div></section><div class="contenido" id="contD"></div>';
+    var cont = UI.$("#contD");
+
+    function verPlanes() {
+      cont.innerHTML = planes.length ? '<div class="tarjeta sin-relleno"><div class="lista">' + planes.map(function (p) {
         var n = asig.filter(function (a) { return a.plan_id === p.id && a.activa !== false; }).length;
-        return '<a class="item" href="#/dieta/' + p.id + '"><span class="ico cuadro" style="font-size:20px">🥗</span><span class="txt"><div class="t1">' + esc(p.nombre) + '</div><div class="t2">' +
-          (p.dias || []).length + " días · " + (p.dias || []).reduce(function (t, d) { return t + (d.comidas || []).length; }, 0) + ' comidas</div></span><span class="der">' + n + "<small>" + (n === 1 ? "alumno" : "alumnos") + "</small></span></a>";
-      }).join("") : '<div class="vacio">Aún no tienes planes de alimentación. Empieza con una plantilla o crea uno desde cero.</div>') + "</div></div>" +
-      '<a class="btn azul" href="#/dieta/nueva">' + ico("mas") + "Nuevo plan desde cero</a>" +
-      '<button class="tarjeta" id="verRecetario" style="width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit;margin-top:14px"><div class="promo"><span class="avatar" style="background:var(--brand);font-size:22px">📖</span><div style="flex:1"><h3>Recetario</h3><p>Ensaladas en frasco, proteínas, salsas, toppings y bases para cocinar el domingo.</p></div><span class=\"chev\">' + ico("der") + "</span></div></button>" +
-      '<div class="titulo-sec"><h2>Plantillas listas</h2></div>' + pls.map(function (p) {
-        return '<div class="tarjeta"><div class="promo"><span class="avatar" style="background:var(--ok);font-size:22px">🌿</span><div><h3>' + esc(p.nombre) + "</h3><p>" + esc(p.descripcion) + '</p></div></div><button class="btn" data-pl="' + esc(p.id) +
+        var com = (p.dias || []).reduce(function (t, d) { return t + (d.comidas || []).length; }, 0);
+        return '<a class="item" href="#/dieta/' + p.id + '"><span class="ico cuadro cat-verde" style="font-size:20px">🥗</span><span class="txt"><div class="t1">' + esc(p.nombre) + '</div><div class="t2">' +
+          com + (com === 1 ? " comida" : " comidas") + " en la semana</div></span><span class=\"der\">" + n + "<small>" + (n === 1 ? "alumno" : "alumnos") + "</small></span></a>";
+      }).join("") + "</div></div>" + '<a class="btn azul" href="#/dieta/nueva">' + ico("mas") + "Crear plan nuevo</a>"
+        : '<div class="tarjeta"><div class="vacio" style="padding:10px 4px 16px"><div style="font-size:40px;margin-bottom:8px">🥗</div><b style="color:#fff;font-size:17px">Arma tu primer plan</b><br>Empieza con una plantilla lista o créalo desde cero.</div>' +
+          '<button class="btn" data-ir="plantillas">Ver plantillas</button><a class="btn vidrio" href="#/dieta/nueva" style="margin-top:8px">' + ico("mas") + "Crear desde cero</a></div>";
+    }
+    function verRecetario() {
+      var html = '<input class="entrada" id="rB" type="search" placeholder="Buscar: pollo, aguacate, salmón…" value="' + esc(q) + '">';
+      if (!q && !cat) {
+        html += '<div class="cat-tiles">' + CATS.filter(function (k) { return k.id !== "base"; }).map(function (k) {
+          var n = recetas.filter(function (x) { return x.categoria === k.id; }).length;
+          return '<button class="cat-tile cat-' + k.cls + '" data-cat="' + k.id + '"><span class="e">' + k.e + "</span><span><b>" + esc(k.corto) + "</b><small>" + n + " recetas</small></span></button>";
+        }).join("") + "</div>" +
+          '<div class="titulo-sec"><h2>🍱 Para cocinar el domingo</h2></div><p class="ayuda" style="margin:0 4px">Se preparan una vez y sirven para toda la semana.</p>' +
+          '<div class="tarjeta sin-relleno"><div class="lista">' + recetas.filter(function (x) { return x.categoria === "base"; }).map(filaReceta).join("") + "</div></div>";
+      } else {
+        var vis = buscarRecetas(recetas, q, cat), k = catDe(cat);
+        html += (cat ? '<div class="titulo-sec"><h2>' + k.e + " " + esc(k.txt) + '</h2><button data-cat="">Ver todas</button></div>' : '<div class="titulo-sec"><h2>' + vis.length + (vis.length === 1 ? " receta" : " recetas") + "</h2></div>") +
+          '<div class="tarjeta sin-relleno"><div class="lista">' + (vis.length ? vis.map(filaReceta).join("") : '<div class="vacio">No encontré recetas con eso.</div>') + "</div></div>";
+      }
+      cont.innerHTML = html;
+      var bx = UI.$("#rB", cont);
+      bx.oninput = function () { q = this.value; var pos = this.selectionStart; verRecetario(); var n = UI.$("#rB", cont); n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} };
+      UI.$$("[data-cat]", cont).forEach(function (b) { b.onclick = function () { cat = b.dataset.cat; q = ""; verRecetario(); window.scrollTo(0, 0); }; });
+      UI.$$("[data-r]", cont).forEach(function (b) {
+        b.onclick = function () { var rr = recetas.find(function (x) { return x.id === b.dataset.r; }); hojaReceta(rr, { alAgregar: hojaAgregarAPlan }); };
+      });
+    }
+    function verPlantillas() {
+      cont.innerHTML = '<p class="ayuda" style="margin:0 4px 4px">Planes completos de lunes a domingo. Al usar uno se copia a “Mis planes” y lo puedes cambiar.</p>' + pls.map(function (p) {
+        var com = (p.dias || []).reduce(function (t, d) { return t + (d.comidas || []).length; }, 0);
+        return '<div class="tarjeta"><div class="promo"><span class="avatar cat-verde" style="font-size:22px">🌿</span><div><h3>' + esc(p.nombre) + "</h3><p>" + esc(p.descripcion) + '</p><p class="ayuda" style="margin-top:6px">' + com + ' comidas en la semana</p></div></div><button class="btn" data-pl="' + esc(p.id) +
           '" style="margin-top:14px">Usar esta plantilla</button></div>';
-      }).join("") + "</div>";
-    UI.$("#verRecetario").onclick = function () { hojaRecetario(); };
-    UI.$$("[data-pl]").forEach(function (b) {
-      b.onclick = async function () {
-        var p = pls.find(function (x) { return x.id === b.dataset.pl; }); b.disabled = true;
-        try {
-          var n = await DB.ins("planes_alim", { entrenador_id: A().ent.id, nombre: p.nombre, descripcion: p.descripcion, dias: p.dias, indicadores: p.indicadores });
-          UI.aviso("Plantilla copiada ✓ Ajústala a tu gusto"); A().ir("dieta/" + n.id);
-        } catch (e) { UI.error(e); b.disabled = false; }
-      };
-    });
+      }).join("");
+      UI.$$("[data-pl]", cont).forEach(function (b) {
+        b.onclick = async function () {
+          var p = pls.find(function (x) { return x.id === b.dataset.pl; }); b.disabled = true;
+          try {
+            var n = await DB.ins("planes_alim", { entrenador_id: A().ent.id, nombre: p.nombre, descripcion: p.descripcion, dias: semanaCompleta(p.dias), indicadores: p.indicadores });
+            UI.aviso("Plantilla copiada ✓ Ajústala a tu gusto"); A().ir("dieta/" + n.id);
+          } catch (e) { UI.error(e); b.disabled = false; }
+        };
+      });
+    }
+    function mostrar(s) {
+      seg = s;
+      UI.$$("#segD button").forEach(function (b) { b.classList.toggle("on", b.dataset.s === s); });
+      try { history.replaceState(null, "", "#/dietas" + (s === "planes" ? "" : "/" + s)); } catch (e) {}
+      if (s === "recetario") verRecetario(); else if (s === "plantillas") verPlantillas(); else verPlanes();
+      UI.$$("[data-ir]", cont).forEach(function (b) { b.onclick = function () { mostrar(b.dataset.ir); }; });
+    }
+    UI.$$("#segD button").forEach(function (b) { b.onclick = function () { mostrar(b.dataset.s); }; });
+    mostrar(seg);
   };
 
-  /* Editor del plan */
+  /* Agregar una receta del recetario a un plan */
+  async function hojaAgregarAPlan(r) {
+    var planes = await DB.sel("planes_alim", { entrenador_id: A().ent.id }, { orden: "actualizado", desc: true });
+    var tiempo = r.tiempo || "comida", dia = 0, pid = planes[0] && planes[0].id;
+    UI.hoja("Agregar a un plan", '<div class="form">' + '<p class="ayuda" style="margin:-8px 0 4px">' + esc(r.nombre) + "</p>" +
+      (planes.length ? '<div class="campo"><label>Plan</label><select class="entrada" id="gP">' + planes.map(function (p) { return '<option value="' + p.id + '">' + esc(p.nombre) + "</option>"; }).join("") + "</select></div>" :
+        '<p class="ayuda">Aún no tienes planes. Se creará uno nuevo con esta receta.</p>') +
+      '<div class="campo"><label>Día</label><div class="chips dias-sem" id="gD">' + SEMANA.map(function (s, i) { return '<button type="button" class="chip' + (i === 0 ? " on" : "") + '" data-d="' + i + '" aria-label="' + s + '">' + s.charAt(0) + "</button>"; }).join("") + "</div></div>" +
+      '<div class="campo"><label>Momento del día</label><div class="chips" id="gT">' + TIEMPOS.map(function (t) { return '<button type="button" class="chip' + (t.id === tiempo ? " on" : "") + '" data-t="' + t.id + '">' + t.ico + " " + t.txt + "</button>"; }).join("") + "</div></div>" +
+      '<button class="btn" id="gG">' + ico("check") + "Agregar</button></div>", function (h, cerrar) {
+      UI.$$("#gD .chip", h).forEach(function (b) { b.onclick = function () { dia = Number(b.dataset.d); UI.$$("#gD .chip", h).forEach(function (x) { x.classList.toggle("on", x === b); }); }; });
+      UI.$$("#gT .chip", h).forEach(function (b) { b.onclick = function () { tiempo = b.dataset.t; UI.$$("#gT .chip", h).forEach(function (x) { x.classList.toggle("on", x === b); }); }; });
+      h.querySelector("#gG").onclick = async function () {
+        this.disabled = true;
+        try {
+          var sp = h.querySelector("#gP"); pid = sp ? sp.value : null;
+          var p = pid ? planes.find(function (x) { return x.id === pid; }) : { nombre: "Mi plan", descripcion: "", indicadores: INDICADORES_BASE.slice(), dias: [] };
+          var dias = semanaCompleta(p.dias); dias[dia].comidas = dias[dia].comidas || []; dias[dia].comidas.push(recetaAComida(r, tiempo)); ordenarComidas(dias[dia]);
+          if (pid) await DB.upd("planes_alim", pid, { dias: dias, actualizado: new Date().toISOString() });
+          else { var n = await DB.ins("planes_alim", { entrenador_id: A().ent.id, nombre: p.nombre, descripcion: "", indicadores: p.indicadores, dias: dias }); pid = n.id; }
+          cerrar(); UI.aviso("Agregada al " + SEMANA[dia].toLowerCase() + " de “" + p.nombre + "” ✓");
+        } catch (e) { UI.error(e); this.disabled = false; }
+      };
+    });
+  }
+
+  /* Editor del plan: la semana de lunes a domingo, con huecos por momento del día */
   VE.dieta = async function (id) {
     UI.tabbar(null); document.body.classList.add("ancho");
     app().innerHTML = UI.cargando();
-    var p = id === "nueva" ? { nombre: "", descripcion: "", indicadores: INDICADORES_BASE.slice(), dias: [{ nombre: "Día 1", consejo: "", checklist: ["Vegetales", "Proteína", "Hidratación"], comidas: [] }] }
-      : await DB.uno("planes_alim", { id: id });
+    var p = id === "nueva" ? { nombre: "", descripcion: "", indicadores: INDICADORES_BASE.slice(), dias: [] } : await DB.uno("planes_alim", { id: id });
     if (!p) return A().ir("dietas");
-    var cambios = false, abierto = 0;
+    p.dias = semanaCompleta(p.dias); p.indicadores = p.indicadores || INDICADORES_BASE.slice();
+    var cambios = false, sel = diaSemanaIdx(DB.hoyISO());
     function marcar() { cambios = true; window.onbeforeunload = function () { return "Hay cambios sin guardar"; }; }
+    function totales(d) {
+      var k = 0, pr = 0, hay = (d.comidas || []).length > 0;
+      (d.comidas || []).forEach(function (c) { if (c.kcal == null) hay = false; k += Number(c.kcal) || 0; pr += Number(c.prot) || 0; });
+      var n = (d.comidas || []).length;
+      return n ? (hay ? "Total del día: <b>" + k + "</b> kcal · <b>" + pr + "</b> g proteína" : n + (n === 1 ? " comida" : " comidas")) : "Día sin comidas todavía";
+    }
     function dibujar() {
+      var d = p.dias[sel];
       app().innerHTML = A().bandaDemo() + '<section class="hero" style="padding-bottom:6px"><div class="barra-sup" style="justify-content:space-between"><a class="atras" href="#/dietas">' + ico("izq", ' width="22" height="22"') + "Dietas</a>" +
         (p.id ? '<button class="btn-redondo" id="borrarP" aria-label="Eliminar plan">' + ico("basura") + "</button>" : "") + "</div>" +
         '<input class="titulo-pag" id="pNombre" value="' + esc(p.nombre) + '" placeholder="Nombre del plan" style="background:none;border:0;outline:0;width:100%;color:#fff">' +
-        '<input id="pDesc" value="' + esc(p.descripcion || "") + '" placeholder="Descripción (opcional)" style="background:none;border:0;outline:0;width:100%;color:var(--suave);font-size:16px;margin-top:4px"></section>' +
-        '<div class="contenido">' + p.dias.map(function (d, di) {
-          var ab = di === abierto;
-          return '<div class="bloque" data-d="' + di + '"><div class="bloque-cab"><input data-dn value="' + esc(d.nombre) + '" placeholder="Nombre del día"><button class="mini" data-dacc="abrir" aria-label="Abrir">' + ico(ab ? "arriba" : "abajo") + "</button>" +
-            '<button class="mini" data-dacc="dup" aria-label="Duplicar día">' + ico("duplicar") + '</button><button class="mini" data-dacc="quita" aria-label="Quitar día">' + ico("basura") + "</button></div>" +
-            (ab ? (d.comidas || []).map(function (c, ci) {
-              return '<div class="ej" data-c="' + ci + '"><div class="ej-cab"><span class="ico" style="background:var(--card-2);font-size:20px">' + imgComida(c) + '</span><div class="nom">' + esc(c.nombre || "(sin nombre)") +
-                "<small>" + esc(((T[c.tiempo] || {}).txt || "Comida") + " · " + (c.ingredientes || []).length + " ingredientes") + '</small></div><button class="mini" data-cacc="editar" aria-label="Editar">' + ico("editar") + "</button>" +
-                '<button class="mini" data-cacc="sube" aria-label="Subir">' + ico("arriba") + '</button><button class="mini" data-cacc="quita" aria-label="Quitar">' + ico("x") + "</button></div></div>";
-            }).join("") + '<button class="btn vidrio chico" data-dacc="comida" style="margin-top:10px;width:100%">' + ico("mas") + "Agregar comida</button>" +
-            '<div class="campo" style="margin-top:12px"><label>Checklist del día <span class="opc">separado por comas</span></label><input class="entrada" data-dchk value="' + esc((d.checklist || []).join(", ")) + '" placeholder="Vegetales, Proteína, Hidratación"></div>' +
-            '<div class="campo" style="margin-top:10px"><label>Consejo del día <span class="opc">opcional</span></label><input class="entrada" data-dcons value="' + esc(d.consejo || "") + '"></div>'
-            : '<p class="ayuda">' + (d.comidas || []).map(function (c) { return esc(c.nombre); }).join(" · ") + "</p>") + "</div>";
-        }).join("") + '<button class="btn vidrio" id="nuevoDia">' + ico("mas") + "Agregar día</button>" +
-        '<div class="titulo-sec"><h2>¿Cómo te sientes? · indicadores</h2></div><div class="tarjeta"><p>Lo que el alumno califica del 1 al 5 cuando quiera durante el día.</p><div class="chips" id="inds" style="margin-top:10px">' +
+        '<input id="pDesc" value="' + esc(p.descripcion || "") + '" placeholder="Descripción (opcional)" style="background:none;border:0;outline:0;width:100%;color:var(--suave);font-size:16px;margin-top:4px">' +
+        '<div class="dias-sem" id="dSem">' + p.dias.map(function (x, i) {
+          var n = (x.comidas || []).length;
+          return '<button class="dia-btn' + (i === sel ? " on" : "") + '" data-i="' + i + '" aria-label="' + esc(SEMANA[i] || "Día " + (i + 1)) + '"><b>' + esc((SEMANA[i] || String(i + 1)).charAt(0)) + "</b><i" + (n ? ' class="lleno"' : "") + "></i></button>";
+        }).join("") + "</div></section>" +
+        '<div class="contenido"><div class="tarjeta">' +
+        '<div class="dia-cab"><div style="flex:1;min-width:0"><h2>' + esc(SEMANA[sel] || "Día " + (sel + 1)) + '</h2><input id="dTema" value="' + esc(temaDe(d.nombre)) + '" placeholder="Tema del día (opcional)"></div>' +
+        '<button class="mini" id="dCopiar" aria-label="Copiar este día a otros">' + ico("duplicar") + '</button><button class="mini" id="dVaciar" aria-label="Vaciar este día">' + ico("basura") + "</button></div>" +
+        '<p class="dia-total">' + totales(d) + "</p>" +
+        TIEMPOS.map(function (t) {
+          var items = (d.comidas || []).map(function (c, ci) { return { c: c, ci: ci }; }).filter(function (x) { return (x.c.tiempo || "comida") === t.id; });
+          if (!items.length) return '<button class="slot-add" data-add="' + t.id + '">' + t.ico + " Agregar " + t.txt.toLowerCase() + "</button>";
+          return '<div class="slot"><div class="slot-lbl">' + t.ico + " " + t.txt + "</div>" + items.map(function (x) {
+            return '<div class="slot-item" data-ci="' + x.ci + '"><span class="comida-img">' + imgComida(x.c) + '</span><span class="txt"><div class="t1">' + esc(x.c.nombre || "(sin nombre)") + '</div><div class="t2">' +
+              esc([x.c.kcal != null ? x.c.kcal + " kcal" : "", x.c.prot != null ? x.c.prot + " g proteína" : "", (x.c.ingredientes || []).length + " ingredientes"].filter(Boolean).slice(0, 2).join(" · ")) +
+              '</div></span><button class="mini" data-quita="' + x.ci + '" aria-label="Quitar">' + ico("x") + "</button></div>";
+          }).join("") + '<button class="slot-add chico" data-add="' + t.id + '">' + ico("mas") + "Agregar otra opción</button></div>";
+        }).join("") +
+        '<details class="mas"' + (d.consejo ? " open" : "") + '><summary>Checklist y consejo del día</summary>' +
+        '<div class="campo"><label>Checklist del día <span class="opc">separado por comas</span></label><input class="entrada" id="dChk" value="' + esc((d.checklist || []).join(", ")) + '" placeholder="Vegetales, Proteína, Hidratación"></div>' +
+        '<div class="campo" style="margin-top:10px"><label>Consejo del día <span class="opc">opcional</span></label><input class="entrada" id="dCons" value="' + esc(d.consejo || "") + '"></div></details></div>' +
+        '<div class="titulo-sec"><h2>¿Cómo te sientes?</h2></div><div class="tarjeta"><p>Lo que el alumno califica del 1 al 5 cuando quiera durante el día.</p><div class="chips" id="inds" style="margin-top:10px">' +
         INDICADORES_BASE.concat(INDICADORES_EXTRA).map(function (n) { return '<button class="chip' + (p.indicadores.indexOf(n) >= 0 ? " on" : "") + '" data-ind="' + esc(n) + '">' + esc(n) + "</button>"; }).join("") + "</div></div>" +
         '<div class="fila-btns" style="position:sticky;bottom:calc(12px + var(--abajo));z-index:5"><button class="btn" id="guardarP">' + ico("check") + "Guardar plan</button>" +
         (p.id ? '<button class="btn azul" id="asignarP" style="flex:.6">Asignar</button>' : "") + "</div></div>";
       enlazar();
     }
+    function agregar(tiempo) {
+      var d = p.dias[sel];
+      function meter(c) { d.comidas = d.comidas || []; d.comidas.push(c); ordenarComidas(d); marcar(); dibujar(); }
+      hojaRecetario(function (r) { meter(recetaAComida(r, tiempo)); UI.aviso("Agregada ✓ Tócala si quieres cambiar algo"); },
+        { tiempo: tiempo, alPropia: function () { hojaComida({ tiempo: tiempo, ingredientes: [] }, meter); } });
+    }
+    function hojaCopiarDia() {
+      var origen = sel, dest = {};
+      UI.hoja("Copiar " + SEMANA[origen].toLowerCase() + " a…", '<p class="ayuda" style="margin:-8px 0 12px">Las comidas, el checklist y el consejo se copian a los días que elijas (reemplazan lo que tengan).</p>' +
+        '<div class="chips" id="cpD">' + SEMANA.map(function (s, i) { return i === origen ? "" : '<button type="button" class="chip" data-i="' + i + '">' + s + "</button>"; }).join("") + "</div>" +
+        '<button class="btn" id="cpG" style="margin-top:16px">' + ico("duplicar") + "Copiar</button>", function (h, cerrar) {
+        UI.$$("#cpD .chip", h).forEach(function (b) { b.onclick = function () { var i = b.dataset.i; dest[i] = !dest[i]; b.classList.toggle("on", dest[i]); }; });
+        h.querySelector("#cpG").onclick = function () {
+          var ids = Object.keys(dest).filter(function (k) { return dest[k]; }).map(Number);
+          if (!ids.length) return UI.aviso("Elige al menos un día", true);
+          ids.forEach(function (i) { var c = JSON.parse(JSON.stringify(p.dias[origen])); c.nombre = SEMANA[i] + (temaDe(c.nombre) ? " · " + temaDe(c.nombre) : ""); p.dias[i] = c; });
+          cerrar(); marcar(); dibujar(); UI.aviso("Copiado a " + ids.length + (ids.length === 1 ? " día ✓" : " días ✓"));
+        };
+      });
+    }
     function enlazar() {
+      var d = p.dias[sel];
       UI.$("#pNombre").oninput = function () { p.nombre = this.value; marcar(); };
       UI.$("#pDesc").oninput = function () { p.descripcion = this.value; marcar(); };
-      UI.$$(".bloque").forEach(function (el) {
-        var di = Number(el.dataset.d), d = p.dias[di];
-        el.querySelector("[data-dn]").oninput = function () { d.nombre = this.value; marcar(); };
-        var ck = el.querySelector("[data-dchk]"); if (ck) ck.oninput = function () { d.checklist = this.value.split(",").map(function (x) { return x.trim(); }).filter(Boolean); marcar(); };
-        var cs = el.querySelector("[data-dcons]"); if (cs) cs.oninput = function () { d.consejo = this.value; marcar(); };
-        UI.$$("[data-dacc]", el).forEach(function (b) {
-          b.onclick = async function () {
-            var acc = b.dataset.dacc;
-            if (acc === "abrir") { abierto = abierto === di ? -1 : di; return dibujar(); }
-            if (acc === "comida") return hojaComida({ tiempo: "desayuno", ingredientes: [] }, function (c) { d.comidas = d.comidas || []; d.comidas.push(c); marcar(); dibujar(); });
-            if (acc === "dup") { var copia = JSON.parse(JSON.stringify(d)); copia.nombre = "Día " + (p.dias.length + 1); p.dias.push(copia); abierto = p.dias.length - 1; marcar(); return dibujar(); }
-            if (acc === "quita") {
-              if (p.dias.length === 1) return UI.aviso("El plan necesita al menos un día", true);
-              if (!(await UI.confirmar("¿Quitar “" + d.nombre + "”?", "Se quitan sus " + (d.comidas || []).length + " comidas.", "Quitar"))) return;
-              p.dias.splice(di, 1); abierto = Math.min(abierto, p.dias.length - 1); marcar(); dibujar();
-            }
-          };
-        });
-        UI.$$(".ej", el).forEach(function (ce) {
-          var ci = Number(ce.dataset.c);
-          UI.$$("[data-cacc]", ce).forEach(function (b) {
-            b.onclick = function () {
-              var acc = b.dataset.cacc;
-              if (acc === "editar") return hojaComida(JSON.parse(JSON.stringify(d.comidas[ci])), function (c) { d.comidas[ci] = c; marcar(); dibujar(); });
-              if (acc === "quita") d.comidas.splice(ci, 1);
-              if (acc === "sube" && ci > 0) { var t = d.comidas[ci - 1]; d.comidas[ci - 1] = d.comidas[ci]; d.comidas[ci] = t; }
-              marcar(); dibujar();
-            };
-          });
-        });
+      UI.$$("#dSem .dia-btn").forEach(function (b) { b.onclick = function () { sel = Number(b.dataset.i); dibujar(); }; });
+      UI.$("#dTema").oninput = function () { var v = this.value.trim(); d.nombre = (SEMANA[sel] || "Día " + (sel + 1)) + (v ? " · " + v : ""); marcar(); };
+      UI.$("#dChk").oninput = function () { d.checklist = this.value.split(",").map(function (x) { return x.trim(); }).filter(Boolean); marcar(); };
+      UI.$("#dCons").oninput = function () { d.consejo = this.value; marcar(); };
+      UI.$("#dCopiar").onclick = hojaCopiarDia;
+      UI.$("#dVaciar").onclick = async function () {
+        if (!(d.comidas || []).length) return UI.aviso("Este día ya está vacío");
+        if (!(await UI.confirmar("¿Vaciar el " + SEMANA[sel].toLowerCase() + "?", "Se quitan sus " + d.comidas.length + " comidas.", "Vaciar"))) return;
+        d.comidas = []; marcar(); dibujar();
+      };
+      UI.$$("[data-add]").forEach(function (b) { b.onclick = function () { agregar(b.dataset.add); }; });
+      UI.$$(".slot-item").forEach(function (el) {
+        var ci = Number(el.dataset.ci);
+        el.onclick = function (e) {
+          if (e.target.closest("[data-quita]")) { d.comidas.splice(ci, 1); marcar(); return dibujar(); }
+          hojaComida(JSON.parse(JSON.stringify(d.comidas[ci])), function (c) { d.comidas[ci] = c; ordenarComidas(d); marcar(); dibujar(); });
+        };
       });
-      UI.$("#nuevoDia").onclick = function () { p.dias.push({ nombre: "Día " + (p.dias.length + 1), consejo: "", checklist: (p.dias[p.dias.length - 1] || {}).checklist || [], comidas: [] }); abierto = p.dias.length - 1; marcar(); dibujar(); };
       UI.$$("#inds .chip").forEach(function (b) {
         b.onclick = function () { var n = b.dataset.ind, i = p.indicadores.indexOf(n); if (i >= 0) p.indicadores.splice(i, 1); else p.indicadores.push(n); b.classList.toggle("on"); marcar(); };
       });
@@ -479,7 +608,7 @@
         (o.planId ? "" : '<div class="campo"><label>Plan</label><select class="entrada" id="aP"><option value="">Elige un plan</option>' + planes.map(function (p) { return '<option value="' + p.id + '">' + esc(p.nombre) + "</option>"; }).join("") + "</select></div>") +
         (o.clienteId ? "" : '<div class="campo"><label>Alumno</label><select class="entrada" id="aC"><option value="">Elige un alumno</option>' + clientes.map(function (c) { return '<option value="' + c.id + '">' + esc(c.nombre) + "</option>"; }).join("") + "</select></div>") +
         '<div class="campo"><label>Empieza el</label><input class="entrada" type="date" id="aI" value="' + DB.hoyISO() + '"></div>' +
-        '<p class="ayuda">Ese día le toca el Día 1. Al terminar el último día, el plan vuelve a empezar. Si ya tenía otro plan, se reemplaza.</p>' +
+        '<p class="ayuda">Cada día verá lo que pusiste para ese día de la semana (el lunes, lo del lunes). Si ya tenía otro plan, se reemplaza.</p>' +
         (planes.length ? "" : '<p class="ayuda" style="color:var(--ambar)">Primero crea un plan en la pestaña Dietas.</p>') +
         '<button class="btn" id="aG">Asignar</button></div>', function (h, cerrar) {
         h.querySelector("#aG").onclick = async function () {
