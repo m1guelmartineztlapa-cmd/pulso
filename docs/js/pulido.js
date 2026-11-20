@@ -23,6 +23,7 @@
   }
   function revisarScroll() {
     var ver = false;
+    if (tituloEl && !tituloEl.isConnected) return buscarTitulo();
     if (tituloEl) ver = tituloEl.getBoundingClientRect().bottom < 54;
     nav.classList.toggle("ver", ver);
   }
@@ -85,7 +86,7 @@
   var pend = false;
   function alCambiar() {
     if (pend) return; pend = true;
-    requestAnimationFrame(function () { pend = false; buscarTitulo(); pildoras(); animarNuevos(); });
+    setTimeout(function () { pend = false; buscarTitulo(); pildoras(); animarNuevos(); }, 16);
   }
   new MutationObserver(function (lista) {
     var cambio = false;
