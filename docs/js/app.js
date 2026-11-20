@@ -19,14 +19,23 @@
   APP.app = function () { return UI.$("#app"); };
 
   function bandaDemo() {
+    if (APP.esAdmin && APP.suplanta)
+      return '<div class="banda-demo banda-admin">🔧 Dentro de la cuenta de <b>' + UI.esc(APP.suplanta.nombre || "") + "</b> (" + (APP.suplanta.tipo === "ent" ? "entrenador" : "alumno") + ')<button data-volver-admin>Salir</button></div>';
     if (APP.esAdmin && APP.rol === "entrenador")
       return '<div class="banda-demo banda-admin">Estás viendo la app como entrenador<button data-volver-admin>Volver al panel</button></div>';
     if (DB.modo !== "demo") return "";
     return '<div class="banda-demo">Modo demo · los datos solo viven en este navegador<button data-reinicio>Reiniciar</button></div>';
   }
   APP.bandaDemo = bandaDemo;
+  // El admin entra a la cuenta de un entrenador o alumno para darle mantenimiento
+  APP.entrarComo = async function (tipo, id, nombre) {
+    try { sessionStorage.removeItem("pulso_ver_como"); sessionStorage.setItem("pulso_suplanta", JSON.stringify({ tipo: tipo, id: id, nombre: nombre })); } catch (e) {}
+    await detectarRol(); location.hash = "#/"; pintar();
+    if (APP.suplanta) UI.aviso("Estás dentro de la cuenta de " + nombre + ". Lo que cambies se guarda en su cuenta.");
+    else UI.aviso("No pude abrir esa cuenta. ¿Ya corriste el SQL admin-v7?", true);
+  };
   APP.verComoEntrenador = async function (si) {
-    try { if (si) sessionStorage.setItem("pulso_ver_como", "1"); else sessionStorage.removeItem("pulso_ver_como"); } catch (e) {}
+    try { sessionStorage.removeItem("pulso_suplanta"); if (si) sessionStorage.setItem("pulso_ver_como", "1"); else sessionStorage.removeItem("pulso_ver_como"); } catch (e) {}
     await detectarRol(); location.hash = "#/"; pintar();
     if (si) UI.aviso("Modo entrenador · usa «Volver al panel» arriba para regresar");
   };
@@ -37,7 +46,7 @@
 
   async function detectarRol() {
     APP.usuario = await DB.usuario();
-    APP.rol = null; APP.ent = null; APP.cli = null; APP.esAdmin = false;
+    APP.rol = null; APP.ent = null; APP.cli = null; APP.esAdmin = false; APP.suplanta = null; window.__suplanta = null;
     if (!APP.usuario) return;
     var uid = APP.usuario.id;
     var pendiente = localStorage.getItem(LLAVE_INV);
@@ -49,6 +58,19 @@
     APP.esAdmin = esAdmin;
     if (esAdmin) {
       localStorage.removeItem(LLAVE_INV);
+      var sup = null; try { sup = JSON.parse(sessionStorage.getItem("pulso_suplanta") || "null"); } catch (e) {}
+      if (sup && sup.id) {
+        try {
+          if (sup.tipo === "ent") {
+            var e2 = await DB.uno("entrenadores", { id: sup.id });
+            if (e2) { APP.rol = "entrenador"; APP.ent = e2; APP.suplanta = sup; window.__suplanta = e2.id; return; }
+          } else {
+            var c2 = await DB.uno("clientes", { id: sup.id });
+            if (c2) { APP.rol = "cliente"; APP.cli = c2; APP.ent = await DB.uno("entrenadores", { id: c2.entrenador_id }); APP.suplanta = sup; window.__suplanta = c2.entrenador_id; return; }
+          }
+        } catch (e) {}
+        try { sessionStorage.removeItem("pulso_suplanta"); } catch (e) {}
+      }
       var verComo = false; try { verComo = sessionStorage.getItem("pulso_ver_como") === "1"; } catch (e) {}
       if (verComo) {
         if (!ent) { try { ent = await DB.ins("entrenadores", { nombre: (APP.usuario.email || "").split("@")[0] }); } catch (e) {} }

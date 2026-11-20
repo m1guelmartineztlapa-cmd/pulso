@@ -51,7 +51,10 @@
         return r(await q) || [];
       },
       uno: async function (tabla, filtro) { var f = await this.sel(tabla, filtro, { limite: 1 }); return f[0] || null; },
-      ins: async function (tabla, fila) { return r(await sb.from(tabla).insert(fila).select().single()); },
+      ins: async function (tabla, fila) {
+        if (window.__suplanta && ["clientes", "ejercicios", "rutinas", "asignaciones", "planes_alim", "asig_alim"].indexOf(tabla) >= 0 && !fila.entrenador_id) fila = Object.assign({ entrenador_id: window.__suplanta }, fila);
+        return r(await sb.from(tabla).insert(fila).select().single());
+      },
       upd: async function (tabla, id, cambios) { return r(await sb.from(tabla).update(cambios).eq("id", id).select().single()); },
       del: async function (tabla, id) { r(await sb.from(tabla).delete().eq("id", id)); },
       rpc: async function (nombre, args) { return r(await sb.rpc(nombre, args)); },

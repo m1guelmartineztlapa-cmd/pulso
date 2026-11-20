@@ -1128,11 +1128,9 @@
         return '<div class="titulo-sec"><h2>Salud de la plataforma</h2></div><div class="tarjeta salud">' +
           '<div><b>' + regP + '</b><small>Cuentas nuevas · ' + nomP + "</small></div>" +
           '<div><b>' + entAct + " / " + ents.length + "</b><small>Entrenadores que la usaron · " + nomP + "</small></div>" +
-          '<div><b>' + (t.activos_7d || 0) + "</b><small>Personas activas (7 días)</small></div>" +
-          '<div><b>' + conC + "%</b><small>Alumnos que ya crearon cuenta</small></div>" +
+          '<div><b>' + (t.alumnos_con_cuenta || 0) + " de " + (t.alumnos || 0) + "</b><small>Alumnos invitados que ya activaron su cuenta (" + conC + "%)</small></div>" +
           '<div><b>' + (t.sesiones || 0) + "</b><small>Entrenamientos en total</small></div>" +
-          '<div><b>' + (t.rutinas || 0) + "</b><small>Rutinas creadas</small></div></div>" +
-          '<a class="tarjeta aviso-card" href="#/usuarios" style="display:block"><div class="promo"><span class="rut-ico">' + ico("clientes") + '</span><div style="flex:1"><h3>Usuarios y correos</h3><p>Todas las cuentas ordenadas, con su correo, alta y último acceso.</p></div><span class="chev">' + ico("der") + "</span></div></a>";
+          '<div><b>' + (t.rutinas || 0) + "</b><small>Rutinas creadas</small></div></div>";
       })() +
       '<div class="titulo-sec"><h2>Uso · ' + nomP + '</h2></div><div class="tarjeta">' + graficaUso(usoSemana(accesos), true) + "</div>" +
       '<div class="titulo-sec"><h2>Entrenadores</h2><span class="adm-de">' + (t.entrenadores || ents.length) + "</span></div>" +
@@ -1167,6 +1165,7 @@
     app().innerHTML = A().bandaDemo() + '<section class="hero compacto"><div class="cab-pag"><span class="marca-mini" style="color:var(--brand-2)">' + ico("ajustes", ' width="22" height="22"') + '</span><div class="cab-txt"><small>Administración</small><h1>Ajustes</h1></div></div></section><div class="contenido">' +
       '<div class="tarjeta"><div class="promo"><span class="avatar grande">' + ico("ajustes", ' width="34" height="34"') + '</span><div><h3>Cuenta de administrador</h3><p>' +
       esc((A().usuario && A().usuario.email) || "") + '</p></div></div><p style="margin-top:14px">Ves el uso de todos los entrenadores y alumnos. Tu propio uso no se registra ni cuenta en las estadísticas.</p></div>' +
+      '<a class="tarjeta" href="#/usuarios" style="display:block"><div class="promo"><span class="rut-ico">' + ico("ajustes") + '</span><div style="flex:1"><h3>Mantenimiento de cuentas</h3><p>Entra a la cuenta de cualquier entrenador o alumno para revisar o corregir sus rutinas, dietas y datos.</p></div><span class="chev">' + ico("der") + "</span></div></a>" +
       '<div class="tarjeta"><h3>Ver la app como entrenador</h3><p>Navega la app igual que un entrenador para revisar cómo está acomodada. Lo que hagas ahí no cuenta en las estadísticas.</p>' +
       '<button class="btn" id="verComo" style="margin-top:14px">' + ico("persona") + "Entrar como entrenador</button></div>" +
       '<div class="tarjeta sin-relleno"><div class="lista"><div class="item" id="salir"><span class="ico">' + ico("salir") + '</span><span class="txt"><div class="t1">Cerrar sesión</div></span></div></div></div></div>';
@@ -1243,7 +1242,9 @@
       '<div class="form" style="margin-top:14px">' +
       (u.email ? '<button class="btn" id="uReset">' + ico("enlace") + "Mandar enlace para cambiar contraseña</button>" +
         '<div class="fila-btns"><button class="btn vidrio" id="uCopiar">' + ico("copiar") + 'Copiar correo</button><a class="btn vidrio" href="mailto:' + esc(u.email) + '">' + ico("enlace") + "Escribirle</a></div>" : "") +
+      '<button class="btn azul" id="uEntrar">' + ico("persona") + "Entrar a su cuenta</button>" +
       '<a class="btn vidrio" href="#/admin/' + esc(u.ent) + '">' + ico("grafica") + (u.rol === "entrenador" ? "Ver su actividad" : "Ver actividad de su entrenador") + "</a></div>", function (h, cerrar) {
+      h.querySelector("#uEntrar").onclick = function () { cerrar(); A().entrarComo(u.rol === "entrenador" ? "ent" : "cli", u.id.slice(1), u.nombre); };
       UI.$$("a", h).forEach(function (a) { a.addEventListener("click", cerrar); });
       var rs = h.querySelector("#uReset");
       if (rs) rs.onclick = async function () {
